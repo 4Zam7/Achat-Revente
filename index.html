@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Achat-Revente</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <div id="loading-screen">
+      <div class="loading-logo">
+        <span class="logo-a">A</span><span class="logo-r">R</span>
+      </div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+
+    <div id="main-app" style="display:none">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="header-inner">
+          <div class="header-brand">
+            <div class="brand-mark">AR</div>
+            <div>
+              <div class="brand-title">Achat-Revente</div>
+              <div class="brand-sub" id="sync-status">● Synchronisé</div>
+            </div>
+          </div>
+          <button class="btn-add-header" onclick="openAddModal()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="btn-add-label">Ajouter</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- NAV TABS -->
+      <nav class="nav">
+        <button class="tab active" data-tab="overview" onclick="showTab('overview')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Vue d'ensemble</span>
+        </button>
+        <button class="tab" data-tab="monthly" onclick="showTab('monthly')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 12l4-5 3 3 3-4 4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Par mois</span>
+        </button>
+        <button class="tab" data-tab="items" onclick="showTab('items')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Articles</span>
+        </button>
+        <button class="tab" data-tab="stock" onclick="showTab('stock')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 5v6l7 4 7-4V5L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 5l7 4 7-4M8 9v6" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Stock</span>
+        </button>
+      </nav>
+
+      <!-- PANELS -->
+      <main class="main-content">
+
+        <!-- OVERVIEW -->
+        <div id="panel-overview" class="panel active">
+          <div class="metrics-grid" id="m-overview"></div>
+          <div class="chart-row">
+            <div class="card">
+              <div class="card-title">Flux mensuel</div>
+              <div class="legend"><span><span class="ldot" style="background:#5B8FF9"></span>Achats</span><span><span class="ldot" style="background:#5AD8A6"></span>Ventes</span><span><span class="ldot" style="background:#F6BD16"></span>Bénéfice</span></div>
+              <div class="chart-wrap"><canvas id="c1"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Catégories vendues</div>
+              <div class="legend" id="leg2"></div>
+              <div class="chart-wrap"><canvas id="c2"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Top plus-values</div>
+            <div id="pv-wrap"></div>
+          </div>
+        </div>
+
+        <!-- MONTHLY -->
+        <div id="panel-monthly" class="panel">
+          <div class="card">
+            <div class="card-title">Bénéfice par mois</div>
+            <div class="chart-wrap"><canvas id="c-mois"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Bénéfice cumulé</div>
+            <div class="chart-wrap"><canvas id="c3"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Articles vendus par mois</div>
+            <div class="chart-wrap" style="height:180px"><canvas id="c4"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ITEMS -->
+        <div id="panel-items" class="panel">
+          <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="srch" placeholder="Rechercher un article..." oninput="filterTable()" class="search-input">
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:35%">Article</th>
+                <th style="width:12%">Achat</th>
+                <th style="width:12%">Vente</th>
+                <th style="width:14%">+Value</th>
+                <th style="width:12%">Statut</th>
+                <th style="width:15%">Action</th>
+              </tr></thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STOCK -->
+        <div id="panel-stock" class="panel">
+          <div class="metrics-grid" id="m-stock"></div>
+          <div class="card">
+            <div class="card-title">Stock — valeur investie par article</div>
+            <div id="pv-wrap2"></div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL AJOUTER -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Nouvel article</div>
+        <button class="btn-close" onclick="closeAddModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de l'article</label>
+        <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off">
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix d'achat (€)</label>
+          <input type="number" id="f-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date d'achat</label>
+          <input type="date" id="f-date">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="addArticle()" id="btn-add-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Ajouter au stock
+        </button>
+        <button class="btn-secondary" onclick="closeAddModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VENTE -->
+  <div class="modal-overlay" id="sell-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Enregistrer la vente</div>
+        <button class="btn-close" onclick="closeSellModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-item-box" id="modal-name"></div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix de vente (€)</label>
+          <input type="number" id="m-prix" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date de vente</label>
+          <input type="date" id="m-date">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmSell()" id="btn-sell-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Confirmer la vente
+        </button>
+        <button class="btn-secondary" onclick="closeSellModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
