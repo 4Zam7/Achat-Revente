@@ -247,16 +247,28 @@ function renderItems(items) {
     const m = d.r !== null && d.a > 0 ? d.r / d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
-    const actions = d.r === null
-      ? `<div style="display:flex;gap:5px"><button class="btn-sell" onclick="openSellModal(${d.id})">Vendu</button><button class="btn-del" onclick="delItem(${d.id})">Suppr.</button></div>`
-      : `<div style="display:flex;gap:5px"><button class="btn-cancel-sell" onclick="cancelSell(${d.id})">Annuler vente</button><button class="btn-del" onclick="delItem(${d.id})">Suppr.</button></div>`;
+    const actionBtns = d.r === null
+      ? `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})">
+           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+           Vendu
+         </button>
+         <button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer">
+           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+         </button>`
+      : `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})">
+           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+           Annuler
+         </button>
+         <button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer">
+           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+         </button>`;
     return `<tr>
-      <td title="${d.n}">${d.n}</td>
-      <td>${d.a.toFixed(2)}€</td>
-      <td>${d.r !== null ? d.r.toFixed(2) + '€' : '—'}</td>
-      <td>${pvHtml}</td>
+      <td class="td-name" title="${d.n}">${d.n}</td>
+      <td class="td-num">${d.a.toFixed(2)}€</td>
+      <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
+      <td class="td-num">${pvHtml}</td>
       <td>${d.r !== null ? '<span class="badge b-green">Vendu</span>' : '<span class="badge b-amber">Stock</span>'}</td>
-      <td>${actions}</td>
+      <td class="td-actions">${actionBtns}</td>
     </tr>`;
   }).join('');
 }
