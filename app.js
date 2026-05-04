@@ -1,6 +1,6 @@
 // ─── SUPABASE CONFIG ───────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://dqsrqdmbqlyvwhfrdjvk.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc3JxZG1icWx5dndoZnJkanZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDY2NTMsImV4cCI6MjA5MzQ4MjY1M30.JNl6up-Nn49rT9m9XXEqvd3e0dkDhgFh1-02vmyIR7g';
+const SUPABASE_KEY = 'sb_publishable_wSd5d243UUyoTP-ZkKzguQ_Gb1g0y5G';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
