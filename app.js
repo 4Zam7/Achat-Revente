@@ -1,6 +1,6 @@
 // ─── SUPABASE CONFIG ───────────────────────────────────────────────────────
 const SUPABASE_URL = 'https://dqsrqdmbqlyvwhfrdjvk.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_wSd5d243UUyoTP-ZkKzguQ_Gb1g0y5G';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc3JxZG1icWx5dndoZnJkanZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDY2NTMsImV4cCI6MjA5MzQ4MjY1M30.JNl6up-Nn49rT9m9XXEqvd3e0dkDhgFh1-02vmyIR7g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
@@ -248,8 +248,8 @@ function renderItems(items) {
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const actions = d.r === null
-      ? `<button class="btn-sell" onclick="openSellModal(${d.id})">Vendu</button>`
-      : `<button class="btn-del" onclick="delItem(${d.id})">Suppr.</button>`;
+      ? `<div style="display:flex;gap:5px"><button class="btn-sell" onclick="openSellModal(${d.id})">Vendu</button><button class="btn-del" onclick="delItem(${d.id})">Suppr.</button></div>`
+      : `<div style="display:flex;gap:5px"><button class="btn-cancel-sell" onclick="cancelSell(${d.id})">Annuler vente</button><button class="btn-del" onclick="delItem(${d.id})">Suppr.</button></div>`;
     return `<tr>
       <td title="${d.n}">${d.n}</td>
       <td>${d.a.toFixed(2)}€</td>
@@ -370,6 +370,19 @@ window.delItem = async function (id) {
   }
 };
 
+// ─── CANCEL SELL ─────────────────────────────────────────────────────────────
+window.cancelSell = async function (id) {
+  const it = D.find(d => d.id === id);
+  if (!it || !confirm(`Annuler la vente de "${it.n}" ?`)) return;
+  try {
+    const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null }).eq("id", id);
+    if (error) throw error;
+    toast(`Vente de "${it.n}" annulée`, "ok");
+  } catch (e) {
+    toast("Erreur lors de l'annulation", "err");
+  }
+};
+
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type = 'ok') {
@@ -391,3 +404,13 @@ document.getElementById('sell-modal').addEventListener('click', function (e) { i
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') { closeAddModal(); closeSellModal(); }
 });
+
+// ─── REFRESH ─────────────────────────────────────────────────────────────────
+window.refreshApp = async function () {
+  const btn = document.querySelector(".btn-refresh-header");
+  if (btn) btn.classList.add("spinning");
+  await loadData();
+  refreshCurrentPanel();
+  if (btn) setTimeout(() => btn.classList.remove("spinning"), 600);
+  toast("Données actualisées", "ok");
+};
