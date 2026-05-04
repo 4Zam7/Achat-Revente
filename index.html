@@ -34,10 +34,15 @@
               <div class="brand-sub" id="sync-status">● Synchronisé</div>
             </div>
           </div>
+          <div style="display:flex;gap:8px">
+          <button class="btn-refresh-header" onclick="refreshApp()" title="Actualiser">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 8A6 6 0 1 1 8 2a6 6 0 0 1 4.2 1.7L14 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="btn-add-header" onclick="openAddModal()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             <span class="btn-add-label">Ajouter</span>
           </button>
+          </div>
         </div>
       </header>
 
