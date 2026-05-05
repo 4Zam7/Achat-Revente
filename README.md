@@ -10,7 +10,7 @@
 
 > *Ajoutez ici une capture d'écran de votre app (faites une capture de `achat-revente-sigma.vercel.app` et uploadez-la dans le repo sous le nom `screenshot.png`, puis décommentez la ligne ci-dessous)*
 
-<!-- ![Aperçu de l'application](screenshot.png) -->
+![Aperçu de l'application](screenshot.png)
 
 ---
 
