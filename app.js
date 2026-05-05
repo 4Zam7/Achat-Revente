@@ -468,7 +468,7 @@ window.confirmEdit = async function () {
   const dateAchat = document.getElementById('e-date-achat').value;
   const venteVal = document.getElementById('e-vente').value;
   const dateVente = document.getElementById('e-date-vente').value;
-  if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date d'achat requis', 'err'); return; }
+  if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
   btn.disabled = true;
