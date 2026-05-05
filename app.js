@@ -9,14 +9,54 @@ let sellId = null;
 let currentTab = 'overview';
 const charts = {};
 
-// ─── INIT ───────────────────────────────────────────────────────────────────
+// ─── AUTH ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    showApp();
+  } else {
+    document.getElementById('loading-screen').style.display = 'none';
+    document.getElementById('login-screen').style.display = 'flex';
+    setTimeout(() => document.getElementById('email-input').focus(), 300);
+  }
+});
+
+window.doLogin = async function () {
+  const email = document.getElementById('email-input').value.trim();
+  const password = document.getElementById('pwd-input').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('login-error');
+  if (!email || !password) { err.textContent = 'Remplis tous les champs'; return; }
+  btn.disabled = true;
+  btn.textContent = '…';
+  err.textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    err.textContent = 'Email ou mot de passe incorrect';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').classList.add('shake');
+    setTimeout(() => document.getElementById('pwd-input').classList.remove('shake'), 500);
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  } else {
+    showApp();
+  }
+};
+
+window.doLogout = async function () {
+  await sb.auth.signOut();
+  location.reload();
+};
+
+async function showApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('loading-screen').style.display = 'flex';
   await loadData();
   hideLoading();
   buildOverview();
   setupRealtimeSync();
   document.getElementById('f-date').value = today();
-});
+}
 
 async function loadData() {
   setSyncStatus('syncing');
