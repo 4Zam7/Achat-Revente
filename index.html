@@ -25,10 +25,13 @@
       </div>
       <div class="login-box">
         <div class="login-title">Achat-Revente</div>
-        <div class="login-sub">Accès privé — entrez le mot de passe</div>
+        <div class="login-sub">Accès privé — connectez-vous</div>
+        <div class="login-field" style="margin-bottom:10px">
+          <input type="email" id="email-input" placeholder="Email" onkeydown="if(event.key==='Enter')document.getElementById('pwd-input').focus()" autocomplete="email">
+        </div>
         <div class="login-field">
-          <input type="password" id="pwd-input" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkPassword()">
-          <button class="login-btn" onclick="checkPassword()">
+          <input type="password" id="pwd-input" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+          <button class="login-btn" id="login-btn" onclick="doLogin()">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
@@ -55,6 +58,9 @@
             </div>
           </div>
           <div style="display:flex;gap:8px">
+          <button class="btn-logout-header" onclick="doLogout()" title="Se déconnecter">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l4-4-4-4M15 7H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="btn-refresh-header" onclick="refreshApp()" title="Actualiser">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 8A6 6 0 1 1 8 2a6 6 0 0 1 4.2 1.7L14 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
