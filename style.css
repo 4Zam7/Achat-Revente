@@ -462,3 +462,104 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--red-text);
   border-color: rgba(244,102,74,0.3);
 }
+
+/* ── LOGIN SCREEN ────────────────────────────────────────────────────────── */
+#login-screen {
+  position: fixed; inset: 0;
+  background: var(--bg);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 2rem; z-index: 9999;
+  padding: 1.5rem;
+}
+.login-logo {
+  font-family: 'DM Mono', monospace;
+  font-size: 52px; font-weight: 500;
+  display: flex; gap: 2px;
+  animation: fadeIn 0.5s ease;
+}
+.login-box {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 2rem;
+  width: 100%; max-width: 360px;
+  display: flex; flex-direction: column; gap: 0.75rem;
+  animation: modalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: var(--shadow);
+}
+.login-title {
+  font-size: 18px; font-weight: 600; color: var(--text);
+  text-align: center;
+}
+.login-sub {
+  font-size: 12px; color: var(--text3);
+  text-align: center; margin-bottom: 0.5rem;
+}
+.login-field {
+  display: flex; gap: 8px; align-items: center;
+}
+.login-field input {
+  flex: 1; padding: 11px 14px; font-size: 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.login-field input:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,143,249,0.12);
+}
+.login-field input::placeholder { color: var(--text3); }
+.login-field input.shake {
+  animation: shake 0.4s ease;
+  border-color: var(--red);
+}
+.login-btn {
+  width: 42px; height: 42px; flex-shrink: 0;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: var(--radius-sm);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.login-btn:hover { background: #4a7ef0; transform: translateY(-1px); }
+.login-btn:active { transform: scale(0.97); }
+.login-error {
+  font-size: 12px; color: var(--red-text);
+  text-align: center; min-height: 18px;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20%       { transform: translateX(-6px); }
+  40%       { transform: translateX(6px); }
+  60%       { transform: translateX(-4px); }
+  80%       { transform: translateX(4px); }
+}
+
+/* LOGIN EMAIL FIELD */
+.login-field input[type="email"] {
+  width: 100%; padding: 11px 14px; font-size: 14px;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.login-field input[type="email"]:focus {
+  outline: none; border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(91,143,249,0.12);
+}
+.login-field input[type="email"]::placeholder { color: var(--text3); }
+
+/* LOGOUT BUTTON */
+.btn-logout-header {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: var(--bg3); color: var(--text3);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-logout-header:hover {
+  background: var(--red-bg);
+  color: var(--red-text);
+  border-color: rgba(244,102,74,0.3);
+}
