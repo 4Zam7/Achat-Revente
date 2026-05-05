@@ -79,6 +79,7 @@ function normalize(row) {
     r: row.prix_revente != null ? parseFloat(row.prix_revente) : null,
     da: row.date_achat,
     dr: row.date_revente || null,
+    cat: row.categorie || '',
   };
 }
 
@@ -145,15 +146,15 @@ function fmtM(k) {
   const [y, mo] = k.split('-');
   return ms[parseInt(mo) - 1] + ' ' + y.slice(2);
 }
-function catOf(n) {
-  n = n.toLowerCase();
-  if (/baskets|nike air|converse|sneaker/.test(n)) return "Chaussures";
-  if (/sweat|hoodie|pull|tracksuit/.test(n)) return "Sweats/Hoodies";
-  if (/jean|pantalon|short|cargo|jogging|track|pantacourt/.test(n)) return "Bas";
-  if (/veste|doudoune|polaire/.test(n)) return "Vestes";
-  return "Hauts & Autres";
+function catOf(d) {
+  return d.cat || "Autres";
 }
-const CC = { "Chaussures": "#5B8FF9", "Sweats/Hoodies": "#5AD8A6", "Bas": "#F6BD16", "Vestes": "#F4664A", "Hauts & Autres": "#7B61FF" };
+const CC = {
+  "Vêtements":"#5B8FF9","Chaussures":"#5AD8A6","Jeux vidéo":"#F6BD16",
+  "Consoles":"#F4664A","Électronique":"#7B61FF","Jouets":"#FF9F7F",
+  "Décoration":"#36CFC9","Ustensiles":"#9FDB1D","Outils":"#E8684A",
+  "Livres":"#6DC8EC","Sport":"#FF85C2","Autres":"#9B9890"
+};
 function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
 function chartDefaults() {
@@ -211,7 +212,7 @@ function buildOverview() {
   });
 
   const cc = {};
-  s.sold.forEach(d => { const c = catOf(d.n); cc[c] = (cc[c] || 0) + 1; });
+  s.sold.forEach(d => { const c = catOf(d); cc[c] = (cc[c] || 0) + 1; });
   const cats = Object.keys(cc);
   document.getElementById('leg2').innerHTML = cats.map(c => `<span><span class="ldot" style="background:${CC[c] || '#888'}"></span>${c} (${cc[c]})</span>`).join('');
   killChart('c2');
@@ -287,6 +288,7 @@ function renderItems(items) {
     const m = d.r !== null && d.a > 0 ? d.r / d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
+    const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
     const actionBtns = d.r === null
       ? `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})">
            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -303,7 +305,8 @@ function renderItems(items) {
            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
          </button>`;
     return `<tr>
-      <td class="td-name" title="${d.n}">${d.n}</td>
+      <td class="td-name td-clickable" title="Cliquer pour modifier" onclick="openEditModal(${d.id})">${d.n}</td>
+      <td>${catBadge}</td>
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
@@ -349,6 +352,7 @@ window.openAddModal = function () {
   document.getElementById('f-nom').value = '';
   document.getElementById('f-achat').value = '';
   document.getElementById('f-date').value = today();
+  document.getElementById('f-cat').value = '';
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-nom').focus(), 100);
 };
@@ -435,6 +439,58 @@ window.cancelSell = async function (id) {
   }
 };
 
+
+// ─── EDIT ARTICLE ─────────────────────────────────────────────────────────────
+let editId = null;
+
+window.openEditModal = function (id) {
+  editId = id;
+  const it = D.find(d => d.id === id);
+  document.getElementById('e-nom').value = it.n;
+  document.getElementById('e-cat').value = it.cat || '';
+  document.getElementById('e-achat').value = it.a;
+  document.getElementById('e-date-achat').value = it.da;
+  document.getElementById('e-vente').value = it.r !== null ? it.r : '';
+  document.getElementById('e-date-vente').value = it.dr || '';
+  document.getElementById('edit-modal').classList.add('open');
+  setTimeout(() => document.getElementById('e-nom').focus(), 100);
+};
+
+window.closeEditModal = function () {
+  document.getElementById('edit-modal').classList.remove('open');
+  editId = null;
+};
+
+window.confirmEdit = async function () {
+  const nom = document.getElementById('e-nom').value.trim();
+  const cat = document.getElementById('e-cat').value;
+  const achat = parseFloat(document.getElementById('e-achat').value);
+  const dateAchat = document.getElementById('e-date-achat').value;
+  const venteVal = document.getElementById('e-vente').value;
+  const dateVente = document.getElementById('e-date-vente').value;
+  if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date d'achat requis', 'err'); return; }
+  const vente = venteVal !== '' ? parseFloat(venteVal) : null;
+  const btn = document.getElementById('btn-edit-confirm');
+  btn.disabled = true;
+  try {
+    const { error } = await sb.from('articles').update({
+      nom,
+      categorie: cat || null,
+      prix_achat: achat,
+      date_achat: dateAchat,
+      prix_revente: vente,
+      date_revente: (vente !== null && dateVente) ? dateVente : null,
+    }).eq('id', editId);
+    if (error) throw error;
+    closeEditModal();
+    toast(`"${nom}" modifié`, 'ok');
+  } catch (e) {
+    toast('Erreur lors de la modification', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
 // ─── TOAST ────────────────────────────────────────────────────────────────────
 let toastTimer;
 function toast(msg, type = 'ok') {
@@ -451,10 +507,11 @@ function today() { return new Date().toISOString().slice(0, 10); }
 // Close modals on overlay click
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
+document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); }
 });
 
 // ─── REFRESH ─────────────────────────────────────────────────────────────────
