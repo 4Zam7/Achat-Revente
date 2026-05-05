@@ -1,8 +1,8 @@
 # 📦 Achat-Revente
 
-> Application web progressive (PWA) de suivi d'achat-revente de vêtements et articles — synchronisée en temps réel sur tous vos appareils.
+> Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.0-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.1-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -22,7 +22,9 @@
 
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
 - 📈 **Graphiques** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
-- 📋 **Gestion des articles** — ajout, vente, annulation de vente, suppression
+- 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
+- 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
+- ✏️ **Modification complète** — cliquez sur un article pour modifier son nom, catégorie, prix et dates
 - 📦 **Suivi du stock** — capital immobilisé, taux de rotation
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
@@ -88,6 +90,7 @@ CREATE TABLE articles (
   date_achat date NOT NULL,
   prix_revente numeric,
   date_revente date,
+  categorie text,
   created_at timestamptz DEFAULT now()
 );
 
@@ -255,11 +258,14 @@ achat-revente/
 Si vous avez déjà des articles à importer, créez un fichier SQL avec ce format et collez-le dans le **SQL Editor** de Supabase :
 
 ```sql
-INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente) VALUES
-('Veste Adidas', 5, '2025-06-01', 18, '2025-09-10'),
-('Jean Levi''s 501', 3, '2025-06-15', NULL, NULL),
-('Hoodie Supreme', 8, '2025-07-01', 25, '2025-08-20');
+INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, categorie) VALUES
+('Veste Adidas', 5, '2025-06-01', 18, '2025-09-10', 'Vêtements'),
+('Jean Levi''s 501', 3, '2025-06-15', NULL, NULL, 'Vêtements'),
+('PS5', 200, '2025-07-01', 350, '2025-08-20', 'Consoles'),
+('Perceuse Bosch', 15, '2025-08-01', NULL, NULL, 'Outils');
 ```
+
+> Les catégories disponibles sont : `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Autres`
 
 ---
 
@@ -271,6 +277,7 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente) V
 | Le lien d'invitation pointe vers `localhost:3000` | Configurez l'URL Vercel dans Supabase → Authentication → URL Configuration **avant** d'envoyer l'invitation |
 | Les données ne s'affichent pas | Vérifiez que les politiques RLS ont bien été créées via le SQL Editor |
 | Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
+| L'app reste bloquée sur l'écran AR | Vérifiez la console du navigateur (F12) — souvent une erreur de syntaxe dans `app.js` ou des clés Supabase incorrectes |
 
 ---
 
