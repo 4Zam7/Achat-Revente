@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f0f0f">
   <title>Achat-Revente</title>
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="apple-touch-icon" href="favicon.svg">
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -16,6 +18,24 @@
 </head>
 <body>
   <div id="app">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" style="display:none">
+      <div class="login-logo">
+        <span class="logo-a">A</span><span class="logo-r">R</span>
+      </div>
+      <div class="login-box">
+        <div class="login-title">Achat-Revente</div>
+        <div class="login-sub">Accès privé — entrez le mot de passe</div>
+        <div class="login-field">
+          <input type="password" id="pwd-input" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkPassword()">
+          <button class="login-btn" onclick="checkPassword()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+
     <div id="loading-screen">
       <div class="loading-logo">
         <span class="logo-a">A</span><span class="logo-r">R</span>
