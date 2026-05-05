@@ -142,6 +142,7 @@
             <table class="items-table">
               <thead><tr>
                 <th>Article</th>
+                <th>Catégorie</th>
                 <th>Achat</th>
                 <th>Vente</th>
                 <th>+Value</th>
@@ -179,6 +180,24 @@
         <label>Nom de l'article</label>
         <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off">
       </div>
+      <div class="fg">
+        <label>Catégorie</label>
+        <select id="f-cat">
+          <option value="">— Choisir une catégorie —</option>
+          <option value="Vêtements">Vêtements</option>
+          <option value="Chaussures">Chaussures</option>
+          <option value="Jeux vidéo">Jeux vidéo</option>
+          <option value="Consoles">Consoles</option>
+          <option value="Électronique">Électronique</option>
+          <option value="Jouets">Jouets</option>
+          <option value="Décoration">Décoration</option>
+          <option value="Ustensiles">Ustensiles</option>
+          <option value="Outils">Outils</option>
+          <option value="Livres">Livres</option>
+          <option value="Sport">Sport</option>
+          <option value="Autres">Autres</option>
+        </select>
+      </div>
       <div class="form-row">
         <div class="fg">
           <label>Prix d'achat (€)</label>
@@ -195,6 +214,68 @@
           Ajouter au stock
         </button>
         <button class="btn-secondary" onclick="closeAddModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL MODIFIER -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Modifier l'article</div>
+        <button class="btn-close" onclick="closeEditModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de l'article</label>
+        <input type="text" id="e-nom" placeholder="Nom de l'article" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>Catégorie</label>
+        <select id="e-cat">
+          <option value="">— Choisir une catégorie —</option>
+          <option value="Vêtements">Vêtements</option>
+          <option value="Chaussures">Chaussures</option>
+          <option value="Jeux vidéo">Jeux vidéo</option>
+          <option value="Consoles">Consoles</option>
+          <option value="Électronique">Électronique</option>
+          <option value="Jouets">Jouets</option>
+          <option value="Décoration">Décoration</option>
+          <option value="Ustensiles">Ustensiles</option>
+          <option value="Outils">Outils</option>
+          <option value="Livres">Livres</option>
+          <option value="Sport">Sport</option>
+          <option value="Autres">Autres</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix d'achat (€)</label>
+          <input type="number" id="e-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date d'achat</label>
+          <input type="date" id="e-date-achat">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix de vente (€) <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <input type="number" id="e-vente" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date de vente <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <input type="date" id="e-date-vente">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmEdit()" id="btn-edit-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn-secondary" onclick="closeEditModal()">Annuler</button>
       </div>
     </div>
   </div>
