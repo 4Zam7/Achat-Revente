@@ -10,28 +10,11 @@
 
 ![Aperçu de l'application](screenshot.png)
 
-<table>
-  <tr>
-    <td align="center">
-      <a href="screenshot-mois.png">
-        <img src="screenshot-mois.png" width="220" alt="Par mois"/>
-      </a>
-      <br/><sub>📈 Par mois</sub>
-    </td>
-    <td align="center">
-      <a href="screenshot-articles.png">
-        <img src="screenshot-articles.png" width="220" alt="Articles"/>
-      </a>
-      <br/><sub>📋 Articles</sub>
-    </td>
-    <td align="center">
-      <a href="screenshot-login.png">
-        <img src="screenshot-login.png" width="220" alt="Login"/>
-      </a>
-      <br/><sub>🔒 Login</sub>
-    </td>
-  </tr>
-</table>
+<p align="center">
+  <a href="screenshot-mois.png"><img src="screenshot-mois.png" width="30%" alt="Par mois"/></a>&nbsp;&nbsp;
+  <a href="screenshot-articles.png"><img src="screenshot-articles.png" width="30%" alt="Articles"/></a>&nbsp;&nbsp;
+  <a href="screenshot-login.png"><img src="screenshot-login.png" width="30%" alt="Login"/></a>
+</p>
 
 ---
 
