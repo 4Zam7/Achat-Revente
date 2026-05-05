@@ -6,6 +6,14 @@
 
 ---
 
+## 📸 Aperçu
+
+> *Ajoutez ici une capture d'écran de votre app (faites une capture de `achat-revente-sigma.vercel.app` et uploadez-la dans le repo sous le nom `screenshot.png`, puis décommentez la ligne ci-dessous)*
+
+<!-- ![Aperçu de l'application](screenshot.png) -->
+
+---
+
 ## ✨ Fonctionnalités
 
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
@@ -42,7 +50,16 @@
 
 ---
 
-### Étape 1 — Créer le projet Supabase
+### Étape 1 — Télécharger les fichiers du projet
+
+1. Sur cette page GitHub, cliquez sur **Code** (bouton vert en haut à droite)
+2. Cliquez **Download ZIP**
+3. Extrayez le ZIP sur votre ordinateur
+4. Vous obtenez un dossier avec tous les fichiers du projet
+
+---
+
+### Étape 2 — Créer le projet Supabase
 
 1. Allez sur [supabase.com](https://supabase.com) → **Start your project**
 2. Connectez-vous avec GitHub ou Google
@@ -54,7 +71,7 @@
 
 ---
 
-### Étape 2 — Créer la table articles
+### Étape 3 — Créer la table articles
 
 Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
 
@@ -74,39 +91,19 @@ CREATE TABLE articles (
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 
 -- Politiques : accès uniquement aux utilisateurs authentifiés
-CREATE POLICY "Auth lecture"     ON articles FOR SELECT    TO authenticated USING (true);
-CREATE POLICY "Auth insertion"   ON articles FOR INSERT    TO authenticated WITH CHECK (true);
-CREATE POLICY "Auth modification" ON articles FOR UPDATE   TO authenticated USING (true);
-CREATE POLICY "Auth suppression" ON articles FOR DELETE    TO authenticated USING (true);
+CREATE POLICY "Auth lecture"      ON articles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth insertion"    ON articles FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Auth modification" ON articles FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Auth suppression"  ON articles FOR DELETE TO authenticated USING (true);
 ```
 
 ---
 
-### Étape 3 — Exposer la table dans l'API
+### Étape 4 — Exposer la table dans l'API
 
 1. Dans Supabase → **Integrations** → **Data API** → onglet **Settings**
 2. Dans **"Exposed tables"** → sélectionnez `articles`
 3. Cliquez **Save**
-
----
-
-### Étape 4 — Créer votre compte utilisateur
-
-1. Dans Supabase → **Authentication** → **URL Configuration**
-   - **Site URL** : `https://VOTRE-APP.vercel.app` *(à compléter après le déploiement)*
-   - **Redirect URLs** : `https://VOTRE-APP.vercel.app`
-   - Cliquez **Save**
-
-2. Dans **Authentication** → **Users** → **"Invite user"**
-   - Entrez votre email → **Send invite**
-
-3. Définissez votre mot de passe via le **SQL Editor** :
-```sql
-UPDATE auth.users 
-SET encrypted_password = crypt('VOTRE_MOT_DE_PASSE', gen_salt('bf'))
-WHERE email = 'votre@email.com';
-```
-> Le mot de passe est hashé en **bcrypt** — il ne sera jamais stocké en clair.
 
 ---
 
@@ -117,16 +114,20 @@ Dans Supabase → **Settings** → **API Keys** :
 - **Project URL** : `https://xxxxxxxxxxxx.supabase.co`
 - **Anon / Public key** : `eyJhbGci...` *(clé longue commençant par eyJ)*
 
+Notez ces deux valeurs, vous en aurez besoin à l'étape suivante.
+
 ---
 
 ### Étape 6 — Configurer le code
 
-Ouvrez le fichier `app.js` et modifiez les deux premières lignes :
+Ouvrez le fichier `app.js` (dans le dossier téléchargé à l'étape 1) et modifiez les deux premières lignes :
 
 ```javascript
-const SUPABASE_URL = 'https://VOTRE-URL.supabase.co';
-const SUPABASE_KEY = 'VOTRE_CLE_ANON';
+const SUPABASE_URL = 'https://VOTRE-URL.supabase.co';   // ← votre Project URL
+const SUPABASE_KEY = 'VOTRE_CLE_ANON';                  // ← votre Anon key
 ```
+
+Sauvegardez le fichier.
 
 ---
 
@@ -134,13 +135,14 @@ const SUPABASE_KEY = 'VOTRE_CLE_ANON';
 
 1. Allez sur [github.com](https://github.com) → **New repository**
 2. Nom : `achat-revente` → **Public** → **Create**
-3. Uploadez tous les fichiers du projet :
+3. Uploadez tous les fichiers du projet via **"Add file → Upload files"** :
    - `index.html`
    - `style.css`
-   - `app.js`
+   - `app.js` *(celui que vous venez de modifier)*
    - `manifest.json`
    - `vercel.json`
    - `favicon.svg`
+4. Cliquez **Commit changes**
 
 ---
 
@@ -149,13 +151,38 @@ const SUPABASE_KEY = 'VOTRE_CLE_ANON';
 1. Allez sur [vercel.com](https://vercel.com) → connectez-vous avec GitHub
 2. **Add New Project** → sélectionnez votre repo `achat-revente`
 3. Cliquez **Deploy** (aucune configuration nécessaire)
-4. Vercel vous donne une URL : `achat-revente-XXXX.vercel.app` 🎉
-
-> Revenez ensuite dans Supabase → **Authentication** → **URL Configuration** et renseignez cette URL dans **Site URL** et **Redirect URLs**.
+4. Vercel vous donne une URL : `achat-revente-XXXX.vercel.app` 🎉 — **notez-la**
 
 ---
 
-### Étape 9 — Installer sur téléphone (optionnel)
+### Étape 9 — Configurer l'URL dans Supabase Auth
+
+> ⚠️ Cette étape est importante — sans elle, les emails d'invitation pointent vers `localhost:3000` et ne fonctionnent pas.
+
+1. Dans Supabase → **Authentication** → **URL Configuration**
+   - **Site URL** : `https://VOTRE-APP.vercel.app` *(l'URL obtenue à l'étape 8)*
+   - **Redirect URLs** : `https://VOTRE-APP.vercel.app`
+   - Cliquez **Save**
+
+---
+
+### Étape 10 — Créer votre compte utilisateur
+
+1. Dans **Authentication** → **Users** → **"Invite user"**
+   - Entrez votre email → **Send invite**
+   - Vous recevrez un email avec un lien — il pointera cette fois vers votre vraie URL Vercel
+
+2. Définissez votre mot de passe directement via le **SQL Editor** :
+```sql
+UPDATE auth.users 
+SET encrypted_password = crypt('VOTRE_MOT_DE_PASSE', gen_salt('bf'))
+WHERE email = 'votre@email.com';
+```
+> Le mot de passe est hashé en **bcrypt** — il ne sera jamais stocké en clair.
+
+---
+
+### Étape 11 — Installer sur téléphone (optionnel)
 
 **Sur iPhone/iPad (Safari uniquement) :**
 1. Ouvrez votre URL dans Safari
@@ -221,7 +248,7 @@ achat-revente/
 
 ## 📊 Importer des données existantes
 
-Si vous avez déjà des articles à importer, créez un fichier SQL avec ce format :
+Si vous avez déjà des articles à importer, créez un fichier SQL avec ce format et collez-le dans le **SQL Editor** de Supabase :
 
 ```sql
 INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente) VALUES
@@ -230,7 +257,16 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente) V
 ('Hoodie Supreme', 8, '2025-07-01', 25, '2025-08-20');
 ```
 
-Collez-le dans le **SQL Editor** de Supabase et cliquez **Run**.
+---
+
+## ❓ Problèmes fréquents
+
+| Problème | Solution |
+|----------|----------|
+| L'app affiche "Hors ligne" | Vérifiez vos clés Supabase dans `app.js` et que la table `articles` est bien exposée dans Data API → Settings |
+| Le lien d'invitation pointe vers `localhost:3000` | Configurez l'URL Vercel dans Supabase → Authentication → URL Configuration **avant** d'envoyer l'invitation |
+| Les données ne s'affichent pas | Vérifiez que les politiques RLS ont bien été créées via le SQL Editor |
+| Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
 
 ---
 
