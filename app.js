@@ -2,6 +2,7 @@
 const SUPABASE_URL = 'https://dqsrqdmbqlyvwhfrdjvk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc3JxZG1icWx5dndoZnJkanZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDY2NTMsImV4cCI6MjA5MzQ4MjY1M30.JNl6up-Nn49rT9m9XXEqvd3e0dkDhgFh1-02vmyIR7g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+Chart.register(ChartDataLabels);
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let D = [];
@@ -157,6 +158,31 @@ const CC = {
 };
 function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
+const DL = {
+  display: true,
+  color: 'rgba(255,255,255,0.7)',
+  font: { size: 10, family: 'DM Mono', weight: '500' },
+  anchor: 'end', align: 'end', offset: 2,
+  formatter: v => v > 0 ? v.toFixed(0)+'€' : '',
+  clip: false,
+};
+const DL_LINE = {
+  display: true,
+  color: '#F6BD16',
+  font: { size: 10, family: 'DM Mono', weight: '500' },
+  anchor: 'end', align: 'top', offset: 4,
+  formatter: v => v > 0 ? v.toFixed(0)+'€' : '',
+  clip: false,
+};
+const DL_COUNT = {
+  display: true,
+  color: 'rgba(255,255,255,0.7)',
+  font: { size: 10, family: 'DM Mono', weight: '500' },
+  anchor: 'end', align: 'end', offset: 2,
+  formatter: v => v > 0 ? v : '',
+  clip: false,
+};
+
 function chartDefaults() {
   return {
     plugins: { legend: { display: false } },
@@ -208,7 +234,25 @@ function buildOverview() {
         { label: 'Bénéfice', data: keys.map(k => +(mm[k].b || 0).toFixed(2)), type: 'line', borderColor: '#F6BD16', backgroundColor: 'rgba(246,189,22,0.06)', fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2, yAxisID: 'y' }
       ]
     },
-    options: { responsive: true, maintainAspectRatio: false, ...chartDefaults() }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: (ctx) => ctx.dataset.type === 'line' ? false : ctx.parsed.y > 0,
+          color: 'rgba(255,255,255,0.65)',
+          font: { size: 9, family: 'DM Mono', weight: '500' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: v => v > 0 ? v.toFixed(0)+'€' : '',
+          clip: false,
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
   });
 
   const cc = {};
@@ -235,7 +279,19 @@ function buildOverview() {
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
-      }
+      },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: 'rgba(255,255,255,0.8)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 4,
+          formatter: v => '+' + v.toFixed(0) + '€',
+          clip: false,
+        }
+      },
+      layout: { padding: { right: 50 } }
     }
   });
 }
@@ -251,7 +307,25 @@ function buildMonthly() {
   charts['c-mois'] = new Chart(document.getElementById('c-mois'), {
     type: 'bar',
     data: { labels: lbls, datasets: [{ data: bData, backgroundColor: bData.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'), borderRadius: 4 }] },
-    options: { responsive: true, maintainAspectRatio: false, ...chartDefaults() }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 22 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: ctx => ctx.parsed.y !== 0,
+          color: ctx => ctx.parsed.y >= 0 ? 'rgba(90,216,166,0.9)' : 'rgba(244,102,74,0.9)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: v => v.toFixed(0) + '€',
+          clip: false,
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
   });
 
   let cum = 0;
@@ -260,7 +334,25 @@ function buildMonthly() {
   charts.c3 = new Chart(document.getElementById('c3'), {
     type: 'line',
     data: { labels: lbls, datasets: [{ data: cumD, borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)', fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2, pointBackgroundColor: '#5AD8A6' }] },
-    options: { responsive: true, maintainAspectRatio: false, ...chartDefaults() }
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 22 } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: '#5AD8A6',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'top', offset: 4,
+          formatter: v => v.toFixed(0) + '€',
+          clip: false,
+        }
+      },
+      scales: {
+        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
   });
 
   killChart('c4');
@@ -269,7 +361,18 @@ function buildMonthly() {
     data: { labels: lbls, datasets: [{ data: keys.map(k => mm[k].cnt), backgroundColor: '#5B8FF9', borderRadius: 4 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: ctx => ctx.parsed.y > 0,
+          color: 'rgba(255,255,255,0.7)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: v => v > 0 ? v : '',
+          clip: false,
+        }
+      },
+      layout: { padding: { top: 20 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { stepSize: 1, font: { size: 10, family: 'DM Mono' }, color: '#5c5a57' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -343,7 +446,19 @@ function buildStock() {
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
-      }
+      },
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: true,
+          color: 'rgba(255,255,255,0.8)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 4,
+          formatter: v => '+' + v.toFixed(0) + '€',
+          clip: false,
+        }
+      },
+      layout: { padding: { right: 50 } }
     }
   });
 }
