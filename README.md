@@ -2,7 +2,7 @@
 
 > Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.1-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.2-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -21,11 +21,12 @@
 ## ✨ Fonctionnalités
 
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
-- 📈 **Graphiques** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
+- 📈 **Graphiques avec valeurs affichées** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
+- 🎯 **Objectif mensuel** — jauge de progression des recettes, modifiable depuis l'app
 - 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- ✏️ **Modification complète** — cliquez sur un article pour modifier son nom, catégorie, prix et dates
-- 📦 **Suivi du stock** — capital immobilisé, taux de rotation
+- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix et dates
+- 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
@@ -41,7 +42,7 @@
 | **Base de données** | [Supabase](https://supabase.com) (PostgreSQL) | Stockage et synchronisation des données |
 | **Auth** | Supabase Auth | Authentification sécurisée |
 | **Hébergement** | [Vercel](https://vercel.com) | Déploiement automatique |
-| **Graphiques** | [Chart.js](https://chartjs.org) | Visualisation des données |
+| **Graphiques** | [Chart.js](https://chartjs.org) + chartjs-plugin-datalabels | Visualisation des données avec valeurs |
 | **Polices** | DM Sans + DM Mono (Google Fonts) | Typographie |
 
 ---
@@ -278,6 +279,32 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, c
 | Les données ne s'affichent pas | Vérifiez que les politiques RLS ont bien été créées via le SQL Editor |
 | Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
 | L'app reste bloquée sur l'écran AR | Vérifiez la console du navigateur (F12) — souvent une erreur de syntaxe dans `app.js` ou des clés Supabase incorrectes |
+| Les graphiques ne s'affichent pas | Vérifiez que le script `chartjs-plugin-datalabels` est bien chargé dans `index.html` avant `app.js` |
+| L'objectif mensuel se remet à zéro | L'objectif est sauvegardé en local (localStorage) — il est propre à chaque appareil/navigateur |
+
+---
+
+## 📝 Changelog
+
+### v1.2 — Mai 2026
+- 🎯 Jauge d'objectif mensuel (recettes) modifiable depuis l'app
+- 📊 Valeurs affichées directement sur tous les graphiques (sans survol)
+- 📦 Stock : affichage de tous les articles avec prix à droite, défilement complet
+- ✏️ Modification d'un article en cliquant sur son nom dans le tableau
+- 🏷️ 12 catégories de produits sélectionnables à l'ajout et à la modification
+- 🔒 Authentification Supabase Auth (email + mot de passe) avec RLS
+- 🔑 Bouton de déconnexion dans le header
+- 🔄 Bouton d'actualisation manuelle dans le header
+
+### v1.1 — Avril 2026
+- Catégories d'articles (12 types)
+- Modification complète d'un article (nom, prix, dates, catégorie)
+- Scroll horizontal sur le tableau Articles en mobile
+
+### v1.0 — Avril 2026
+- Lancement initial
+- Tableau de bord, graphiques, gestion stock
+- PWA installable, synchronisation temps réel Supabase
 
 ---
 
