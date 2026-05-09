@@ -224,30 +224,50 @@ function buildOverview() {
   const lbls = keys.map(fmtM);
 
   killChart('c1');
-  charts.c1 = new Chart(document.getElementById('c1'), { plugins: [ChartDataLabels],
+  charts.c1 = new Chart(document.getElementById('c1'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
     data: {
-      labels: lbls, datasets: [
-        { label: 'Achats', data: keys.map(k => +(mm[k].a || 0).toFixed(2)), backgroundColor: '#5B8FF9', borderRadius: 4 },
-        { label: 'Ventes', data: keys.map(k => +(mm[k].v || 0).toFixed(2)), backgroundColor: '#5AD8A6', borderRadius: 4 },
-        { label: 'Bénéfice', data: keys.map(k => +(mm[k].b || 0).toFixed(2)), type: 'line', borderColor: '#F6BD16', backgroundColor: 'rgba(246,189,22,0.06)', fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2, yAxisID: 'y' }
+      labels: lbls,
+      datasets: [
+        {
+          label: 'Achats',
+          data: keys.map(k => +(mm[k].a || 0).toFixed(2)),
+          backgroundColor: '#5B8FF9', borderRadius: 4,
+          datalabels: {
+            display: true,
+            color: 'rgba(255,255,255,0.75)',
+            font: { size: 9, family: 'DM Mono', weight: '500' },
+            anchor: 'end', align: 'end', offset: 2,
+            formatter: (v) => v > 0 ? v.toFixed(0)+'€' : '',
+          }
+        },
+        {
+          label: 'Ventes',
+          data: keys.map(k => +(mm[k].v || 0).toFixed(2)),
+          backgroundColor: '#5AD8A6', borderRadius: 4,
+          datalabels: {
+            display: true,
+            color: 'rgba(255,255,255,0.75)',
+            font: { size: 9, family: 'DM Mono', weight: '500' },
+            anchor: 'end', align: 'end', offset: 2,
+            formatter: (v) => v > 0 ? v.toFixed(0)+'€' : '',
+          }
+        },
+        {
+          label: 'Bénéfice',
+          data: keys.map(k => +(mm[k].b || 0).toFixed(2)),
+          type: 'line', borderColor: '#F6BD16',
+          backgroundColor: 'rgba(246,189,22,0.06)',
+          fill: true, tension: 0.35, pointRadius: 3, borderWidth: 2, yAxisID: 'y',
+          datalabels: { display: false }
+        }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      layout: { padding: { top: 20 } },
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: (ctx) => ctx.datasetIndex < 2 && ctx.parsed.y > 0,
-          color: 'rgba(255,255,255,0.75)',
-          font: { size: 9, family: 'DM Mono', weight: '500' },
-          anchor: 'end', align: 'end', offset: 2,
-          formatter: (v) => v > 0 ? v.toFixed(0)+'€' : '',
-          clip: false,
-        }
-      },
       layout: { padding: { top: 22 } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -255,7 +275,7 @@ function buildOverview() {
     }
   });
 
-  const cc = {};
+    const cc = {};
   s.sold.forEach(d => { const c = catOf(d); cc[c] = (cc[c] || 0) + 1; });
   const cats = Object.keys(cc);
   document.getElementById('leg2').innerHTML = cats.map(c => `<span><span class="ldot" style="background:${CC[c] || '#888'}"></span>${c} (${cc[c]})</span>`).join('');
@@ -305,21 +325,24 @@ function buildMonthly() {
   const bData = keys.map(k => +(mm[k].b).toFixed(2));
 
   killChart('c-mois');
-  charts['c-mois'] = new Chart(document.getElementById('c-mois'), { plugins: [ChartDataLabels],
+  charts['c-mois'] = new Chart(document.getElementById('c-mois'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
-    data: { labels: lbls, datasets: [{
-      data: bData,
-      backgroundColor: bData.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'),
-      borderRadius: 4,
-      datalabels: {
-        display: (ctx) => ctx.parsed.y !== 0,
-        color: (ctx) => ctx.parsed.y >= 0 ? 'rgba(90,216,166,0.95)' : 'rgba(244,102,74,0.95)',
-        font: { size: 10, family: 'DM Mono', weight: '600' },
-        anchor: 'end', align: 'end', offset: 2,
-        formatter: (v) => v.toFixed(0) + '€',
-        clip: false,
-      }
-    }] },
+    data: {
+      labels: lbls,
+      datasets: [{
+        data: bData,
+        backgroundColor: bData.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'),
+        borderRadius: 4,
+        datalabels: {
+          display: true,
+          color: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'rgba(90,216,166,0.95)' : 'rgba(244,102,74,0.95)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: (v) => v !== 0 ? v.toFixed(0)+'€' : '',
+        }
+      }]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
@@ -331,23 +354,27 @@ function buildMonthly() {
     }
   });
 
-  let cum = 0;
+    let cum = 0;
   const cumD = keys.map(k => { cum += mm[k].b; return +cum.toFixed(2); });
   killChart('c3');
-  charts.c3 = new Chart(document.getElementById('c3'), { plugins: [ChartDataLabels],
+  charts.c3 = new Chart(document.getElementById('c3'), {
+    plugins: [ChartDataLabels],
     type: 'line',
-    data: { labels: lbls, datasets: [{
-      data: cumD, borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)',
-      fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2, pointBackgroundColor: '#5AD8A6',
-      datalabels: {
-        display: true,
-        color: '#5AD8A6',
-        font: { size: 10, family: 'DM Mono', weight: '600' },
-        anchor: 'end', align: 'top', offset: 4,
-        formatter: (v) => v.toFixed(0) + '€',
-        clip: false,
-      }
-    }] },
+    data: {
+      labels: lbls,
+      datasets: [{
+        data: cumD,
+        borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)',
+        fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2, pointBackgroundColor: '#5AD8A6',
+        datalabels: {
+          display: true,
+          color: '#5AD8A6',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'top', offset: 4,
+          formatter: (v) => v.toFixed(0)+'€',
+        }
+      }]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
@@ -359,24 +386,28 @@ function buildMonthly() {
     }
   });
 
-  killChart('c4');
-  charts.c4 = new Chart(document.getElementById('c4'), { plugins: [ChartDataLabels],
+    killChart('c4');
+  charts.c4 = new Chart(document.getElementById('c4'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
-    data: { labels: lbls, datasets: [{
-      data: keys.map(k => mm[k].cnt), backgroundColor: '#5B8FF9', borderRadius: 4,
-      datalabels: {
-        display: (ctx) => ctx.parsed.y > 0,
-        color: 'rgba(255,255,255,0.7)',
-        font: { size: 10, family: 'DM Mono', weight: '600' },
-        anchor: 'end', align: 'end', offset: 2,
-        formatter: (v) => v > 0 ? v : '',
-        clip: false,
-      }
-    }] },
+    data: {
+      labels: lbls,
+      datasets: [{
+        data: keys.map(k => mm[k].cnt),
+        backgroundColor: '#5B8FF9', borderRadius: 4,
+        datalabels: {
+          display: true,
+          color: 'rgba(255,255,255,0.75)',
+          font: { size: 10, family: 'DM Mono', weight: '600' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: (v) => v > 0 ? String(v) : '',
+        }
+      }]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
       layout: { padding: { top: 20 } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { stepSize: 1, font: { size: 10, family: 'DM Mono' }, color: '#5c5a57' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -385,7 +416,8 @@ function buildMonthly() {
   });
 }
 
-// ─── ITEMS ───────────────────────────────────────────────────────────────────
+// ─── ITEMS
+ ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
     document.getElementById('items-body').innerHTML = `<tr><td colspan="6" class="empty-state">Aucun article trouvé</td></tr>`;
