@@ -688,3 +688,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .goal-right { justify-content: space-between; width: 100%; }
   .goal-pct { min-width: 80px; font-size: 11px; }
 }
+
+/* ── SCROLLABLE HORIZONTAL CHARTS ───────────────────────────────────────── */
+#pv-wrap,
+#pv-wrap2 {
+  overflow-y: auto;
+  max-height: 420px;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg4) transparent;
+}
+#pv-wrap::-webkit-scrollbar,
+#pv-wrap2::-webkit-scrollbar { width: 4px; }
+#pv-wrap::-webkit-scrollbar-thumb,
+#pv-wrap2::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 99px; }
