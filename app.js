@@ -272,21 +272,23 @@ function buildOverview() {
   document.getElementById('pv-wrap').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c5"></canvas></div>`;
   charts.c5 = new Chart(document.getElementById('c5'), {
     type: 'bar',
-    data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{ data: top.map(d => +(d.r - d.a).toFixed(2)), backgroundColor: top.map(d => (d.r - d.a) >= 10 ? '#5AD8A6' : '#5B8FF9'), borderRadius: 4 }] },
+    data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{
+      data: top.map(d => +(d.r - d.a).toFixed(2)),
+      backgroundColor: top.map(d => (d.r - d.a) >= 10 ? '#5AD8A6' : '#5B8FF9'),
+      borderRadius: 4,
+      datalabels: {
+        display: true,
+        color: 'rgba(255,255,255,0.8)',
+        font: { size: 10, family: 'DM Mono', weight: '600' },
+        anchor: 'end', align: 'end', offset: 4,
+        formatter: (v) => '+' + v.toFixed(0) + '€',
+        clip: false,
+      }
+    }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       layout: { padding: { right: 55 } },
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: true,
-          color: 'rgba(255,255,255,0.8)',
-          font: { size: 10, family: 'DM Mono', weight: '600' },
-          anchor: 'end', align: 'end', offset: 4,
-          formatter: (v) => '+' + v.toFixed(0) + '€',
-          clip: false,
-        }
-      },
+      plugins: { legend: { display: false }, datalabels: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
@@ -305,21 +307,23 @@ function buildMonthly() {
   killChart('c-mois');
   charts['c-mois'] = new Chart(document.getElementById('c-mois'), {
     type: 'bar',
-    data: { labels: lbls, datasets: [{ data: bData, backgroundColor: bData.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'), borderRadius: 4 }] },
+    data: { labels: lbls, datasets: [{
+      data: bData,
+      backgroundColor: bData.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'),
+      borderRadius: 4,
+      datalabels: {
+        display: (ctx) => ctx.parsed.y !== 0,
+        color: (ctx) => ctx.parsed.y >= 0 ? 'rgba(90,216,166,0.95)' : 'rgba(244,102,74,0.95)',
+        font: { size: 10, family: 'DM Mono', weight: '600' },
+        anchor: 'end', align: 'end', offset: 2,
+        formatter: (v) => v.toFixed(0) + '€',
+        clip: false,
+      }
+    }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: ctx => ctx.parsed.y !== 0,
-          color: ctx => ctx.parsed.y >= 0 ? 'rgba(90,216,166,0.9)' : 'rgba(244,102,74,0.9)',
-          font: { size: 10, family: 'DM Mono', weight: '600' },
-          anchor: 'end', align: 'end', offset: 2,
-          formatter: v => v.toFixed(0) + '€',
-          clip: false,
-        }
-      },
+      plugins: { legend: { display: false }, datalabels: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -332,21 +336,22 @@ function buildMonthly() {
   killChart('c3');
   charts.c3 = new Chart(document.getElementById('c3'), {
     type: 'line',
-    data: { labels: lbls, datasets: [{ data: cumD, borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)', fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2, pointBackgroundColor: '#5AD8A6' }] },
+    data: { labels: lbls, datasets: [{
+      data: cumD, borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)',
+      fill: true, tension: 0.35, pointRadius: 4, borderWidth: 2, pointBackgroundColor: '#5AD8A6',
+      datalabels: {
+        display: true,
+        color: '#5AD8A6',
+        font: { size: 10, family: 'DM Mono', weight: '600' },
+        anchor: 'end', align: 'top', offset: 4,
+        formatter: (v) => v.toFixed(0) + '€',
+        clip: false,
+      }
+    }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: true,
-          color: '#5AD8A6',
-          font: { size: 10, family: 'DM Mono', weight: '600' },
-          anchor: 'end', align: 'top', offset: 4,
-          formatter: (v) => v.toFixed(0) + '€',
-          clip: false,
-        }
-      },
+      plugins: { legend: { display: false }, datalabels: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -357,20 +362,20 @@ function buildMonthly() {
   killChart('c4');
   charts.c4 = new Chart(document.getElementById('c4'), {
     type: 'bar',
-    data: { labels: lbls, datasets: [{ data: keys.map(k => mm[k].cnt), backgroundColor: '#5B8FF9', borderRadius: 4 }] },
+    data: { labels: lbls, datasets: [{
+      data: keys.map(k => mm[k].cnt), backgroundColor: '#5B8FF9', borderRadius: 4,
+      datalabels: {
+        display: (ctx) => ctx.parsed.y > 0,
+        color: 'rgba(255,255,255,0.7)',
+        font: { size: 10, family: 'DM Mono', weight: '600' },
+        anchor: 'end', align: 'end', offset: 2,
+        formatter: (v) => v > 0 ? v : '',
+        clip: false,
+      }
+    }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: ctx => ctx.parsed.y > 0,
-          color: 'rgba(255,255,255,0.7)',
-          font: { size: 10, family: 'DM Mono', weight: '600' },
-          anchor: 'end', align: 'end', offset: 2,
-          formatter: v => v > 0 ? v : '',
-          clip: false,
-        }
-      },
+      plugins: { legend: { display: false }, datalabels: { display: false } },
       layout: { padding: { top: 20 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
