@@ -469,8 +469,8 @@ function buildStock() {
     <div class="metric"><div class="metric-label">Capital immo.</div><div class="metric-value mv-amber">${s.capitalStock.toFixed(0)}€</div><div class="metric-sub">non récupéré</div></div>
     <div class="metric"><div class="metric-label">Rotation</div><div class="metric-value">${tx}%</div><div class="metric-sub">articles vendus</div></div>`;
 
-  const top = s.stock.slice().sort((a, b) => b.a - a.a).slice(0, 25);
-  const h = top.length * 28 + 40;
+  const top = s.stock.slice().sort((a, b) => b.a - a.a);
+  const h = top.length * 26 + 20;
   document.getElementById('pv-wrap2').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c6"></canvas></div>`;
   charts.c6 = new Chart(document.getElementById('c6'), {
     type: 'bar',
