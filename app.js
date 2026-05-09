@@ -2,7 +2,6 @@
 const SUPABASE_URL = 'https://dqsrqdmbqlyvwhfrdjvk.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxc3JxZG1icWx5dndoZnJkanZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MDY2NTMsImV4cCI6MjA5MzQ4MjY1M30.JNl6up-Nn49rT9m9XXEqvd3e0dkDhgFh1-02vmyIR7g';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-Chart.register(ChartDataLabels);
 
 // ─── STATE ──────────────────────────────────────────────────────────────────
 let D = [];
@@ -240,12 +239,7 @@ function buildOverview() {
       plugins: {
         legend: { display: false },
         datalabels: {
-          display: (ctx) => ctx.dataset.type === 'line' ? false : ctx.parsed.y > 0,
-          color: 'rgba(255,255,255,0.65)',
-          font: { size: 9, family: 'DM Mono', weight: '500' },
-          anchor: 'end', align: 'end', offset: 2,
-          formatter: v => v > 0 ? v.toFixed(0)+'€' : '',
-          clip: false,
+          display: false
         }
       },
       scales: {
@@ -263,7 +257,7 @@ function buildOverview() {
   charts.c2 = new Chart(document.getElementById('c2'), {
     type: 'doughnut',
     data: { labels: cats, datasets: [{ data: cats.map(c => cc[c]), backgroundColor: cats.map(c => CC[c] || '#888'), borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '65%' }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: false } }, cutout: '65%' }
   });
 
   buildGoal();
@@ -344,10 +338,11 @@ function buildMonthly() {
           color: '#5AD8A6',
           font: { size: 10, family: 'DM Mono', weight: '600' },
           anchor: 'end', align: 'top', offset: 4,
-          formatter: v => v.toFixed(0) + '€',
+          formatter: (v) => v.toFixed(0) + '€',
           clip: false,
         }
       },
+      layout: { padding: { top: 22 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
