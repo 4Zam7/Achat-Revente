@@ -606,3 +606,85 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   box-shadow: 0 0 0 3px rgba(91,143,249,0.12);
 }
 .fg select option { background: var(--bg3); color: var(--text); }
+
+/* ── OBJECTIF MENSUEL ────────────────────────────────────────────────────── */
+.goal-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: border-color 0.2s;
+}
+.goal-card:hover { border-color: var(--border2); }
+
+.goal-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; gap: 1rem;
+  margin-bottom: 1rem;
+}
+.goal-title {
+  font-size: 13px; font-weight: 600; color: var(--text);
+  margin-bottom: 3px;
+}
+.goal-subtitle {
+  font-size: 11px; color: var(--text3);
+  font-family: 'DM Mono', monospace;
+}
+.goal-right {
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.goal-amounts {
+  display: flex; align-items: baseline; gap: 4px;
+  font-family: 'DM Mono', monospace;
+}
+.goal-current {
+  font-size: 22px; font-weight: 600; color: var(--text);
+}
+.goal-sep { font-size: 16px; color: var(--text3); }
+.goal-target {
+  font-size: 15px; font-weight: 500; color: var(--text3);
+}
+.goal-edit-btn {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: var(--bg3); border: 1px solid var(--border);
+  color: var(--text3); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.goal-edit-btn:hover {
+  background: var(--bg4); color: var(--text);
+  border-color: var(--border2);
+}
+
+.goal-bar-wrap {
+  display: flex; align-items: center; gap: 12px;
+}
+.goal-bar-track {
+  flex: 1; height: 8px;
+  background: var(--bg4);
+  border-radius: 999px; overflow: hidden;
+  position: relative;
+}
+.goal-bar-fill {
+  height: 100%; width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #5B8FF9, #5AD8A6);
+  transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.goal-pct {
+  font-size: 12px; font-weight: 600;
+  color: var(--text2); white-space: nowrap;
+  font-family: 'DM Mono', monospace;
+  min-width: 120px; text-align: right;
+}
+.goal-hint {
+  font-size: 11px; color: var(--text3);
+  margin-top: 8px;
+}
+
+@media (max-width: 600px) {
+  .goal-header { flex-direction: column; gap: 0.5rem; }
+  .goal-right { justify-content: space-between; width: 100%; }
+  .goal-pct { min-width: 80px; font-size: 11px; }
+}
