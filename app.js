@@ -473,24 +473,30 @@ function buildStock() {
   const h = top.length * 26 + 20;
   document.getElementById('pv-wrap2').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c6"></canvas></div>`;
   charts.c6 = new Chart(document.getElementById('c6'), {
+    plugins: [ChartDataLabels],
     type: 'bar',
-    data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{ data: top.map(d => d.a), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3 }] },
-    options: {
-      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      layout: { padding: { right: 55 } },
-      plugins: {
-        legend: { display: false },
+    data: {
+      labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n),
+      datasets: [{
+        data: top.map(d => d.a),
+        backgroundColor: 'rgba(255,255,255,0.15)',
+        borderRadius: 3,
         datalabels: {
           display: true,
-          color: 'rgba(255,255,255,0.8)',
+          color: 'rgba(255,255,255,0.75)',
           font: { size: 10, family: 'DM Mono', weight: '600' },
-          anchor: 'end', align: 'end', offset: 4,
-          formatter: (v) => '+' + v.toFixed(0) + '€',
+          anchor: 'end', align: 'end', offset: 6,
+          formatter: (v) => v.toFixed(2) + '€',
           clip: false,
         }
-      },
+      }]
+    },
+    options: {
+      indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      layout: { padding: { right: 60 } },
+      plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        x: { display: false },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
       }
     }
