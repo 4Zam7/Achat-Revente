@@ -239,9 +239,15 @@ function buildOverview() {
       plugins: {
         legend: { display: false },
         datalabels: {
-          display: false
+          display: (ctx) => ctx.datasetIndex < 2 && ctx.parsed.y > 0,
+          color: 'rgba(255,255,255,0.75)',
+          font: { size: 9, family: 'DM Mono', weight: '500' },
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: (v) => v > 0 ? v.toFixed(0)+'€' : '',
+          clip: false,
         }
       },
+      layout: { padding: { top: 22 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -269,11 +275,7 @@ function buildOverview() {
     data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{ data: top.map(d => +(d.r - d.a).toFixed(2)), backgroundColor: top.map(d => (d.r - d.a) >= 10 ? '#5AD8A6' : '#5B8FF9'), borderRadius: 4 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
-      },
+      layout: { padding: { right: 55 } },
       plugins: {
         legend: { display: false },
         datalabels: {
@@ -281,11 +283,14 @@ function buildOverview() {
           color: 'rgba(255,255,255,0.8)',
           font: { size: 10, family: 'DM Mono', weight: '600' },
           anchor: 'end', align: 'end', offset: 4,
-          formatter: v => '+' + v.toFixed(0) + '€',
+          formatter: (v) => '+' + v.toFixed(0) + '€',
           clip: false,
         }
       },
-      layout: { padding: { right: 50 } }
+      scales: {
+        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
+      }
     }
   });
 }
@@ -342,7 +347,6 @@ function buildMonthly() {
           clip: false,
         }
       },
-      layout: { padding: { top: 22 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -437,11 +441,7 @@ function buildStock() {
     data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{ data: top.map(d => d.a), backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 3 }] },
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
-      },
+      layout: { padding: { right: 55 } },
       plugins: {
         legend: { display: false },
         datalabels: {
@@ -449,11 +449,14 @@ function buildStock() {
           color: 'rgba(255,255,255,0.8)',
           font: { size: 10, family: 'DM Mono', weight: '600' },
           anchor: 'end', align: 'end', offset: 4,
-          formatter: v => '+' + v.toFixed(0) + '€',
+          formatter: (v) => '+' + v.toFixed(0) + '€',
           clip: false,
         }
       },
-      layout: { padding: { right: 50 } }
+      scales: {
+        x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
+      }
     }
   });
 }
