@@ -416,8 +416,7 @@ function buildMonthly() {
   });
 }
 
-// ─── ITEMS
- ───────────────────────────────────────────────────────────────────
+// ─── ITEMS ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
     document.getElementById('items-body').innerHTML = `<tr><td colspan="6" class="empty-state">Aucun article trouvé</td></tr>`;
