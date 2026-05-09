@@ -222,6 +222,7 @@ function buildOverview() {
     options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '65%' }
   });
 
+  buildGoal();
   const top = s.sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a)).slice(0, 18);
   const h = top.length * 32 + 40;
   document.getElementById('pv-wrap').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c5"></canvas></div>`;
@@ -508,11 +509,108 @@ function today() { return new Date().toISOString().slice(0, 10); }
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
 document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
+document.getElementById('goal-modal').addEventListener('click', function (e) { if (e.target === this) closeGoalModal(); });
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); }
 });
+
+
+// ─── OBJECTIF MENSUEL ─────────────────────────────────────────────────────────
+const GOAL_KEY = 'ar_goal';
+
+function getMonthLabel() {
+  const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const now = new Date();
+  return ms[now.getMonth()] + ' ' + now.getFullYear();
+}
+
+function getCurrentMonthRevenue() {
+  const now = new Date();
+  const key = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  return D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key))
+          .reduce((s, d) => s + d.r, 0);
+}
+
+function buildGoal() {
+  const goal = parseFloat(localStorage.getItem(GOAL_KEY)) || 0;
+  const current = getCurrentMonthRevenue();
+  const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
+  const pctReal = goal > 0 ? (current / goal) * 100 : 0;
+
+  document.getElementById('goal-month-label').textContent = getMonthLabel();
+  document.getElementById('goal-current').textContent = current.toFixed(0) + '€';
+  document.getElementById('goal-target-display').textContent = goal > 0 ? goal.toFixed(0) + '€' : 'Non défini';
+
+  const fill = document.getElementById('goal-bar-fill');
+  const pctEl = document.getElementById('goal-pct');
+  const hint = document.getElementById('goal-hint');
+
+  fill.style.width = pct + '%';
+
+  if (goal <= 0) {
+    fill.style.background = 'rgba(255,255,255,0.1)';
+    pctEl.textContent = '';
+    hint.textContent = 'Cliquez sur ✏️ pour définir un objectif';
+    hint.style.color = 'var(--text3)';
+    return;
+  }
+
+  // Color based on progress
+  if (pctReal >= 100) {
+    fill.style.background = 'linear-gradient(90deg, #5AD8A6, #3ecf8e)';
+    fill.style.boxShadow = '0 0 12px rgba(90,216,166,0.4)';
+    pctEl.textContent = '✓ Objectif atteint !';
+    pctEl.style.color = 'var(--green)';
+    hint.textContent = `Bravo ! ${(current - goal).toFixed(0)}€ de plus que l'objectif 🎉`;
+    hint.style.color = 'var(--green-text)';
+  } else if (pctReal >= 75) {
+    fill.style.background = 'linear-gradient(90deg, #5B8FF9, #5AD8A6)';
+    fill.style.boxShadow = 'none';
+    pctEl.textContent = Math.round(pctReal) + '%';
+    pctEl.style.color = 'var(--accent)';
+    const reste = (goal - current).toFixed(0);
+    hint.textContent = `Plus que ${reste}€ pour atteindre l'objectif 💪`;
+    hint.style.color = 'var(--text2)';
+  } else if (pctReal >= 40) {
+    fill.style.background = 'linear-gradient(90deg, #5B8FF9, #7B61FF)';
+    fill.style.boxShadow = 'none';
+    pctEl.textContent = Math.round(pctReal) + '%';
+    pctEl.style.color = 'var(--accent)';
+    const reste = (goal - current).toFixed(0);
+    hint.textContent = `${reste}€ restants pour atteindre l'objectif`;
+    hint.style.color = 'var(--text3)';
+  } else {
+    fill.style.background = 'linear-gradient(90deg, #F6BD16, #F4A316)';
+    fill.style.boxShadow = 'none';
+    pctEl.textContent = Math.round(pctReal) + '%';
+    pctEl.style.color = 'var(--amber)';
+    const reste = (goal - current).toFixed(0);
+    hint.textContent = `${reste}€ restants — encore un effort !`;
+    hint.style.color = 'var(--amber-text)';
+  }
+}
+
+window.openGoalModal = function () {
+  const goal = localStorage.getItem(GOAL_KEY) || '';
+  document.getElementById('goal-input').value = goal;
+  document.getElementById('goal-modal').classList.add('open');
+  setTimeout(() => document.getElementById('goal-input').focus(), 100);
+};
+
+window.closeGoalModal = function () {
+  document.getElementById('goal-modal').classList.remove('open');
+};
+
+window.saveGoal = function () {
+  const val = parseFloat(document.getElementById('goal-input').value);
+  if (isNaN(val) || val < 0) { toast('Montant invalide', 'err'); return; }
+  localStorage.setItem(GOAL_KEY, val);
+  closeGoalModal();
+  buildGoal();
+  toast(`Objectif fixé à ${val}€`, 'ok');
+};
 
 // ─── REFRESH ─────────────────────────────────────────────────────────────────
 window.refreshApp = async function () {
