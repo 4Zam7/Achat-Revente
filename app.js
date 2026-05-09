@@ -224,7 +224,7 @@ function buildOverview() {
   const lbls = keys.map(fmtM);
 
   killChart('c1');
-  charts.c1 = new Chart(document.getElementById('c1'), {
+  charts.c1 = new Chart(document.getElementById('c1'), { plugins: [ChartDataLabels],
     type: 'bar',
     data: {
       labels: lbls, datasets: [
@@ -263,14 +263,14 @@ function buildOverview() {
   charts.c2 = new Chart(document.getElementById('c2'), {
     type: 'doughnut',
     data: { labels: cats, datasets: [{ data: cats.map(c => cc[c]), backgroundColor: cats.map(c => CC[c] || '#888'), borderWidth: 0 }] },
-    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: false } }, cutout: '65%' }
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '65%' }
   });
 
   buildGoal();
   const top = s.sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a)).slice(0, 18);
   const h = top.length * 32 + 40;
   document.getElementById('pv-wrap').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c5"></canvas></div>`;
-  charts.c5 = new Chart(document.getElementById('c5'), {
+  charts.c5 = new Chart(document.getElementById('c5'), { plugins: [ChartDataLabels],
     type: 'bar',
     data: { labels: top.map(d => d.n.length > 28 ? d.n.slice(0, 28) + '…' : d.n), datasets: [{
       data: top.map(d => +(d.r - d.a).toFixed(2)),
@@ -288,7 +288,7 @@ function buildOverview() {
     options: {
       indexAxis: 'y', responsive: true, maintainAspectRatio: false,
       layout: { padding: { right: 55 } },
-      plugins: { legend: { display: false }, datalabels: { display: false } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#9b9890' }, grid: { display: false } }
@@ -305,7 +305,7 @@ function buildMonthly() {
   const bData = keys.map(k => +(mm[k].b).toFixed(2));
 
   killChart('c-mois');
-  charts['c-mois'] = new Chart(document.getElementById('c-mois'), {
+  charts['c-mois'] = new Chart(document.getElementById('c-mois'), { plugins: [ChartDataLabels],
     type: 'bar',
     data: { labels: lbls, datasets: [{
       data: bData,
@@ -323,7 +323,7 @@ function buildMonthly() {
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
-      plugins: { legend: { display: false }, datalabels: { display: false } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -334,7 +334,7 @@ function buildMonthly() {
   let cum = 0;
   const cumD = keys.map(k => { cum += mm[k].b; return +cum.toFixed(2); });
   killChart('c3');
-  charts.c3 = new Chart(document.getElementById('c3'), {
+  charts.c3 = new Chart(document.getElementById('c3'), { plugins: [ChartDataLabels],
     type: 'line',
     data: { labels: lbls, datasets: [{
       data: cumD, borderColor: '#5AD8A6', backgroundColor: 'rgba(90,216,166,0.06)',
@@ -351,7 +351,7 @@ function buildMonthly() {
     options: {
       responsive: true, maintainAspectRatio: false,
       layout: { padding: { top: 22 } },
-      plugins: { legend: { display: false }, datalabels: { display: false } },
+      plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
         y: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', callback: v => v + '€' }, grid: { color: 'rgba(255,255,255,0.04)' } }
@@ -360,7 +360,7 @@ function buildMonthly() {
   });
 
   killChart('c4');
-  charts.c4 = new Chart(document.getElementById('c4'), {
+  charts.c4 = new Chart(document.getElementById('c4'), { plugins: [ChartDataLabels],
     type: 'bar',
     data: { labels: lbls, datasets: [{
       data: keys.map(k => mm[k].cnt), backgroundColor: '#5B8FF9', borderRadius: 4,
@@ -375,7 +375,7 @@ function buildMonthly() {
     }] },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, datalabels: { display: false } },
+      plugins: { legend: { display: false } },
       layout: { padding: { top: 20 } },
       scales: {
         x: { ticks: { font: { size: 10, family: 'DM Mono' }, color: '#5c5a57', maxRotation: 40, autoSkip: false }, grid: { color: 'rgba(255,255,255,0.04)' } },
