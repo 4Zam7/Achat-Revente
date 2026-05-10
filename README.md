@@ -176,17 +176,11 @@ Sauvegardez le fichier.
 
 ### Étape 10 — Créer votre compte utilisateur
 
-1. Dans **Authentication** → **Users** → **"Invite user"**
-   - Entrez votre email → **Send invite**
-   - Vous recevrez un email avec un lien — il pointera cette fois vers votre vraie URL Vercel
+1. Dans Supabase → **Authentication** → **Users** → cliquez **"Add user"**
+2. Renseignez votre **email** et un **mot de passe**
+3. Cliquez **"Create user"**
 
-2. Définissez votre mot de passe directement via le **SQL Editor** :
-```sql
-UPDATE auth.users 
-SET encrypted_password = crypt('VOTRE_MOT_DE_PASSE', gen_salt('bf'))
-WHERE email = 'votre@email.com';
-```
-> Le mot de passe est hashé en **bcrypt** — il ne sera jamais stocké en clair.
+> Le mot de passe est hashé en **bcrypt** par Supabase — il ne sera jamais stocké en clair.
 
 ---
 
