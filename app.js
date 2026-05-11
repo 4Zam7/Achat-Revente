@@ -51,7 +51,7 @@ window.doLogout = async function () {
 async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
-  await loadData();
+  await Promise.all([loadData(), loadGoal()]);
   hideLoading();
   buildOverview();
   setupRealtimeSync();
@@ -673,7 +673,7 @@ document.addEventListener('keydown', e => {
 
 
 // ─── OBJECTIF MENSUEL ─────────────────────────────────────────────────────────
-const GOAL_KEY = 'ar_goal';
+let cachedGoal = 0;
 
 function getMonthLabel() {
   const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -688,8 +688,17 @@ function getCurrentMonthRevenue() {
           .reduce((s, d) => s + d.r, 0);
 }
 
+async function loadGoal() {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key', 'monthly_goal').single();
+    cachedGoal = data ? parseFloat(data.value) || 0 : 0;
+  } catch(e) {
+    cachedGoal = 0;
+  }
+}
+
 function buildGoal() {
-  const goal = parseFloat(localStorage.getItem(GOAL_KEY)) || 0;
+  const goal = cachedGoal;
   const current = getCurrentMonthRevenue();
   const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
   const pctReal = goal > 0 ? (current / goal) * 100 : 0;
@@ -706,13 +715,12 @@ function buildGoal() {
 
   if (goal <= 0) {
     fill.style.background = 'rgba(255,255,255,0.1)';
+    fill.style.boxShadow = 'none';
     pctEl.textContent = '';
-    hint.textContent = 'Cliquez sur ✏️ pour définir un objectif';
-    hint.style.color = 'var(--text3)';
+    hint.textContent = '';
     return;
   }
 
-  // Color based on progress
   if (pctReal >= 100) {
     fill.style.background = 'linear-gradient(90deg, #5AD8A6, #3ecf8e)';
     fill.style.boxShadow = '0 0 12px rgba(90,216,166,0.4)';
@@ -725,31 +733,27 @@ function buildGoal() {
     fill.style.boxShadow = 'none';
     pctEl.textContent = Math.round(pctReal) + '%';
     pctEl.style.color = 'var(--accent)';
-    const reste = (goal - current).toFixed(0);
-    hint.textContent = `Plus que ${reste}€ pour atteindre l'objectif 💪`;
+    hint.textContent = `Plus que ${(goal - current).toFixed(0)}€ pour atteindre l'objectif 💪`;
     hint.style.color = 'var(--text2)';
   } else if (pctReal >= 40) {
     fill.style.background = 'linear-gradient(90deg, #5B8FF9, #7B61FF)';
     fill.style.boxShadow = 'none';
     pctEl.textContent = Math.round(pctReal) + '%';
     pctEl.style.color = 'var(--accent)';
-    const reste = (goal - current).toFixed(0);
-    hint.textContent = `${reste}€ restants pour atteindre l'objectif`;
+    hint.textContent = `${(goal - current).toFixed(0)}€ restants pour atteindre l'objectif`;
     hint.style.color = 'var(--text3)';
   } else {
     fill.style.background = 'linear-gradient(90deg, #F6BD16, #F4A316)';
     fill.style.boxShadow = 'none';
     pctEl.textContent = Math.round(pctReal) + '%';
     pctEl.style.color = 'var(--amber)';
-    const reste = (goal - current).toFixed(0);
-    hint.textContent = `${reste}€ restants — encore un effort !`;
+    hint.textContent = `${(goal - current).toFixed(0)}€ restants — encore un effort !`;
     hint.style.color = 'var(--amber-text)';
   }
 }
 
 window.openGoalModal = function () {
-  const goal = localStorage.getItem(GOAL_KEY) || '';
-  document.getElementById('goal-input').value = goal;
+  document.getElementById('goal-input').value = cachedGoal > 0 ? cachedGoal : '';
   document.getElementById('goal-modal').classList.add('open');
   setTimeout(() => document.getElementById('goal-input').focus(), 100);
 };
@@ -758,13 +762,22 @@ window.closeGoalModal = function () {
   document.getElementById('goal-modal').classList.remove('open');
 };
 
-window.saveGoal = function () {
+window.saveGoal = async function () {
   const val = parseFloat(document.getElementById('goal-input').value);
   if (isNaN(val) || val < 0) { toast('Montant invalide', 'err'); return; }
-  localStorage.setItem(GOAL_KEY, val);
-  closeGoalModal();
-  buildGoal();
-  toast(`Objectif fixé à ${val}€`, 'ok');
+  const btn = document.querySelector('#goal-modal .btn-primary');
+  if (btn) btn.disabled = true;
+  try {
+    await sb.from('settings').upsert({ key: 'monthly_goal', value: String(val) });
+    cachedGoal = val;
+    closeGoalModal();
+    buildGoal();
+    toast(`Objectif fixé à ${val}€`, 'ok');
+  } catch(e) {
+    toast('Erreur lors de la sauvegarde', 'err');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 };
 
 // ─── REFRESH ─────────────────────────────────────────────────────────────────
