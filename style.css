@@ -82,11 +82,10 @@ body {
 .header-brand { display: flex; align-items: center; gap: 10px; }
 .brand-mark {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, var(--accent), var(--green));
   border-radius: 8px;
   display: flex; align-items: center; justify-content: center;
-  font-family: 'DM Mono', monospace;
-  font-size: 12px; font-weight: 500; color: #fff;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 .brand-title { font-size: 15px; font-weight: 600; color: var(--text); }
 .brand-sub { font-size: 10px; color: var(--green); font-family: 'DM Mono', monospace; }
