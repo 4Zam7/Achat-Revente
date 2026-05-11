@@ -1,7 +1,7 @@
 {
-  "name": "Achat-Revente",
-  "short_name": "AR",
-  "description": "Suivi achat-revente de vêtements et articles",
+  "name": "Laney",
+  "short_name": "Laney",
+  "description": "Suivi achat-revente — Laney",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f0f0f",
