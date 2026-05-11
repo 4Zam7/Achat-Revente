@@ -87,7 +87,7 @@ body {
   flex-shrink: 0;
   overflow: hidden;
 }
-.brand-title { font-size: 15px; font-weight: 600; color: var(--text); }
+.brand-title { font-size: 19px; font-weight: 700; color: var(--text); }
 .brand-sub { font-size: 10px; color: var(--green); font-family: 'DM Mono', monospace; }
 .brand-sub.syncing { color: var(--amber); }
 .brand-sub.error { color: var(--red); }
