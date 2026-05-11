@@ -2,7 +2,7 @@
 
 > Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.2-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.3-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -22,7 +22,7 @@
 
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
 - 📈 **Graphiques avec valeurs affichées** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
-- 🎯 **Objectif mensuel** — jauge de progression des recettes, modifiable depuis l'app
+- 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase
 - 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix et dates
@@ -31,6 +31,8 @@
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
+- ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
+- 🏷️ **Catégorie sauvegardée** — correctement enregistrée lors de l'ajout d'un article
 
 ---
 
@@ -44,6 +46,7 @@
 | **Hébergement** | [Vercel](https://vercel.com) | Déploiement automatique |
 | **Graphiques** | [Chart.js](https://chartjs.org) + chartjs-plugin-datalabels | Visualisation des données avec valeurs |
 | **Polices** | DM Sans + DM Mono (Google Fonts) | Typographie |
+| **Icône** | SVG custom | Logo Laney (L blanc sur bordeaux) |
 
 ---
 
@@ -264,6 +267,26 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, c
 
 ---
 
+### Créer la table settings (objectif mensuel)
+
+Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
+
+```sql
+CREATE TABLE settings (
+  key text PRIMARY KEY,
+  value text NOT NULL
+);
+
+ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Auth lecture"      ON settings FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth insertion"    ON settings FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING (true);
+```
+
+> N'oubliez pas d'exposer la table `settings` dans **Integrations → Data API → Settings → Exposed tables**.
+
+---
+
 ## ❓ Problèmes fréquents
 
 | Problème | Solution |
@@ -274,11 +297,18 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, c
 | Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
 | L'app reste bloquée sur l'écran AR | Vérifiez la console du navigateur (F12) — souvent une erreur de syntaxe dans `app.js` ou des clés Supabase incorrectes |
 | Les graphiques ne s'affichent pas | Vérifiez que le script `chartjs-plugin-datalabels` est bien chargé dans `index.html` avant `app.js` |
-| L'objectif mensuel se remet à zéro | L'objectif est sauvegardé en local (localStorage) — il est propre à chaque appareil/navigateur |
+| L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 
 ---
 
 ## 📝 Changelog
+
+### v1.3 — Mai 2026
+- ⚡ Mise à jour instantanée de l'interface après chaque action (sans rechargement réseau)
+- 🎯 Objectif mensuel sauvegardé dans Supabase (synchronisé sur tous les appareils)
+- 🏷️ Catégorie correctement enregistrée lors de l'ajout d'un article
+- 🎨 Nouveau logo Laney (L blanc sur fond bordeaux) — favicon, header, écran de chargement
+- 📝 Renommage de l'app en **Laney**
 
 ### v1.2 — Mai 2026
 - 🎯 Jauge d'objectif mensuel (recettes) modifiable depuis l'app
