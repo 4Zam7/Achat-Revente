@@ -524,10 +524,12 @@ window.addArticle = async function () {
   btn.disabled = true;
 
   try {
-    const cat = document.getElementById('f-cat').value;
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null }]);
+    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date }]);
     if (error) throw error;
+    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
+    if (inserted.data) D.push(normalize(inserted.data));
     closeAddModal();
+    refreshCurrentPanel();
     toast(`"${nom}" ajouté au stock`, 'ok');
   } catch (e) {
     toast('Erreur lors de l\'ajout', 'err');
@@ -560,7 +562,10 @@ window.confirmSell = async function () {
     const it = D.find(d => d.id === sellId);
     const { error } = await sb.from('articles').update({ prix_revente: prix, date_revente: date }).eq('id', sellId);
     if (error) throw error;
+    const item = D.find(d => d.id === sellId);
+    if (item) { item.r = prix; item.dr = date; }
     closeSellModal();
+    refreshCurrentPanel();
     const pv = (prix - it.a).toFixed(2);
     toast(`"${it.n}" vendu ${prix.toFixed(2)}€ — bénéf. +${pv}€`, 'ok');
   } catch (e) {
@@ -577,6 +582,8 @@ window.delItem = async function (id) {
   try {
     const { error } = await sb.from('articles').delete().eq('id', id);
     if (error) throw error;
+    D = D.filter(d => d.id !== id);
+    refreshCurrentPanel();
     toast(`"${it.n}" supprimé`, 'ok');
   } catch (e) {
     toast('Erreur lors de la suppression', 'err');
@@ -590,6 +597,9 @@ window.cancelSell = async function (id) {
   try {
     const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null }).eq("id", id);
     if (error) throw error;
+    const item = D.find(d => d.id === id);
+    if (item) { item.r = null; item.dr = null; }
+    refreshCurrentPanel();
     toast(`Vente de "${it.n}" annulée`, "ok");
   } catch (e) {
     toast("Erreur lors de l'annulation", "err");
@@ -639,7 +649,10 @@ window.confirmEdit = async function () {
       date_revente: (vente !== null && dateVente) ? dateVente : null,
     }).eq('id', editId);
     if (error) throw error;
+    const item = D.find(d => d.id === editId);
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; }
     closeEditModal();
+    refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
   } catch (e) {
     toast('Erreur lors de la modification', 'err');
