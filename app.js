@@ -524,7 +524,8 @@ window.addArticle = async function () {
   btn.disabled = true;
 
   try {
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date }]);
+    const cat = document.getElementById('f-cat').value;
+    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null }]);
     if (error) throw error;
     const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
     if (inserted.data) D.push(normalize(inserted.data));
