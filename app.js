@@ -524,7 +524,8 @@ window.addArticle = async function () {
   btn.disabled = true;
 
   try {
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date }]);
+    const cat = document.getElementById('f-cat').value;
+    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null }]);
     if (error) throw error;
     closeAddModal();
     toast(`"${nom}" ajouté au stock`, 'ok');
