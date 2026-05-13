@@ -117,7 +117,8 @@ window.showTab = function (id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
-  refreshCurrentPanel();
+  if (id === 'bilan') buildBilanSelectors();
+  else refreshCurrentPanel();
 };
 
 function refreshCurrentPanel() {
@@ -518,13 +519,13 @@ window.addArticle = async function () {
   const nom = document.getElementById('f-nom').value.trim();
   const achat = parseFloat(document.getElementById('f-achat').value);
   const date = document.getElementById('f-date').value;
+  const cat = document.getElementById('f-cat').value;
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
 
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
 
   try {
-    const cat = document.getElementById('f-cat').value;
     const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null }]);
     if (error) throw error;
     const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
@@ -803,4 +804,184 @@ window.refreshApp = async function () {
   refreshCurrentPanel();
   if (btn) setTimeout(() => btn.classList.remove("spinning"), 600);
   toast("Données actualisées", "ok");
+};
+
+// ─── BILAN ───────────────────────────────────────────────────────────────────
+let bilanCharts = {};
+
+function killBilanChart(id) { if (bilanCharts[id]) { bilanCharts[id].destroy(); delete bilanCharts[id]; } }
+
+window.showBilanTab = function(tab) {
+  document.getElementById('btab-month').classList.toggle('active', tab === 'month');
+  document.getElementById('btab-year').classList.toggle('active', tab === 'year');
+  document.getElementById('bilan-month').style.display = tab === 'month' ? 'block' : 'none';
+  document.getElementById('bilan-year').style.display = tab === 'year' ? 'block' : 'none';
+};
+
+function buildBilanSelectors() {
+  // Months with sold items
+  const monthSet = new Set();
+  const yearSet = new Set();
+  D.forEach(d => {
+    if (d.dr) { monthSet.add(d.dr.slice(0, 7)); yearSet.add(d.dr.slice(0, 4)); }
+    if (d.da) yearSet.add(d.da.slice(0, 4));
+  });
+
+  const months = [...monthSet].sort().reverse();
+  const years = [...yearSet].sort().reverse();
+
+  const mSel = document.getElementById('bilan-month-select');
+  const ySel = document.getElementById('bilan-year-select');
+  const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+  mSel.innerHTML = months.map(k => {
+    const [y, m] = k.split('-');
+    return `<option value="${k}">${ms[parseInt(m)-1]} ${y}</option>`;
+  }).join('');
+  ySel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  buildBilanMonth();
+  buildBilanYear();
+}
+
+function bilanMetricsHTML(metrics) {
+  return metrics.map(m => `
+    <div class="metric">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-value ${m.color||''}">${m.value}</div>
+      ${m.sub ? `<div class="metric-sub">${m.sub}</div>` : ''}
+    </div>`).join('');
+}
+
+function bilanTopHTML(items, limit) {
+  return items.slice(0, limit).map((d, i) => `
+    <div class="bilan-top-item">
+      <div class="bilan-top-rank">${i+1}</div>
+      <div class="bilan-top-name" title="${d.n}">${d.n}</div>
+      <div class="bilan-top-pv">+${(d.r - d.a).toFixed(2)}€</div>
+    </div>`).join('');
+}
+
+function bilanCatChart(canvasId, sold, legendId) {
+  killBilanChart(canvasId);
+  const cc = {};
+  sold.forEach(d => { const c = catOf(d); cc[c] = (cc[c]||0) + 1; });
+  const cats = Object.keys(cc);
+  if (!cats.length) return;
+  document.getElementById(legendId).innerHTML = cats.map(c =>
+    `<span><span class="ldot" style="background:${CC[c]||'#888'}"></span>${c} (${cc[c]})</span>`
+  ).join('');
+  bilanCharts[canvasId] = new Chart(document.getElementById(canvasId), {
+    type: 'doughnut',
+    data: { labels: cats, datasets: [{ data: cats.map(c => cc[c]), backgroundColor: cats.map(c => CC[c]||'#888'), borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, datalabels: { display: false } }, cutout: '62%' }
+  });
+}
+
+window.buildBilanMonth = function() {
+  const key = document.getElementById('bilan-month-select').value;
+  if (!key) return;
+
+  const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
+  const bought = D.filter(d => d.da && d.da.startsWith(key));
+  const recettes = sold.reduce((s, d) => s + d.r, 0);
+  const coutVendus = sold.reduce((s, d) => s + d.a, 0);
+  const benefice = recettes - coutVendus;
+  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
+
+  document.getElementById('bilan-m-metrics').innerHTML = bilanMetricsHTML([
+    { label: 'Articles vendus', value: sold.length, sub: `ce mois` },
+    { label: 'Articles achetés', value: bought.length, sub: `${montantAchete.toFixed(0)}€ investis` },
+    { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
+    { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
+    { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
+    { label: 'Marge moy./article', value: sold.length > 0 ? (benefice/sold.length).toFixed(0)+'€' : '—' },
+  ]);
+
+  bilanCatChart('bilan-c-cat-m', sold, 'bilan-m-leg');
+
+  const top5 = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  document.getElementById('bilan-m-top').innerHTML = top5.length
+    ? bilanTopHTML(top5, 5)
+    : '<div class="empty-state">Aucun article vendu ce mois</div>';
+
+  document.getElementById('bilan-m-achats').innerHTML = bought.length
+    ? bought.map(d => `
+        <div class="bilan-achat-item">
+          <div class="bilan-achat-name">${d.n}</div>
+          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
+          ${d.r !== null ? `<span class="badge b-green" style="margin-left:6px;font-size:10px">Vendu</span>` : `<span class="badge b-amber" style="margin-left:6px;font-size:10px">Stock</span>`}
+        </div>`).join('')
+    : '<div class="empty-state">Aucun article acheté ce mois</div>';
+};
+
+window.buildBilanYear = function() {
+  const year = document.getElementById('bilan-year-select').value;
+  if (!year) return;
+
+  const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(year));
+  const bought = D.filter(d => d.da && d.da.startsWith(year));
+  const recettes = sold.reduce((s, d) => s + d.r, 0);
+  const coutVendus = sold.reduce((s, d) => s + d.a, 0);
+  const benefice = recettes - coutVendus;
+  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
+  const meilleurMois = () => {
+    const mm = {};
+    sold.forEach(d => { const k = d.dr.slice(0,7); mm[k] = (mm[k]||0) + (d.r - d.a); });
+    const best = Object.entries(mm).sort((a,b) => b[1]-a[1])[0];
+    if (!best) return '—';
+    const ms = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+    const mo = parseInt(best[0].split('-')[1]) - 1;
+    return `${ms[mo]} (+${best[1].toFixed(0)}€)`;
+  };
+
+  document.getElementById('bilan-y-metrics').innerHTML = bilanMetricsHTML([
+    { label: 'Articles vendus', value: sold.length, sub: `en ${year}` },
+    { label: 'Articles achetés', value: bought.length, sub: `${montantAchete.toFixed(0)}€ investis` },
+    { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
+    { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
+    { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
+    { label: 'Meilleur mois', value: meilleurMois(), sub: 'en bénéfice' },
+  ]);
+
+  bilanCatChart('bilan-c-cat-y', sold, 'bilan-y-leg');
+
+  // Monthly bar chart for the year
+  const ms = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
+  const monthlyB = Array(12).fill(0);
+  sold.forEach(d => { const mo = parseInt(d.dr.slice(5,7))-1; monthlyB[mo] += (d.r - d.a); });
+  killBilanChart('bilan-c-monthly-y');
+  bilanCharts['bilan-c-monthly-y'] = new Chart(document.getElementById('bilan-c-monthly-y'), {
+    plugins: [ChartDataLabels],
+    type: 'bar',
+    data: { labels: ms, datasets: [{
+      data: monthlyB.map(v => +v.toFixed(2)),
+      backgroundColor: monthlyB.map(v => v >= 0 ? 'rgba(90,216,166,0.7)' : 'rgba(244,102,74,0.7)'),
+      borderRadius: 4,
+      datalabels: {
+        display: (ctx) => ctx.dataset.data[ctx.dataIndex] !== 0,
+        color: (ctx) => ctx.dataset.data[ctx.dataIndex] >= 0 ? 'rgba(90,216,166,0.95)' : 'rgba(244,102,74,0.95)',
+        font: { size: 9, family: 'DM Mono', weight: '600' },
+        anchor: 'end', align: 'end', offset: 2,
+        formatter: (v) => v !== 0 ? v.toFixed(0)+'€' : '',
+      }
+    }] },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      layout: { padding: { top: 20 } },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 9, family: 'DM Mono' }, color: '#5c5a57' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { callback: v => v+'€', font: { size: 9, family: 'DM Mono' }, color: '#5c5a57' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+
+  const top10 = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  document.getElementById('bilan-y-top').innerHTML = top10.length
+    ? bilanTopHTML(top10, 10)
+    : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
