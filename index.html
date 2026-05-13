@@ -76,6 +76,9 @@
           <button class="btn-logout-header" onclick="doLogout()" title="Se déconnecter">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l4-4-4-4M15 7H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+          <button class="btn-export-header" onclick="exportExcel()" title="Exporter en Excel">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="btn-refresh-header" onclick="refreshApp()" title="Actualiser">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 8A6 6 0 1 1 8 2a6 6 0 0 1 4.2 1.7L14 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -446,6 +449,7 @@
   <!-- TOAST -->
   <div id="toast"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
