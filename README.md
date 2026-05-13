@@ -1,8 +1,8 @@
 # 📦 Achat-Revente
 
-> Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
+> **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.3-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.4-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -33,6 +33,7 @@
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
 - 🏷️ **Catégorie sauvegardée** — correctement enregistrée lors de l'ajout d'un article
+- 📅 **Onglet Bilan** — bilan mensuel et annuel avec stats complètes, top plus-values, camembert catégories
 
 ---
 
@@ -46,7 +47,6 @@
 | **Hébergement** | [Vercel](https://vercel.com) | Déploiement automatique |
 | **Graphiques** | [Chart.js](https://chartjs.org) + chartjs-plugin-datalabels | Visualisation des données avec valeurs |
 | **Polices** | DM Sans + DM Mono (Google Fonts) | Typographie |
-| **Icône** | SVG custom | Logo Laney (L blanc sur bordeaux) |
 
 ---
 
@@ -152,7 +152,10 @@ Sauvegardez le fichier.
    - `app.js` *(celui que vous venez de modifier)*
    - `manifest.json`
    - `vercel.json`
-   - `favicon.svg`
+   - `favicon.png`
+   - `apple-touch-icon.png`
+   - `icon-192.png`
+   - `icon-512.png`
 4. Cliquez **Commit changes**
 
 ---
@@ -209,7 +212,10 @@ achat-revente/
 ├── app.js            # Logique applicative + connexion Supabase
 ├── manifest.json     # Configuration PWA
 ├── vercel.json       # Configuration déploiement Vercel
-├── favicon.svg       # Logo AR (onglet navigateur)
+├── favicon.png       # Logo Laney (onglet navigateur)
+├── apple-touch-icon.png # Icône iPhone/iPad
+├── icon-192.png          # Icône Android
+├── icon-512.png          # Icône haute résolution
 └── README.md         # Ce fichier
 ```
 
@@ -287,6 +293,27 @@ CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING 
 
 ---
 
+### Accorder les droits API (obligatoire depuis mai 2026)
+
+Depuis le 30 mai 2026, Supabase exige des `GRANT` explicites pour exposer les tables via l'API. Dans **SQL Editor** → **Run** :
+
+```sql
+-- Table articles
+GRANT SELECT, INSERT, UPDATE, DELETE ON articles TO authenticated;
+GRANT SELECT ON articles TO anon;
+GRANT ALL ON articles TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE articles_id_seq TO authenticated;
+
+-- Table settings
+GRANT SELECT, INSERT, UPDATE, DELETE ON settings TO authenticated;
+GRANT SELECT ON settings TO anon;
+GRANT ALL ON settings TO service_role;
+```
+
+> Sans ces `GRANT`, les tables ne seront plus accessibles via l'API après le **30 octobre 2026**.
+
+---
+
 ## ❓ Problèmes fréquents
 
 | Problème | Solution |
@@ -298,16 +325,24 @@ CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING 
 | L'app reste bloquée sur l'écran AR | Vérifiez la console du navigateur (F12) — souvent une erreur de syntaxe dans `app.js` ou des clés Supabase incorrectes |
 | Les graphiques ne s'affichent pas | Vérifiez que le script `chartjs-plugin-datalabels` est bien chargé dans `index.html` avant `app.js` |
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
+| Le bilan ne s'affiche pas | Vérifiez que des articles ont bien des dates de vente renseignées pour le mois/année sélectionné |
+| Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
 
 ---
 
 ## 📝 Changelog
 
+### v1.4 — Mai 2026
+- 📅 Onglet **Bilan** avec sous-onglets Mois / Année
+  - Bilan mensuel : 6 métriques, camembert catégories, top 5 plus-values, liste articles achetés
+  - Bilan annuel : 6 métriques, camembert catégories, graphique mensuel, top 10 plus-values, meilleur mois
+  - Navigation par menu déroulant
+- 🔐 `GRANT` explicites ajoutés pour conformité Supabase (deadline oct. 2026)
+
 ### v1.3 — Mai 2026
 - ⚡ Mise à jour instantanée de l'interface après chaque action (sans rechargement réseau)
 - 🎯 Objectif mensuel sauvegardé dans Supabase (synchronisé sur tous les appareils)
 - 🏷️ Catégorie correctement enregistrée lors de l'ajout d'un article
-- 🎨 Nouveau logo Laney (L blanc sur fond bordeaux) — favicon, header, écran de chargement
 - 📝 Renommage de l'app en **Laney**
 
 ### v1.2 — Mai 2026
