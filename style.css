@@ -698,3 +698,77 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 #pv-wrap2::-webkit-scrollbar { width: 4px; }
 #pv-wrap2::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 99px; }
+
+/* ── BILAN ───────────────────────────────────────────────────────────────── */
+.bilan-tabs {
+  display: flex; gap: 4px;
+  background: var(--bg3); padding: 4px;
+  border-radius: 10px; margin-bottom: 1.25rem;
+  border: 1px solid var(--border);
+}
+.bilan-tab {
+  flex: 1; padding: 8px 12px;
+  font-size: 13px; font-weight: 500;
+  color: var(--text3); background: none;
+  border: none; border-radius: 7px;
+  cursor: pointer; transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.bilan-tab.active {
+  background: var(--bg2); color: var(--text);
+  border: 0.5px solid var(--border2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.bilan-tab:hover:not(.active) { color: var(--text2); }
+
+.bilan-selector {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 1.25rem;
+}
+.bilan-select-label {
+  font-size: 12px; font-weight: 500;
+  color: var(--text3); white-space: nowrap;
+  text-transform: uppercase; letter-spacing: 0.05em;
+}
+.bilan-select {
+  padding: 8px 36px 8px 12px; font-size: 13px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c5a57' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  min-width: 180px;
+}
+.bilan-select:focus { outline: none; border-color: var(--accent); }
+
+.bilan-top-item {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 0.5px solid var(--border);
+  font-size: 12px;
+}
+.bilan-top-item:last-child { border-bottom: none; }
+.bilan-top-rank {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--bg3); border: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  flex-shrink: 0; margin-right: 10px;
+}
+.bilan-top-name { flex: 1; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilan-top-pv { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; color: var(--green-text); flex-shrink: 0; margin-left: 8px; }
+
+.bilan-achats-list { font-size: 12px; }
+.bilan-achat-item {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  padding: 7px 0;
+  border-bottom: 0.5px solid var(--border);
+}
+.bilan-achat-item:last-child { border-bottom: none; }
+.bilan-achat-name { color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: 8px; }
+.bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
