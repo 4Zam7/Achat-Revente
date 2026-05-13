@@ -772,3 +772,17 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .bilan-achat-name { color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: 8px; }
 .bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
+
+/* ── EXPORT BUTTON ───────────────────────────────────────────────────────── */
+.btn-export-header {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-export-header:hover {
+  background: var(--green-bg);
+  color: var(--green-text);
+  border-color: rgba(90,216,166,0.3);
+}
