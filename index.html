@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0f0f0f">
   <title>Laney</title>
-  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="icon" type="image/png" href="favicon.png">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="manifest" href="manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,8 +24,7 @@
       <div class="login-logo">
         <svg width="72" height="72" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="80" height="80" rx="20" fill="#8B1A2E"/>
-          <rect x="40" y="0" width="40" height="40" fill="rgba(0,0,0,0.18)"/>
-          <rect x="40" y="0" width="40" height="40" rx="20" fill="rgba(0,0,0,0.0)"/>
+          <rect x="45" y="0" width="35" height="53" fill="rgba(0,0,0,0.22)"/>
           <text x="40" y="63" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="58" font-weight="900" fill="white">L</text>
         </svg>
       </div>
@@ -49,8 +48,7 @@
       <div class="loading-logo">
         <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="80" height="80" rx="20" fill="#8B1A2E"/>
-          <rect x="40" y="0" width="40" height="40" fill="rgba(0,0,0,0.18)"/>
-          <rect x="40" y="0" width="40" height="40" rx="20" fill="rgba(0,0,0,0.0)"/>
+          <rect x="45" y="0" width="35" height="53" fill="rgba(0,0,0,0.22)"/>
           <text x="40" y="63" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="58" font-weight="900" fill="white">L</text>
         </svg>
       </div>
@@ -65,7 +63,7 @@
             <div class="brand-mark">
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect width="32" height="32" rx="8" fill="#8B1A2E"/>
-                <rect x="16" y="0" width="16" height="16" fill="rgba(0,0,0,0.18)"/>
+                <rect x="18" y="0" width="14" height="21" fill="rgba(0,0,0,0.22)"/>
                 <text x="16" y="25" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="23" font-weight="900" fill="white">L</text>
               </svg>
             </div>
@@ -106,6 +104,10 @@
         <button class="tab" data-tab="stock" onclick="showTab('stock')">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 5v6l7 4 7-4V5L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 5l7 4 7-4M8 9v6" stroke="currentColor" stroke-width="1.5"/></svg>
           <span>Stock</span>
+        </button>
+        <button class="tab" data-tab="bilan" onclick="showTab('bilan')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 7h14M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Bilan</span>
         </button>
       </nav>
 
@@ -207,6 +209,66 @@
             <div class="card-title">Stock — valeur investie par article</div>
             <div id="pv-wrap2"></div>
           </div>
+        </div>
+
+
+        <!-- BILAN -->
+        <div id="panel-bilan" class="panel">
+
+          <!-- Sous-onglets Mois / Année -->
+          <div class="bilan-tabs">
+            <button class="bilan-tab active" id="btab-month" onclick="showBilanTab('month')">Par mois</button>
+            <button class="bilan-tab" id="btab-year" onclick="showBilanTab('year')">Par année</button>
+          </div>
+
+          <!-- BILAN MENSUEL -->
+          <div id="bilan-month">
+            <div class="bilan-selector">
+              <label class="bilan-select-label">Choisir un mois</label>
+              <select id="bilan-month-select" onchange="buildBilanMonth()" class="bilan-select"></select>
+            </div>
+            <div class="metrics-grid" id="bilan-m-metrics"></div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Catégories vendues</div>
+                <div class="legend" id="bilan-m-leg"></div>
+                <div class="chart-wrap"><canvas id="bilan-c-cat-m"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Top 5 plus-values</div>
+                <div id="bilan-m-top"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Articles achetés ce mois</div>
+              <div id="bilan-m-achats"></div>
+            </div>
+          </div>
+
+          <!-- BILAN ANNUEL -->
+          <div id="bilan-year" style="display:none">
+            <div class="bilan-selector">
+              <label class="bilan-select-label">Choisir une année</label>
+              <select id="bilan-year-select" onchange="buildBilanYear()" class="bilan-select"></select>
+            </div>
+            <div class="metrics-grid" id="bilan-y-metrics"></div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Catégories vendues</div>
+                <div class="legend" id="bilan-y-leg"></div>
+                <div class="chart-wrap"><canvas id="bilan-c-cat-y"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Bénéfice par mois</div>
+                <div class="chart-wrap"><canvas id="bilan-c-monthly-y"></canvas></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Top 10 plus-values</div>
+              <div id="bilan-y-top"></div>
+            </div>
+          </div>
+
         </div>
 
       </main>
