@@ -985,3 +985,89 @@ window.buildBilanYear = function() {
     ? bilanTopHTML(top10, 10)
     : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
+
+// ─── EXPORT EXCEL ─────────────────────────────────────────────────────────────
+window.exportExcel = function () {
+  const wb = XLSX.utils.book_new();
+  const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+
+  // ── Feuille 1 : Tous les articles ──────────────────────────────────────────
+  const articlesData = [
+    ['ID', 'Nom', 'Catégorie', 'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente', 'Plus-value (€)', 'Multiplicateur', 'Statut']
+  ];
+  D.forEach(d => {
+    const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
+    const mult = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
+    articlesData.push([
+      d.id, d.n, d.cat || '', d.a, d.da,
+      d.r !== null ? d.r : '', d.dr || '',
+      pv, mult,
+      d.r !== null ? 'Vendu' : 'En stock'
+    ]);
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet(articlesData);
+  ws1['!cols'] = [
+    {wch:6},{wch:32},{wch:16},{wch:14},{wch:12},
+    {wch:14},{wch:12},{wch:14},{wch:13},{wch:10}
+  ];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Articles');
+
+  // ── Feuille 2 : Résumé global ──────────────────────────────────────────────
+  const s = stats();
+  const resumeData = [
+    ['📊 RÉSUMÉ GLOBAL', ''],
+    ['Date export', new Date().toLocaleDateString('fr-FR')],
+    ['', ''],
+    ['Articles achetés', s.count],
+    ['Articles vendus', s.sold.length],
+    ['Articles en stock', s.stock.length],
+    ['Taux de rotation', `${Math.round(s.sold.length / s.count * 100)}%`],
+    ['', ''],
+    ['Total investi (tous articles)', `${s.totalAchat.toFixed(2)} €`],
+    ['Coût articles vendus', `${s.coutVendus.toFixed(2)} €`],
+    ['Capital en stock', `${s.capitalStock.toFixed(2)} €`],
+    ['Recettes de vente', `${s.totalRevente.toFixed(2)} €`],
+    ['Bénéfice net', `${s.benefice.toFixed(2)} €`],
+    ['ROI', `+${s.roi.toFixed(0)}%`],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(resumeData);
+  ws2['!cols'] = [{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Résumé');
+
+  // ── Feuille 3 : Bilan par mois ─────────────────────────────────────────────
+  const mm = {};
+  D.forEach(d => {
+    if (d.dr) {
+      const k = d.dr.slice(0,7);
+      if (!mm[k]) mm[k] = { vendus: 0, recettes: 0, cout: 0, achetes: 0, montantAchete: 0 };
+      mm[k].vendus++; mm[k].recettes += d.r; mm[k].cout += d.a;
+    }
+    if (d.da) {
+      const ka = d.da.slice(0,7);
+      if (!mm[ka]) mm[ka] = { vendus: 0, recettes: 0, cout: 0, achetes: 0, montantAchete: 0 };
+      mm[ka].achetes++; mm[ka].montantAchete += d.a;
+    }
+  });
+  const mensuelData = [
+    ['Mois', 'Articles vendus', 'Recettes (€)', 'Coût vendus (€)', 'Bénéfice (€)', 'ROI', 'Articles achetés', 'Montant acheté (€)']
+  ];
+  Object.keys(mm).sort().forEach(k => {
+    const m = mm[k];
+    const benef = m.recettes - m.cout;
+    const roi = m.cout > 0 ? `+${(benef/m.cout*100).toFixed(0)}%` : '—';
+    const [y, mo] = k.split('-');
+    mensuelData.push([
+      `${ms[parseInt(mo)-1]} ${y}`,
+      m.vendus, +m.recettes.toFixed(2), +m.cout.toFixed(2),
+      +benef.toFixed(2), roi, m.achetes, +m.montantAchete.toFixed(2)
+    ]);
+  });
+  const ws3 = XLSX.utils.aoa_to_sheet(mensuelData);
+  ws3['!cols'] = [{wch:16},{wch:16},{wch:14},{wch:16},{wch:14},{wch:8},{wch:16},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Bilan mensuel');
+
+  // ── Génération du fichier ──────────────────────────────────────────────────
+  const date = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Laney_backup_${date}.xlsx`);
+  toast('Export Excel téléchargé ✓', 'ok');
+};
