@@ -819,30 +819,45 @@ window.showBilanTab = function(tab) {
 };
 
 function buildBilanSelectors() {
-  // Months with sold items
   const monthSet = new Set();
   const yearSet = new Set();
   D.forEach(d => {
     if (d.dr) { monthSet.add(d.dr.slice(0, 7)); yearSet.add(d.dr.slice(0, 4)); }
-    if (d.da) yearSet.add(d.da.slice(0, 4));
+    if (d.da) { monthSet.add(d.da.slice(0, 7)); yearSet.add(d.da.slice(0, 4)); }
   });
 
-  const months = [...monthSet].sort().reverse();
   const years = [...yearSet].sort().reverse();
-
-  const mSel = document.getElementById('bilan-month-select');
   const ySel = document.getElementById('bilan-year-select');
-  const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const ySelAnnual = document.getElementById('bilan-year-select');
 
-  mSel.innerHTML = months.map(k => {
-    const [y, m] = k.split('-');
-    return `<option value="${k}">${ms[parseInt(m)-1]} ${y}</option>`;
-  }).join('');
-  ySel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+  // Populate year selector for monthly tab
+  const myYSel = document.getElementById('bilan-month-year');
+  myYSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
 
-  buildBilanMonth();
+  // Populate year selector for annual tab
+  const ayYSel = document.getElementById('bilan-year-select');
+  ayYSel.innerHTML = years.map(y => `<option value="${y}">${y}</option>`).join('');
+
+  filterBilanMonths();
   buildBilanYear();
 }
+
+window.filterBilanMonths = function() {
+  const year = document.getElementById('bilan-month-year').value;
+  const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const monthSet = new Set();
+  D.forEach(d => {
+    if (d.dr && d.dr.startsWith(year)) monthSet.add(d.dr.slice(0, 7));
+    if (d.da && d.da.startsWith(year)) monthSet.add(d.da.slice(0, 7));
+  });
+  const months = [...monthSet].sort().reverse();
+  const mSel = document.getElementById('bilan-month-select');
+  mSel.innerHTML = months.map(k => {
+    const [y, m] = k.split('-');
+    return `<option value="${k}">${ms[parseInt(m)-1]}</option>`;
+  }).join('');
+  buildBilanMonth();
+};
 
 function bilanMetricsHTML(metrics) {
   return metrics.map(m => `
