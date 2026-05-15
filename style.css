@@ -955,7 +955,6 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 
 /* ── MOBILE SEARCH ───────────────────────────────────────────────────────── */
 .mobile-search-wrap {
-  display: none;
   background: var(--bg);
   padding: 8px 1rem;
   border-bottom: 1px solid var(--border);
