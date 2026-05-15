@@ -73,6 +73,9 @@
             </div>
           </div>
           <div style="display:flex;gap:8px">
+          <button class="btn-search-header" onclick="toggleSearch()" id="btn-search" title="Rechercher">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.6"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
           <button class="btn-logout-header" onclick="doLogout()" title="Se déconnecter">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l4-4-4-4M15 7H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
@@ -89,6 +92,20 @@
           </div>
         </div>
       </header>
+
+      <!-- SEARCH OVERLAY -->
+      <div id="search-overlay" style="display:none">
+        <div class="search-overlay-inner">
+          <div class="search-overlay-bar">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" style="color:var(--text3);flex-shrink:0"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="global-search" placeholder="Rechercher un article..." oninput="doGlobalSearch()" autocomplete="off">
+            <button onclick="toggleSearch()" style="background:none;border:none;cursor:pointer;color:var(--text3);display:flex;align-items:center">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div id="global-results"></div>
+        </div>
+      </div>
 
       <!-- NAV TABS -->
       <nav class="nav">
@@ -188,6 +205,40 @@
           <div class="search-wrap">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
             <input type="text" id="srch" placeholder="Rechercher un article..." oninput="filterTable()" class="search-input">
+          </div>
+          <div class="filters-bar">
+            <select id="f-statut" onchange="filterTable()" class="filter-select">
+              <option value="">Tous les statuts</option>
+              <option value="stock">Stock</option>
+              <option value="vendu">Vendu</option>
+            </select>
+            <select id="f-categorie" onchange="filterTable()" class="filter-select">
+              <option value="">Toutes catégories</option>
+              <option>Vêtements</option>
+              <option>Chaussures</option>
+              <option>Jeux vidéo</option>
+              <option>Consoles</option>
+              <option>Électronique</option>
+              <option>Jouets</option>
+              <option>Décoration</option>
+              <option>Ustensiles</option>
+              <option>Outils</option>
+              <option>Livres</option>
+              <option>Sport</option>
+              <option>Autres</option>
+            </select>
+            <select id="f-tri" onchange="filterTable()" class="filter-select">
+              <option value="default">Tri : Par défaut</option>
+              <option value="pv-desc">Tri : Plus-value ↓</option>
+              <option value="pv-asc">Tri : Plus-value ↑</option>
+              <option value="achat-desc">Tri : Prix achat ↓</option>
+              <option value="achat-asc">Tri : Prix achat ↑</option>
+              <option value="date-desc">Tri : Date achat ↓</option>
+              <option value="date-asc">Tri : Date achat ↑</option>
+              <option value="nom-asc">Tri : Nom A→Z</option>
+            </select>
+            <button class="filter-reset-btn" onclick="resetFilters()">Réinitialiser</button>
+            <span class="filter-count" id="filter-count"></span>
           </div>
           <div class="table-scroll-wrap">
             <table class="items-table">
