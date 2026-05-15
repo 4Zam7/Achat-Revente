@@ -1071,6 +1071,49 @@ window.doGlobalSearch = function () {
   `;
 };
 
+
+window.doMobileSearch = function () {
+  const q = document.getElementById('mobile-search').value.trim().toLowerCase();
+  const container = document.getElementById('mobile-results');
+  if (!q) { container.classList.remove('open'); container.innerHTML = ''; return; }
+
+  const results = D.filter(d => d.n.toLowerCase().includes(q));
+  container.classList.add('open');
+
+  if (!results.length) {
+    container.innerHTML = `<div class="search-empty">Aucun résultat pour "${q}"</div>`;
+    return;
+  }
+
+  container.innerHTML = `
+    <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
+    ${results.slice(0, 8).map(d => {
+      const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
+      return `<div class="search-result-item" onclick="goToItemMobile(${d.id})">
+        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="sri-name">${d.n}</div>
+          <div class="sri-meta">
+            <span class="sri-cat">${d.cat || '—'}</span>
+            <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
+            ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
+            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}
+    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres — affinez la recherche</div>` : ''}
+  `;
+};
+
+window.goToItemMobile = function (id) {
+  document.getElementById('mobile-search').value = '';
+  document.getElementById('mobile-results').classList.remove('open');
+  showTab('items');
+  const it = D.find(d => d.id === id);
+  if (it) { document.getElementById('srch').value = it.n; filterTable(); }
+};
+
 window.goToItem = function (id) {
   document.getElementById('global-search').value = '';
   document.getElementById('global-results').classList.remove('open');
@@ -1084,6 +1127,11 @@ document.addEventListener('click', function(e) {
   const wrap = document.querySelector('.header-search-wrap');
   if (wrap && !wrap.contains(e.target)) {
     document.getElementById('global-results').classList.remove('open');
+  }
+  const mWrap = document.querySelector('.mobile-search-wrap');
+  if (mWrap && !mWrap.contains(e.target)) {
+    const mr = document.getElementById('mobile-results');
+    if (mr) mr.classList.remove('open');
   }
 });
 
