@@ -844,8 +844,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .sri-sold { background: var(--green-bg); color: var(--green-text); }
 .sri-stock { background: var(--amber-bg); color: var(--amber-text); }
 .sri-name { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sri-cat { font-size: 10px; color: var(--text3); }
-.sri-left > div { min-width: 0; overflow: hidden; }
+.sri-cat { font-size: 11px; color: var(--text3); }
+.sri-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .sri-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .sri-price { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); }
 .sri-pv { font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 600; color: var(--green-text); background: var(--green-bg); padding: 2px 6px; border-radius: 4px; }
@@ -924,7 +924,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   padding: 4px 6px 8px;
 }
 .search-result-item {
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex; align-items: flex-start; gap: 9px;
   padding: 8px 6px; border-radius: var(--radius-sm);
   cursor: pointer; transition: background 0.1s;
 }
@@ -937,9 +937,9 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .sri-sold { background: var(--green-bg); color: var(--green-text); }
 .sri-stock { background: var(--amber-bg); color: var(--amber-text); }
-.sri-name { font-size: 12px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 200px; }
-.sri-cat { font-size: 10px; color: var(--text3); }
-.sri-left > div { min-width: 0; overflow: hidden; }
+.sri-name { font-size: 13px; color: var(--text); font-weight: 500; margin-bottom: 3px; }
+.sri-cat { font-size: 11px; color: var(--text3); }
+.sri-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .sri-right { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: 8px; }
 .sri-price { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); }
 .sri-pv { font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 600; color: var(--green-text); background: var(--green-bg); padding: 1px 5px; border-radius: 4px; }
