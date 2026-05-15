@@ -717,7 +717,7 @@ document.getElementById('goal-modal').addEventListener('click', function (e) { i
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); if (searchOpen) toggleSearch(); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -1036,37 +1036,27 @@ window.buildBilanYear = function() {
 
 
 // ─── RECHERCHE GLOBALE ────────────────────────────────────────────────────────
-let searchOpen = false;
-
-window.toggleSearch = function () {
-  searchOpen = !searchOpen;
-  const overlay = document.getElementById('search-overlay');
-  const btn = document.getElementById('btn-search');
-  overlay.style.display = searchOpen ? 'block' : 'none';
-  btn.classList.toggle('active', searchOpen);
-  if (searchOpen) {
-    setTimeout(() => document.getElementById('global-search').focus(), 50);
-  } else {
-    document.getElementById('global-search').value = '';
-    document.getElementById('global-results').innerHTML = '';
-  }
-};
-
 window.doGlobalSearch = function () {
   const q = document.getElementById('global-search').value.trim().toLowerCase();
   const container = document.getElementById('global-results');
-  if (!q) { container.innerHTML = '<div class="search-empty">Tapez pour rechercher…</div>'; return; }
+
+  if (!q) { container.classList.remove('open'); container.innerHTML = ''; return; }
 
   const results = D.filter(d => d.n.toLowerCase().includes(q));
-  if (!results.length) { container.innerHTML = '<div class="search-empty">Aucun résultat pour "' + q + '"</div>'; return; }
+  container.classList.add('open');
+
+  if (!results.length) {
+    container.innerHTML = `<div class="search-empty">Aucun résultat pour "${q}"</div>`;
+    return;
+  }
 
   container.innerHTML = `
-    <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''} pour "${q}"</div>
+    <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
     ${results.slice(0, 8).map(d => {
-      const pv = d.r !== null ? d.r - d.a : null;
+      const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItem(${d.id})">
         <div class="sri-left">
-          <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '⊙'}</div>
+          <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '·'}</div>
           <div>
             <div class="sri-name">${d.n}</div>
             <div class="sri-cat">${d.cat || '—'}</div>
@@ -1074,24 +1064,30 @@ window.doGlobalSearch = function () {
         </div>
         <div class="sri-right">
           <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
-          ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
+          ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
           <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
         </div>
       </div>`;
     }).join('')}
-    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres résultats — affinez votre recherche</div>` : ''}
+    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres — affinez la recherche</div>` : ''}
   `;
 };
 
 window.goToItem = function (id) {
-  toggleSearch();
+  document.getElementById('global-search').value = '';
+  document.getElementById('global-results').classList.remove('open');
   showTab('items');
   const it = D.find(d => d.id === id);
-  if (it) {
-    document.getElementById('srch').value = it.n;
-    filterTable();
-  }
+  if (it) { document.getElementById('srch').value = it.n; filterTable(); }
 };
+
+// Close search dropdown on click outside
+document.addEventListener('click', function(e) {
+  const wrap = document.querySelector('.header-search-wrap');
+  if (wrap && !wrap.contains(e.target)) {
+    document.getElementById('global-results').classList.remove('open');
+  }
+});
 
 // ─── EXPORT EXCEL ─────────────────────────────────────────────────────────────
 window.exportExcel = function () {
