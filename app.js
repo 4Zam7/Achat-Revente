@@ -458,7 +458,40 @@ function renderItems(items) {
 
 window.filterTable = function () {
   const q = document.getElementById('srch').value.toLowerCase();
-  renderItems(D.filter(d => d.n.toLowerCase().includes(q)));
+  const statut = document.getElementById('f-statut').value;
+  const cat = document.getElementById('f-categorie').value;
+  const tri = document.getElementById('f-tri').value;
+
+  let items = D.filter(d => {
+    if (q && !d.n.toLowerCase().includes(q)) return false;
+    if (statut === 'stock' && d.r !== null) return false;
+    if (statut === 'vendu' && d.r === null) return false;
+    if (cat && d.cat !== cat) return false;
+    return true;
+  });
+
+  if (tri === 'pv-desc') items = items.slice().sort((a, b) => (b.r !== null ? b.r - b.a : -999) - (a.r !== null ? a.r - a.a : -999));
+  else if (tri === 'pv-asc') items = items.slice().sort((a, b) => (a.r !== null ? a.r - a.a : 999) - (b.r !== null ? b.r - b.a : 999));
+  else if (tri === 'achat-desc') items = items.slice().sort((a, b) => b.a - a.a);
+  else if (tri === 'achat-asc') items = items.slice().sort((a, b) => a.a - b.a);
+  else if (tri === 'date-desc') items = items.slice().sort((a, b) => b.da.localeCompare(a.da));
+  else if (tri === 'date-asc') items = items.slice().sort((a, b) => a.da.localeCompare(b.da));
+  else if (tri === 'nom-asc') items = items.slice().sort((a, b) => a.n.localeCompare(b.n));
+
+  const countEl = document.getElementById('filter-count');
+  const hasFilter = q || statut || cat || tri !== 'default';
+  countEl.textContent = hasFilter ? `${items.length} article${items.length > 1 ? 's' : ''}` : '';
+
+  renderItems(items);
+};
+
+window.resetFilters = function () {
+  document.getElementById('srch').value = '';
+  document.getElementById('f-statut').value = '';
+  document.getElementById('f-categorie').value = '';
+  document.getElementById('f-tri').value = 'default';
+  document.getElementById('filter-count').textContent = '';
+  renderItems(D);
 };
 
 // ─── STOCK ───────────────────────────────────────────────────────────────────
@@ -684,7 +717,7 @@ document.getElementById('goal-modal').addEventListener('click', function (e) { i
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); if (searchOpen) toggleSearch(); }
 });
 
 
@@ -999,6 +1032,65 @@ window.buildBilanYear = function() {
   document.getElementById('bilan-y-top').innerHTML = top10.length
     ? bilanTopHTML(top10, 10)
     : '<div class="empty-state">Aucun article vendu cette année</div>';
+};
+
+
+// ─── RECHERCHE GLOBALE ────────────────────────────────────────────────────────
+let searchOpen = false;
+
+window.toggleSearch = function () {
+  searchOpen = !searchOpen;
+  const overlay = document.getElementById('search-overlay');
+  const btn = document.getElementById('btn-search');
+  overlay.style.display = searchOpen ? 'block' : 'none';
+  btn.classList.toggle('active', searchOpen);
+  if (searchOpen) {
+    setTimeout(() => document.getElementById('global-search').focus(), 50);
+  } else {
+    document.getElementById('global-search').value = '';
+    document.getElementById('global-results').innerHTML = '';
+  }
+};
+
+window.doGlobalSearch = function () {
+  const q = document.getElementById('global-search').value.trim().toLowerCase();
+  const container = document.getElementById('global-results');
+  if (!q) { container.innerHTML = '<div class="search-empty">Tapez pour rechercher…</div>'; return; }
+
+  const results = D.filter(d => d.n.toLowerCase().includes(q));
+  if (!results.length) { container.innerHTML = '<div class="search-empty">Aucun résultat pour "' + q + '"</div>'; return; }
+
+  container.innerHTML = `
+    <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''} pour "${q}"</div>
+    ${results.slice(0, 8).map(d => {
+      const pv = d.r !== null ? d.r - d.a : null;
+      return `<div class="search-result-item" onclick="goToItem(${d.id})">
+        <div class="sri-left">
+          <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '⊙'}</div>
+          <div>
+            <div class="sri-name">${d.n}</div>
+            <div class="sri-cat">${d.cat || '—'}</div>
+          </div>
+        </div>
+        <div class="sri-right">
+          <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
+          ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
+          <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+        </div>
+      </div>`;
+    }).join('')}
+    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres résultats — affinez votre recherche</div>` : ''}
+  `;
+};
+
+window.goToItem = function (id) {
+  toggleSearch();
+  showTab('items');
+  const it = D.find(d => d.id === id);
+  if (it) {
+    document.getElementById('srch').value = it.n;
+    filterTable();
+  }
 };
 
 // ─── EXPORT EXCEL ─────────────────────────────────────────────────────────────
