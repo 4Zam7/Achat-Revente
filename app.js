@@ -1055,17 +1055,15 @@ window.doGlobalSearch = function () {
     ${results.slice(0, 8).map(d => {
       const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItem(${d.id})">
-        <div class="sri-left">
-          <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '·'}</div>
-          <div>
-            <div class="sri-name">${d.n}</div>
-            <div class="sri-cat">${d.cat || '—'}</div>
+        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
+        <div style="flex:1;min-width:0">
+          <div class="sri-name">${d.n}</div>
+          <div class="sri-meta">
+            <span class="sri-cat">${d.cat || '—'}</span>
+            <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
+            ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
+            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
           </div>
-        </div>
-        <div class="sri-right">
-          <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
-          ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
-          <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
         </div>
       </div>`;
     }).join('')}
