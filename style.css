@@ -886,7 +886,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ── HEADER SEARCH BAR ───────────────────────────────────────────────────── */
 .header-search-wrap {
   position: relative;
-  flex: 1; max-width: 320px; min-width: 160px;
+  flex: 1; max-width: 520px; min-width: 200px;
 }
 .header-search-icon {
   position: absolute; left: 10px; top: 50%;
