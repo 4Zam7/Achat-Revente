@@ -786,3 +786,98 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: var(--green-text);
   border-color: rgba(90,216,166,0.3);
 }
+
+/* ── SEARCH HEADER BUTTON ────────────────────────────────────────────────── */
+.btn-search-header {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px;
+  background: var(--bg3); color: var(--text2);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.2s;
+}
+.btn-search-header:hover { background: var(--bg4); color: var(--text); }
+.btn-search-header.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+/* ── SEARCH OVERLAY ──────────────────────────────────────────────────────── */
+#search-overlay {
+  position: sticky; top: calc(var(--header-height) + var(--nav-height));
+  z-index: 98; background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  animation: fadeIn 0.15s ease;
+}
+.search-overlay-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 0.75rem 1rem;
+}
+.search-overlay-bar {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--bg2); border: 1px solid var(--accent);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  box-shadow: 0 0 0 3px rgba(91,143,249,0.1);
+  margin-bottom: 0.75rem;
+}
+.search-overlay-bar input {
+  flex: 1; background: none; border: none; outline: none;
+  font-size: 14px; color: var(--text); font-family: 'DM Sans', sans-serif;
+}
+.search-overlay-bar input::placeholder { color: var(--text3); }
+
+/* Search results */
+.search-result-label {
+  font-size: 10px; font-weight: 500; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+}
+.search-result-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 9px 0; border-bottom: 0.5px solid var(--border);
+  cursor: pointer; transition: background 0.1s;
+}
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover .sri-name { color: var(--accent); }
+.sri-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.sri-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; flex-shrink: 0;
+}
+.sri-sold { background: var(--green-bg); color: var(--green-text); }
+.sri-stock { background: var(--amber-bg); color: var(--amber-text); }
+.sri-name { font-size: 13px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sri-cat { font-size: 10px; color: var(--text3); }
+.sri-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.sri-price { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text2); }
+.sri-pv { font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 600; color: var(--green-text); background: var(--green-bg); padding: 2px 6px; border-radius: 4px; }
+.search-empty { text-align: center; padding: 1.5rem; font-size: 13px; color: var(--text3); }
+
+/* ── FILTERS BAR ─────────────────────────────────────────────────────────── */
+.filters-bar {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 0.75rem; flex-wrap: wrap;
+}
+.filter-select {
+  padding: 6px 28px 6px 10px; font-size: 12px;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text2);
+  font-family: 'DM Sans', sans-serif; cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' viewBox='0 0 10 6' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%235c5a57' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: all 0.15s;
+}
+.filter-select:focus { outline: none; border-color: var(--accent); color: var(--text); }
+.filter-select:hover { border-color: var(--border2); color: var(--text); }
+.filter-reset-btn {
+  padding: 5px 12px; font-size: 11px; font-weight: 500;
+  background: none; border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text3);
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+.filter-reset-btn:hover { border-color: var(--red); color: var(--red-text); }
+.filter-count {
+  font-size: 11px; color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  margin-left: 4px;
+}
