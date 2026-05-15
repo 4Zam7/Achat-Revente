@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.4-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.5-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -33,6 +33,10 @@
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
 - 🏷️ **Catégorie sauvegardée** — correctement enregistrée lors de l'ajout d'un article
+- 🔍 **Recherche globale** — barre de recherche dans le header (desktop) et sous la nav (mobile), résultats en temps réel avec prix et plus-value
+- 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie et trier par plus-value, prix, date ou nom
+- 📅 **Bilan mensuel amélioré** — sélecteur Année puis Mois, affiche tous les mois même sans vente
+- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 3 onglets (Articles, Résumé, Bilan mensuel)
 - 📅 **Onglet Bilan** — bilan mensuel et annuel avec stats complètes, top plus-values, camembert catégories
 
 ---
@@ -326,26 +330,34 @@ GRANT ALL ON settings TO service_role;
 | Les graphiques ne s'affichent pas | Vérifiez que le script `chartjs-plugin-datalabels` est bien chargé dans `index.html` avant `app.js` |
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 | Le bilan ne s'affiche pas | Vérifiez que des articles ont bien des dates de vente renseignées pour le mois/année sélectionné |
+| La recherche mobile ne s'affiche pas | Vérifiez que `style.css` est bien à jour — le `display:none` de base a été supprimé en v1.5 |
+| L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
 | Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
 
 ---
 
 ## 📝 Changelog
 
-### v1.4 — Mai 2026
+### v1.5 — 16 Mai 2026
+- 🔍 Recherche globale dans le header (desktop) et sous la nav (mobile)
+- 🔽 Filtres dans Articles : statut, catégorie, tri (plus-value, prix, date, nom)
+- 📅 Bilan amélioré : sélecteur Année → Mois, tous les mois visibles (achats ou ventes)
+- 📤 Export Excel avec 3 onglets : Articles complets, Résumé global, Bilan mensuel
+
+### v1.4 — 14 Mai 2026
 - 📅 Onglet **Bilan** avec sous-onglets Mois / Année
   - Bilan mensuel : 6 métriques, camembert catégories, top 5 plus-values, liste articles achetés
   - Bilan annuel : 6 métriques, camembert catégories, graphique mensuel, top 10 plus-values, meilleur mois
   - Navigation par menu déroulant
 - 🔐 `GRANT` explicites ajoutés pour conformité Supabase (deadline oct. 2026)
 
-### v1.3 — Mai 2026
+### v1.3 — 12 Mai 2026
 - ⚡ Mise à jour instantanée de l'interface après chaque action (sans rechargement réseau)
 - 🎯 Objectif mensuel sauvegardé dans Supabase (synchronisé sur tous les appareils)
 - 🏷️ Catégorie correctement enregistrée lors de l'ajout d'un article
 - 📝 Renommage de l'app en **Laney**
 
-### v1.2 — Mai 2026
+### v1.2 — 10 Mai 2026
 - 🎯 Jauge d'objectif mensuel (recettes) modifiable depuis l'app
 - 📊 Valeurs affichées directement sur tous les graphiques (sans survol)
 - 📦 Stock : affichage de tous les articles avec prix à droite, défilement complet
@@ -355,12 +367,12 @@ GRANT ALL ON settings TO service_role;
 - 🔑 Bouton de déconnexion dans le header
 - 🔄 Bouton d'actualisation manuelle dans le header
 
-### v1.1 — Avril 2026
+### v1.1 — 28 Avril 2026
 - Catégories d'articles (12 types)
 - Modification complète d'un article (nom, prix, dates, catégorie)
 - Scroll horizontal sur le tableau Articles en mobile
 
-### v1.0 — Avril 2026
+### v1.0 — 25 Avril 2026
 - Lancement initial
 - Tableau de bord, graphiques, gestion stock
 - PWA installable, synchronisation temps réel Supabase
