@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.5-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.6-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -34,6 +34,7 @@
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
 - 🏷️ **Catégorie sauvegardée** — correctement enregistrée lors de l'ajout d'un article
 - 🔍 **Recherche globale** — barre de recherche dans le header (desktop) et sous la nav (mobile), résultats en temps réel avec prix et plus-value
+- 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel amélioré** — sélecteur Année puis Mois, affiche tous les mois même sans vente
 - 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 3 onglets (Articles, Résumé, Bilan mensuel)
@@ -277,6 +278,43 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, c
 
 ---
 
+### Créer la table boutiques (multi-boutiques)
+
+Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
+
+```sql
+CREATE TABLE boutiques (
+  id bigserial PRIMARY KEY,
+  nom text NOT NULL,
+  couleur text DEFAULT '#185FA5',
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE boutiques ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Auth lecture"      ON boutiques FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth insertion"    ON boutiques FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Auth modification" ON boutiques FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Auth suppression"  ON boutiques FOR DELETE TO authenticated USING (true);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON boutiques TO authenticated;
+GRANT SELECT ON boutiques TO anon;
+GRANT ALL ON boutiques TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE boutiques_id_seq TO authenticated;
+
+-- Ajouter boutique_id à articles
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint REFERENCES boutiques(id);
+
+-- Créer la boutique par défaut
+INSERT INTO boutiques (nom, couleur) VALUES ('Brocante', '#185FA5');
+
+-- Assigner tous les articles existants à cette boutique
+UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
+```
+
+> N'oubliez pas d'exposer la table `boutiques` dans **Integrations → Data API → Settings → Exposed tables**.
+
+---
+
 ### Créer la table settings (objectif mensuel)
 
 Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
@@ -331,12 +369,21 @@ GRANT ALL ON settings TO service_role;
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 | Le bilan ne s'affiche pas | Vérifiez que des articles ont bien des dates de vente renseignées pour le mois/année sélectionné |
 | La recherche mobile ne s'affiche pas | Vérifiez que `style.css` est bien à jour — le `display:none` de base a été supprimé en v1.5 |
+| Les boutiques ne s'affichent pas | Vérifiez que la table `boutiques` est bien créée, exposée dans Data API, et que les articles existants ont bien un `boutique_id` assigné |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
 | Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
 
 ---
 
 ## 📝 Changelog
+
+### v1.6 — 25 Mai 2026
+- 🏪 Système **multi-boutiques** — séparez vos activités (Brocante, Vinted, Leboncoin…)
+- Toggle dans le header pour basculer entre boutiques en un clic
+- Bouton `+` pour créer une nouvelle boutique à tout moment
+- Chaque boutique a ses propres articles, statistiques et bilans
+- Disponible aussi sur mobile (sous la barre de recherche)
+- Boutique active mémorisée entre les sessions
 
 ### v1.5 — 16 Mai 2026
 - 🔍 Recherche globale dans le header (desktop) et sous la nav (mobile)
