@@ -8,6 +8,8 @@ let D = [];
 let sellId = null;
 let currentTab = 'overview';
 const charts = {};
+let BOUTIQUES = [];
+let CURRENT_BOUTIQUE = null;
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -51,6 +53,7 @@ window.doLogout = async function () {
 async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
+  await loadBoutiques();
   await Promise.all([loadData(), loadGoal()]);
   hideLoading();
   buildOverview();
@@ -61,7 +64,9 @@ async function showApp() {
 async function loadData() {
   setSyncStatus('syncing');
   try {
-    const { data, error } = await sb.from('articles').select('*').order('created_at', { ascending: true });
+    let query = sb.from('articles').select('*').order('created_at', { ascending: true });
+    if (CURRENT_BOUTIQUE) query = query.eq('boutique_id', CURRENT_BOUTIQUE.id);
+    const { data, error } = await query;
     if (error) throw error;
     D = data.map(normalize);
     setSyncStatus('ok');
@@ -80,6 +85,7 @@ function normalize(row) {
     da: row.date_achat,
     dr: row.date_revente || null,
     cat: row.categorie || '',
+    boutique_id: row.boutique_id,
   };
 }
 
@@ -559,7 +565,7 @@ window.addArticle = async function () {
   btn.disabled = true;
 
   try {
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null }]);
+    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null, boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null }]);
     if (error) throw error;
     const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
     if (inserted.data) D.push(normalize(inserted.data));
@@ -717,7 +723,7 @@ document.getElementById('goal-modal').addEventListener('click', function (e) { i
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -826,6 +832,77 @@ window.saveGoal = async function () {
     toast('Erreur lors de la sauvegarde', 'err');
   } finally {
     if (btn) btn.disabled = false;
+  }
+};
+
+
+// ─── BOUTIQUES ────────────────────────────────────────────────────────────────
+async function loadBoutiques() {
+  try {
+    const { data, error } = await sb.from('boutiques').select('*').order('created_at', { ascending: true });
+    if (error) throw error;
+    BOUTIQUES = data;
+    if (!CURRENT_BOUTIQUE && BOUTIQUES.length > 0) {
+      const saved = localStorage.getItem('ar_boutique_id');
+      CURRENT_BOUTIQUE = BOUTIQUES.find(b => b.id === parseInt(saved)) || BOUTIQUES[0];
+    }
+    renderBoutiqueToggle();
+  } catch(e) {
+    console.error('Erreur boutiques', e);
+  }
+}
+
+function renderBoutiqueToggle() {
+  const html = BOUTIQUES.map(b => `
+    <button class="btq-pill ${CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id ? 'active' : ''}"
+      onclick="switchBoutique(${b.id})">
+      ${b.nom}
+    </button>
+  `).join('') + `<button class="btq-pill btq-add" onclick="openNewBoutiqueModal()" title="Nouvelle boutique">+</button>`;
+  const c1 = document.getElementById('boutique-toggle');
+  const c2 = document.getElementById('mobile-boutique-toggle');
+  if (c1) c1.innerHTML = html;
+  if (c2) c2.innerHTML = html;
+}
+
+window.switchBoutique = async function(id) {
+  const b = BOUTIQUES.find(b => b.id === id);
+  if (!b || (CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id)) return;
+  CURRENT_BOUTIQUE = b;
+  localStorage.setItem('ar_boutique_id', id);
+  renderBoutiqueToggle();
+  await loadData();
+  refreshCurrentPanel();
+  toast(`Boutique : ${b.nom}`, 'ok');
+};
+
+window.openNewBoutiqueModal = function() {
+  document.getElementById('new-boutique-name').value = '';
+  document.getElementById('new-boutique-modal').classList.add('open');
+  setTimeout(() => document.getElementById('new-boutique-name').focus(), 100);
+};
+window.closeNewBoutiqueModal = function() {
+  document.getElementById('new-boutique-modal').classList.remove('open');
+};
+
+window.createBoutique = async function() {
+  const nom = document.getElementById('new-boutique-name').value.trim();
+  if (!nom) { toast('Nomme ta boutique', 'err'); return; }
+  const colors = ['#185FA5', '#1D9E75', '#BA7517', '#A32D2D', '#7B1A2E', '#533AB7'];
+  const couleur = colors[BOUTIQUES.length % colors.length];
+  const btn = document.getElementById('btn-create-boutique');
+  btn.disabled = true;
+  try {
+    const { data, error } = await sb.from('boutiques').insert([{ nom, couleur }]).select().single();
+    if (error) throw error;
+    BOUTIQUES.push(data);
+    closeNewBoutiqueModal();
+    await switchBoutique(data.id);
+    toast(`Boutique "${nom}" créée`, 'ok');
+  } catch(e) {
+    toast('Erreur lors de la création', 'err');
+  } finally {
+    btn.disabled = false;
   }
 };
 
