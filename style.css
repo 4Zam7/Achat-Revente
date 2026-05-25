@@ -888,6 +888,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .header-search-wrap {
   position: relative;
   flex: 1; max-width: 520px; min-width: 200px;
+  margin-right: 16px;
 }
 .header-search-icon {
   position: absolute; left: 10px; top: 50%;
