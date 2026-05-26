@@ -1071,3 +1071,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .radar-grid { grid-template-columns: 1fr; }
   .radar-topbar { flex-direction: column; align-items: stretch; }
 }
+
+/* ── CONFIRM DELETE MODAL ────────────────────────────────────────────────── */
+.btn-confirm-delete {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 10px 18px; font-size: 13px; font-weight: 500;
+  background: var(--red-bg); color: var(--red-text);
+  border: 1px solid rgba(244,102,74,0.3);
+  border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-confirm-delete:hover {
+  background: rgba(244,102,74,0.25);
+  border-color: rgba(244,102,74,0.5);
+}
+
+#confirm-modal .modal {
+  border-top: 3px solid rgba(244,102,74,0.6);
+}
+#confirm-modal .modal-title {
+  color: var(--red-text);
+}
