@@ -133,6 +133,8 @@ function refreshCurrentPanel() {
   else if (currentTab === 'monthly') buildMonthly();
   else if (currentTab === 'items') renderItems(D);
   else if (currentTab === 'stock') buildStock();
+  else if (currentTab === 'bilan') buildBilanSelectors();
+  else if (currentTab === 'radar') filterRadar();
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
