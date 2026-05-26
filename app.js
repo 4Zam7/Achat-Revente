@@ -54,7 +54,7 @@ async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
   await loadBoutiques();
-  await Promise.all([loadData(), loadGoal()]);
+  await Promise.all([loadData(), loadGoal(), loadMarques()]);
   hideLoading();
   buildOverview();
   setupRealtimeSync();
@@ -124,6 +124,7 @@ window.showTab = function (id) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-' + id).classList.add('active');
   if (id === 'bilan') buildBilanSelectors();
+  else if (id === 'radar') { filterRadar(); }
   else refreshCurrentPanel();
 };
 
@@ -546,6 +547,7 @@ function buildStock() {
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────
 window.openAddModal = function () {
   document.getElementById('f-nom').value = '';
+  const alertEl = document.getElementById('radar-alert'); if(alertEl) alertEl.style.display='none';
   document.getElementById('f-achat').value = '';
   document.getElementById('f-date').value = today();
   document.getElementById('f-cat').value = '';
@@ -723,7 +725,7 @@ document.getElementById('goal-modal').addEventListener('click', function (e) { i
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeRadarAddModal(); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -1297,3 +1299,184 @@ window.exportExcel = function () {
   XLSX.writeFile(wb, `Laney_backup_${date}.xlsx`);
   toast('Export Excel téléchargé ✓', 'ok');
 };
+
+// ─── RADAR ────────────────────────────────────────────────────────────────────
+let MARQUES = [];
+let currentRadarId = null;
+let radarEditMode = false;
+
+async function loadMarques() {
+  try {
+    const { data, error } = await sb.from('marques_niches').select('*').order('nom', { ascending: true });
+    if (error) throw error;
+    MARQUES = data || [];
+  } catch(e) { MARQUES = []; }
+}
+
+function renderRadarGrid(items) {
+  const grid = document.getElementById('radar-grid');
+  if (!items.length) {
+    grid.innerHTML = '<div class="empty-state" style="padding:3rem">Aucune marque niche — clique sur "Ajouter une marque" pour commencer !</div>';
+    return;
+  }
+  grid.innerHTML = items.map(m => {
+    const stars = '⭐'.repeat(m.rarete || 2) + '<span style="opacity:.3">' + '⭐'.repeat(3 - (m.rarete || 2)) + '</span>';
+    const found = D.filter(d => d.n.toLowerCase().includes(m.nom.toLowerCase()));
+    const sold = found.filter(d => d.r !== null);
+    const avgPv = sold.length > 0 ? sold.reduce((s, d) => s + (d.r - d.a), 0) / sold.length : null;
+    return `<div class="radar-card" onclick="openRadarDetail(${m.id})">
+      <div class="rc-header">
+        <div>
+          <div class="rc-name">${m.nom}</div>
+          <div class="rc-cat">${m.categorie || '—'}</div>
+        </div>
+        <div class="rc-stars">${stars}</div>
+      </div>
+      <div class="rc-range">${m.prix_min}–${m.prix_max}€ <span class="rc-range-label">Vinted</span></div>
+      ${m.note ? `<div class="rc-note">${m.note}</div>` : ''}
+      <div class="rc-footer">
+        <span class="rc-found">Trouvé <strong>${found.length}×</strong>${avgPv !== null ? ' · moy. <strong>+' + avgPv.toFixed(0) + '€</strong>' : ''}</span>
+        <button class="btn-action btn-action-del" onclick="event.stopPropagation();deleteMarque(${m.id})" title="Supprimer">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.filterRadar = function() {
+  const q = document.getElementById('radar-search').value.toLowerCase();
+  renderRadarGrid(q ? MARQUES.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q)) : MARQUES);
+};
+
+window.openRadarDetail = function(id) {
+  const m = MARQUES.find(x => x.id === id);
+  if (!m) return;
+  currentRadarId = id;
+  document.getElementById('rd-name').textContent = m.nom;
+  document.getElementById('rd-cat').textContent = (m.categorie || '') + ' · ' + '⭐'.repeat(m.rarete||2);
+  document.getElementById('rd-note').textContent = m.note || 'Aucune note';
+  document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
+
+  const found = D.filter(d => d.n.toLowerCase().includes(m.nom.toLowerCase()));
+  const sold = found.filter(d => d.r !== null);
+  const avgPv = sold.length > 0 ? (sold.reduce((s,d) => s+(d.r-d.a),0)/sold.length).toFixed(0) : '—';
+  document.getElementById('rd-metrics').innerHTML = `
+    <div class="metric"><div class="metric-label">Prix Vinted</div><div class="metric-value">${m.prix_min}–${m.prix_max}€</div></div>
+    <div class="metric"><div class="metric-label">Trouvé</div><div class="metric-value mv-green">${found.length}×</div></div>
+    <div class="metric"><div class="metric-label">Moy. bénéfice</div><div class="metric-value mv-amber">${avgPv !== '—' ? '+'+avgPv+'€' : '—'}</div></div>`;
+
+  document.getElementById('rd-calc-input').value = 5;
+  updateCalc();
+
+  document.getElementById('rd-history').innerHTML = found.length
+    ? found.map(d => `<div class="bilan-top-item">
+        <div class="bilan-top-rank" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
+        <div class="bilan-top-name">${d.n}</div>
+        <span style="font-size:11px;color:var(--text3)">${d.da}</span>
+        <div class="bilan-top-pv">${d.r !== null ? '+' + (d.r-d.a).toFixed(2)+'€' : 'En stock'}</div>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:1rem">Aucun article de cette marque trouvé</div>';
+
+  document.getElementById('radar-detail').style.display = 'block';
+  document.getElementById('radar-detail').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+window.closeRadarDetail = function() {
+  document.getElementById('radar-detail').style.display = 'none';
+  currentRadarId = null;
+};
+
+window.updateCalc = function() {
+  const m = MARQUES.find(x => x.id === currentRadarId);
+  if (!m) return;
+  const achat = parseFloat(document.getElementById('rd-calc-input').value) || 0;
+  const minPv = (m.prix_min - achat).toFixed(0);
+  const maxPv = (m.prix_max - achat).toFixed(0);
+  document.getElementById('rd-calc-result').textContent = `+${minPv} à +${maxPv}€`;
+};
+
+window.openRadarAddModal = function() {
+  radarEditMode = false;
+  document.getElementById('rn-nom').value = '';
+  document.getElementById('rn-cat').value = '';
+  document.getElementById('rn-rarete').value = '2';
+  document.getElementById('rn-pmin').value = '';
+  document.getElementById('rn-pmax').value = '';
+  document.getElementById('rn-note').value = '';
+  document.getElementById('radar-add-modal').classList.add('open');
+  setTimeout(() => document.getElementById('rn-nom').focus(), 100);
+};
+window.closeRadarAddModal = function() { document.getElementById('radar-add-modal').classList.remove('open'); };
+
+window.openRadarEditModal = function() {
+  const m = MARQUES.find(x => x.id === currentRadarId);
+  if (!m) return;
+  radarEditMode = true;
+  document.getElementById('rn-nom').value = m.nom;
+  document.getElementById('rn-cat').value = m.categorie || '';
+  document.getElementById('rn-rarete').value = m.rarete || 2;
+  document.getElementById('rn-pmin').value = m.prix_min;
+  document.getElementById('rn-pmax').value = m.prix_max;
+  document.getElementById('rn-note').value = m.note || '';
+  document.getElementById('radar-add-modal').classList.add('open');
+};
+
+window.saveRadarMarque = async function() {
+  const nom = document.getElementById('rn-nom').value.trim();
+  const pmin = parseFloat(document.getElementById('rn-pmin').value);
+  const pmax = parseFloat(document.getElementById('rn-pmax').value);
+  if (!nom || isNaN(pmin) || isNaN(pmax)) { toast('Nom et prix requis', 'err'); return; }
+  const btn = document.getElementById('btn-radar-save');
+  btn.disabled = true;
+  const payload = {
+    nom, categorie: document.getElementById('rn-cat').value.trim() || null,
+    rarete: parseInt(document.getElementById('rn-rarete').value),
+    prix_min: pmin, prix_max: pmax,
+    note: document.getElementById('rn-note').value.trim() || null
+  };
+  try {
+    if (radarEditMode && currentRadarId) {
+      const { error } = await sb.from('marques_niches').update(payload).eq('id', currentRadarId);
+      if (error) throw error;
+      const idx = MARQUES.findIndex(m => m.id === currentRadarId);
+      if (idx >= 0) MARQUES[idx] = { ...MARQUES[idx], ...payload };
+      toast(`"${nom}" mis à jour`, 'ok');
+      openRadarDetail(currentRadarId);
+    } else {
+      const { data, error } = await sb.from('marques_niches').insert([payload]).select().single();
+      if (error) throw error;
+      MARQUES.push(data);
+      MARQUES.sort((a,b) => a.nom.localeCompare(b.nom));
+      toast(`"${nom}" ajouté au Radar`, 'ok');
+    }
+    closeRadarAddModal();
+    filterRadar();
+  } catch(e) { toast('Erreur lors de la sauvegarde', 'err'); }
+  finally { btn.disabled = false; }
+};
+
+window.deleteMarque = async function(id) {
+  const m = MARQUES.find(x => x.id === id);
+  if (!m || !confirm(`Supprimer "${m.nom}" du Radar ?`)) return;
+  try {
+    const { error } = await sb.from('marques_niches').delete().eq('id', id);
+    if (error) throw error;
+    MARQUES = MARQUES.filter(x => x.id !== id);
+    if (currentRadarId === id) closeRadarDetail();
+    filterRadar();
+    toast(`"${m.nom}" supprimé`, 'ok');
+  } catch(e) { toast('Erreur', 'err'); }
+};
+
+function checkRadarAlert(nom) {
+  const match = MARQUES.find(m => nom.toLowerCase().includes(m.nom.toLowerCase()));
+  const alert = document.getElementById('radar-alert');
+  const alertText = document.getElementById('radar-alert-text');
+  if (match && alert && alertText) {
+    alertText.innerHTML = `Marque niche détectée : <strong>${match.nom}</strong> — fourchette Vinted estimée : <strong>${match.prix_min}–${match.prix_max}€</strong>. Ne bradez pas !`;
+    alert.style.display = 'flex';
+  } else if (alert) {
+    alert.style.display = 'none';
+  }
+}
