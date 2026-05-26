@@ -106,6 +106,10 @@
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 7h14M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <span>Bilan</span>
         </button>
+        <button class="tab" data-tab="radar" onclick="showTab('radar')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
+          <span>Radar</span>
+        </button>
       </nav>
 
       <!-- MOBILE SEARCH -->
@@ -316,6 +320,66 @@
 
         </div>
 
+
+        <!-- RADAR -->
+        <div id="panel-radar" class="panel">
+
+          <!-- Alerte marque niche -->
+          <div id="radar-alert" style="display:none" class="radar-alert">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 1l7 13H1L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span id="radar-alert-text"></span>
+          </div>
+
+          <!-- Top bar -->
+          <div class="radar-topbar">
+            <div class="search-wrap" style="flex:1;margin-bottom:0">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="text" id="radar-search" placeholder="Rechercher une marque..." oninput="filterRadar()" class="search-input">
+            </div>
+            <button class="btn-primary" onclick="openRadarAddModal()" style="white-space:nowrap;flex-shrink:0">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Ajouter une marque
+            </button>
+          </div>
+
+          <!-- Cards grid -->
+          <div class="radar-grid" id="radar-grid"></div>
+
+          <!-- Detail panel -->
+          <div id="radar-detail" style="display:none">
+            <div class="card" style="margin-top:1rem">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+                <div>
+                  <div style="font-size:18px;font-weight:500;color:var(--text)" id="rd-name"></div>
+                  <div style="font-size:12px;color:var(--text3);margin-top:3px" id="rd-cat"></div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn-action btn-action-cancel" onclick="openRadarEditModal()" style="padding:5px 10px;font-size:12px">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Modifier
+                  </button>
+                  <button class="btn-action btn-action-del" onclick="closeRadarDetail()" style="padding:5px 10px">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="metrics-grid" id="rd-metrics" style="margin-bottom:1rem"></div>
+              <div id="rd-note" style="background:var(--bg3);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:13px;color:var(--text2);font-style:italic;margin-bottom:1rem"></div>
+              <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem">
+                <div class="section-title" style="margin-bottom:.75rem">Calculateur de marge rapide</div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2)">
+                  <span>Si j'achète à</span>
+                  <input type="number" id="rd-calc-input" value="5" min="0" step="0.5" oninput="updateCalc()" style="width:70px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Mono',monospace">
+                  <span>€ →</span>
+                  <span id="rd-calc-result" style="color:var(--green-text);font-family:'DM Mono',monospace;font-size:15px;font-weight:500;margin-left:auto"></span>
+                </div>
+              </div>
+              <div class="section-title">Historique de tes trouvailles</div>
+              <div id="rd-history"></div>
+            </div>
+          </div>
+        </div>
+
       </main>
     </div>
   </div>
@@ -331,7 +395,7 @@
       </div>
       <div class="fg">
         <label>Nom de l'article</label>
-        <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off">
+        <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off" oninput="checkRadarAlert(this.value)">
       </div>
       <div class="fg">
         <label>Catégorie</label>
@@ -484,6 +548,60 @@
           Confirmer la vente
         </button>
         <button class="btn-secondary" onclick="closeSellModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL AJOUTER MARQUE NICHE -->
+  <div class="modal-overlay" id="radar-add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Nouvelle marque niche</div>
+        <button class="btn-close" onclick="closeRadarAddModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="form-row">
+        <div class="fg" style="grid-column:1/-1">
+          <label>Nom de la marque</label>
+          <input type="text" id="rn-nom" placeholder="Ex : Carhartt, Stone Island…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Catégorie</label>
+          <input type="text" id="rn-cat" placeholder="Ex : Vêtements, Sport…">
+        </div>
+        <div class="fg">
+          <label>Rareté en brocante</label>
+          <select id="rn-rarete">
+            <option value="1">⭐ Rare</option>
+            <option value="2" selected>⭐⭐ Parfois</option>
+            <option value="3">⭐⭐⭐ Souvent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix min Vinted (€)</label>
+          <input type="number" id="rn-pmin" placeholder="40" min="0" step="5" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Prix max Vinted (€)</label>
+          <input type="number" id="rn-pmax" placeholder="120" min="0" step="5" inputmode="decimal">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Note personnelle</label>
+        <input type="text" id="rn-note" placeholder="Astuce, conseil, détail à vérifier…">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="saveRadarMarque()" id="btn-radar-save">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn-secondary" onclick="closeRadarAddModal()">Annuler</button>
       </div>
     </div>
   </div>
