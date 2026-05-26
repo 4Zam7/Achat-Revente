@@ -630,6 +630,26 @@
     </div>
   </div>
 
+  <!-- MODAL CONFIRMATION SUPPRESSION -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-header">
+        <div class="modal-title" id="confirm-title">Confirmer la suppression</div>
+        <button class="btn-close" onclick="closeConfirm(false)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="confirm-body" style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6"></div>
+      <div class="modal-actions">
+        <button class="btn-confirm-delete" id="btn-confirm-yes" onclick="closeConfirm(true)">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3 7h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Supprimer
+        </button>
+        <button class="btn-secondary" onclick="closeConfirm(false)">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="toast"></div>
 
