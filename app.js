@@ -623,7 +623,9 @@ window.confirmSell = async function () {
 // ─── DELETE ───────────────────────────────────────────────────────────────────
 window.delItem = async function (id) {
   const it = D.find(d => d.id === id);
-  if (!it || !confirm(`Supprimer "${it.n}" ?`)) return;
+  if (!it) return;
+  const ok = await showConfirm('Supprimer cet article', `Supprimer définitivement <strong>${it.n}</strong> ?<br><br>Cette action est irréversible.`);
+  if (!ok) return;
   try {
     const { error } = await sb.from('articles').delete().eq('id', id);
     if (error) throw error;
@@ -638,7 +640,9 @@ window.delItem = async function (id) {
 // ─── CANCEL SELL ─────────────────────────────────────────────────────────────
 window.cancelSell = async function (id) {
   const it = D.find(d => d.id === id);
-  if (!it || !confirm(`Annuler la vente de "${it.n}" ?`)) return;
+  if (!it) return;
+  const ok = await showConfirm('Annuler la vente', `Remettre <strong>${it.n}</strong> en stock ?<br><br>Les informations de vente seront effacées.`);
+  if (!ok) return;
   try {
     const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null }).eq("id", id);
     if (error) throw error;
@@ -727,7 +731,7 @@ document.getElementById('goal-modal').addEventListener('click', function (e) { i
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeRadarAddModal(); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -747,9 +751,13 @@ function getCurrentMonthRevenue() {
           .reduce((s, d) => s + d.r, 0);
 }
 
+function goalKey() {
+  return CURRENT_BOUTIQUE ? `monthly_goal_${CURRENT_BOUTIQUE.id}` : 'monthly_goal';
+}
+
 async function loadGoal() {
   try {
-    const { data } = await sb.from('settings').select('value').eq('key', 'monthly_goal').single();
+    const { data } = await sb.from('settings').select('value').eq('key', goalKey()).single();
     cachedGoal = data ? parseFloat(data.value) || 0 : 0;
   } catch(e) {
     cachedGoal = 0;
@@ -827,7 +835,7 @@ window.saveGoal = async function () {
   const btn = document.querySelector('#goal-modal .btn-primary');
   if (btn) btn.disabled = true;
   try {
-    await sb.from('settings').upsert({ key: 'monthly_goal', value: String(val) });
+    await sb.from('settings').upsert({ key: goalKey(), value: String(val) });
     cachedGoal = val;
     closeGoalModal();
     buildGoal();
@@ -875,7 +883,7 @@ window.switchBoutique = async function(id) {
   CURRENT_BOUTIQUE = b;
   localStorage.setItem('ar_boutique_id', id);
   renderBoutiqueToggle();
-  await loadData();
+  await Promise.all([loadData(), loadGoal()]);
   refreshCurrentPanel();
   toast(`Boutique : ${b.nom}`, 'ok');
 };
@@ -1216,6 +1224,24 @@ document.addEventListener('click', function(e) {
   }
 });
 
+
+// ─── CONFIRM DIALOG ───────────────────────────────────────────────────────────
+let confirmResolve = null;
+
+function showConfirm(title, body) {
+  return new Promise(resolve => {
+    confirmResolve = resolve;
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-body').innerHTML = body;
+    document.getElementById('confirm-modal').classList.add('open');
+  });
+}
+
+window.closeConfirm = function(result) {
+  document.getElementById('confirm-modal').classList.remove('open');
+  if (confirmResolve) { confirmResolve(result); confirmResolve = null; }
+};
+
 // ─── EXPORT EXCEL ─────────────────────────────────────────────────────────────
 window.exportExcel = function () {
   const wb = XLSX.utils.book_new();
@@ -1460,7 +1486,9 @@ window.saveRadarMarque = async function() {
 
 window.deleteMarque = async function(id) {
   const m = MARQUES.find(x => x.id === id);
-  if (!m || !confirm(`Supprimer "${m.nom}" du Radar ?`)) return;
+  if (!m) return;
+  const ok = await showConfirm('Supprimer du Radar', `Supprimer <strong>${m.nom}</strong> de ton Radar ?<br><br>L'historique de tes trouvailles ne sera pas affecté.`);
+  if (!ok) return;
   try {
     const { error } = await sb.from('marques_niches').delete().eq('id', id);
     if (error) throw error;
