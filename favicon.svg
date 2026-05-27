@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="8" fill="#8B1A2E"/>
+  <rect x="16" y="0" width="16" height="16" fill="rgba(0,0,0,0.15)"/>
+  <rect x="16" y="0" width="16" height="16" rx="8" fill="rgba(0,0,0,0.0)"/>
+  <text x="16" y="26" text-anchor="middle" font-family="system-ui,-apple-system,sans-serif" font-size="24" font-weight="900" fill="white">L</text>
+</svg>

@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f0f0f">
+  <title>Laney</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" style="display:none">
+      <div class="login-logo">
+        <img src="icon-192.png" width="110" height="110" alt="Laney" style="border-radius:24px;display:block">
+      </div>
+      <div class="login-box">
+        <div class="login-title">Laney</div>
+        <div class="login-sub">Accès privé — connectez-vous</div>
+        <div class="login-field" style="margin-bottom:10px">
+          <input type="email" id="email-input" placeholder="Email" onkeydown="if(event.key==='Enter')document.getElementById('pwd-input').focus()" autocomplete="email">
+        </div>
+        <div class="login-field">
+          <input type="password" id="pwd-input" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doLogin()" autocomplete="current-password">
+          <button class="login-btn" id="login-btn" onclick="doLogin()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+        <div class="login-error" id="login-error"></div>
+      </div>
+    </div>
+
+    <div id="loading-screen">
+      <div class="loading-logo">
+        <img src="icon-192.png" width="120" height="120" alt="Laney" style="border-radius:26px;display:block">
+      </div>
+      <div class="loading-bar"><div class="loading-fill"></div></div>
+    </div>
+
+    <div id="main-app" style="display:none">
+      <!-- HEADER -->
+      <header class="header">
+        <div class="header-inner">
+          <div class="header-brand">
+            <div class="brand-mark">
+              <img src="favicon-64.png" width="32" height="32" alt="Laney" style="border-radius:8px;display:block">
+            </div>
+            <div>
+              <div class="brand-title">Laney</div>
+              <div class="brand-sub" id="sync-status">● Synchronisé</div>
+            </div>
+          </div>
+          <div id="boutique-toggle" class="boutique-toggle"></div>
+          <div class="header-search-wrap">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="header-search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="global-search" placeholder="Rechercher un article..." oninput="doGlobalSearch()" autocomplete="off" class="header-search-input">
+            <div id="global-results" class="header-search-results"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+<button class="btn-logout-header" onclick="doLogout()" title="Se déconnecter">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l4-4-4-4M15 7H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-export-header" onclick="exportExcel()" title="Exporter en Excel">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-refresh-header" onclick="refreshApp()" title="Actualiser">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M14 8A6 6 0 1 1 8 2a6 6 0 0 1 4.2 1.7L14 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-add-header" onclick="openAddModal()">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span class="btn-add-label">Ajouter</span>
+          </button>
+          </div>
+        </div>
+      </header>
+
+      <!-- NAV TABS -->
+      <nav class="nav">
+        <button class="tab active" data-tab="overview" onclick="showTab('overview')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="1" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="1" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="9" y="9" width="6" height="6" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Vue d'ensemble</span>
+        </button>
+        <button class="tab" data-tab="monthly" onclick="showTab('monthly')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M1 12l4-5 3 3 3-4 4 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Par mois</span>
+        </button>
+        <button class="tab" data-tab="items" onclick="showTab('items')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Articles</span>
+        </button>
+        <button class="tab" data-tab="stock" onclick="showTab('stock')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1L1 5v6l7 4 7-4V5L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 5l7 4 7-4M8 9v6" stroke="currentColor" stroke-width="1.5"/></svg>
+          <span>Stock</span>
+        </button>
+        <button class="tab" data-tab="bilan" onclick="showTab('bilan')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="11" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M1 7h14M5 3V2M11 3V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>Bilan</span>
+        </button>
+        <button class="tab" data-tab="radar" onclick="showTab('radar')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
+          <span>Radar</span>
+        </button>
+      </nav>
+
+      <!-- MOBILE SEARCH -->
+      <div class="mobile-search-wrap">
+        <div class="mobile-search-inner">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="mobile-search" placeholder="Rechercher un article..." oninput="doMobileSearch()" autocomplete="off">
+          <div id="mobile-results" class="mobile-search-results"></div>
+        </div>
+      </div>
+
+      <!-- MOBILE BOUTIQUE TOGGLE -->
+      <div class="mobile-boutique-toggle" id="mobile-boutique-toggle"></div>
+
+      <!-- PANELS -->
+      <main class="main-content">
+
+        <!-- OVERVIEW -->
+        <div id="panel-overview" class="panel active">
+          <div class="metrics-grid" id="m-overview"></div>
+
+          <!-- OBJECTIF MENSUEL -->
+          <div class="goal-card" id="goal-card">
+            <div class="goal-header">
+              <div class="goal-left">
+                <div class="goal-title">🎯 Objectif du mois</div>
+                <div class="goal-subtitle" id="goal-subtitle">Recettes de vente — <span id="goal-month-label"></span></div>
+              </div>
+              <div class="goal-right">
+                <div class="goal-amounts">
+                  <span class="goal-current" id="goal-current">0€</span>
+                  <span class="goal-sep">/</span>
+                  <span class="goal-target" id="goal-target-display">—</span>
+                </div>
+                <button class="goal-edit-btn" onclick="openGoalModal()" title="Modifier l'objectif">
+                  <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="goal-bar-wrap">
+              <div class="goal-bar-track">
+                <div class="goal-bar-fill" id="goal-bar-fill"></div>
+                <div class="goal-bar-marker" id="goal-bar-marker"></div>
+              </div>
+              <div class="goal-pct" id="goal-pct">0%</div>
+            </div>
+            <div class="goal-hint" id="goal-hint"></div>
+          </div>
+
+          <div class="chart-row">
+            <div class="card">
+              <div class="card-title">Flux mensuel</div>
+              <div class="legend"><span><span class="ldot" style="background:#5B8FF9"></span>Achats</span><span><span class="ldot" style="background:#5AD8A6"></span>Ventes</span><span><span class="ldot" style="background:#F6BD16"></span>Bénéfice</span></div>
+              <div class="chart-wrap"><canvas id="c1"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Catégories vendues</div>
+              <div class="legend" id="leg2"></div>
+              <div class="chart-wrap"><canvas id="c2"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Top plus-values</div>
+            <div id="pv-wrap"></div>
+          </div>
+        </div>
+
+        <!-- MONTHLY -->
+        <div id="panel-monthly" class="panel">
+          <div class="card">
+            <div class="card-title">Bénéfice cumulé</div>
+            <div class="chart-wrap"><canvas id="c3"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Bénéfice par mois</div>
+            <div class="chart-wrap"><canvas id="c-mois"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Articles vendus par mois</div>
+            <div class="chart-wrap" style="height:180px"><canvas id="c4"></canvas></div>
+          </div>
+        </div>
+
+        <!-- ITEMS -->
+        <div id="panel-items" class="panel">
+          <div class="search-wrap">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <input type="text" id="srch" placeholder="Rechercher un article..." oninput="filterTable()" class="search-input">
+          </div>
+          <div class="filters-bar">
+            <select id="f-statut" onchange="filterTable()" class="filter-select">
+              <option value="">Tous les statuts</option>
+              <option value="stock">Stock</option>
+              <option value="vendu">Vendu</option>
+            </select>
+            <select id="f-categorie" onchange="filterTable()" class="filter-select">
+              <option value="">Toutes catégories</option>
+              <option>Vêtements</option>
+              <option>Chaussures</option>
+              <option>Jeux vidéo</option>
+              <option>Consoles</option>
+              <option>Électronique</option>
+              <option>Jouets</option>
+              <option>Décoration</option>
+              <option>Ustensiles</option>
+              <option>Outils</option>
+              <option>Livres</option>
+              <option>Sport</option>
+              <option>Autres</option>
+            </select>
+            <select id="f-tri" onchange="filterTable()" class="filter-select">
+              <option value="default">Tri : Par défaut</option>
+              <option value="pv-desc">Tri : Plus-value ↓</option>
+              <option value="pv-asc">Tri : Plus-value ↑</option>
+              <option value="achat-desc">Tri : Prix achat ↓</option>
+              <option value="achat-asc">Tri : Prix achat ↑</option>
+              <option value="date-desc">Tri : Date achat ↓</option>
+              <option value="date-asc">Tri : Date achat ↑</option>
+              <option value="nom-asc">Tri : Nom A→Z</option>
+            </select>
+            <button class="filter-reset-btn" onclick="resetFilters()">Réinitialiser</button>
+            <span class="filter-count" id="filter-count"></span>
+          </div>
+          <div class="table-scroll-wrap">
+            <table class="items-table">
+              <thead><tr>
+                <th>Article</th>
+                <th>Catégorie</th>
+                <th>Achat</th>
+                <th>Vente</th>
+                <th>+Value</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr></thead>
+              <tbody id="items-body"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STOCK -->
+        <div id="panel-stock" class="panel">
+          <div class="metrics-grid" id="m-stock"></div>
+          <div class="card">
+            <div class="card-title">Stock — valeur investie par article</div>
+            <div id="pv-wrap2"></div>
+          </div>
+        </div>
+
+
+        <!-- BILAN -->
+        <div id="panel-bilan" class="panel">
+
+          <!-- Sous-onglets Mois / Année -->
+          <div class="bilan-tabs">
+            <button class="bilan-tab active" id="btab-month" onclick="showBilanTab('month')">Par mois</button>
+            <button class="bilan-tab" id="btab-year" onclick="showBilanTab('year')">Par année</button>
+          </div>
+
+          <!-- BILAN MENSUEL -->
+          <div id="bilan-month">
+            <div class="bilan-selector">
+              <label class="bilan-select-label">Année</label>
+              <select id="bilan-month-year" onchange="filterBilanMonths()" class="bilan-select" style="min-width:100px"></select>
+              <label class="bilan-select-label" style="margin-left:12px">Mois</label>
+              <select id="bilan-month-select" onchange="buildBilanMonth()" class="bilan-select"></select>
+            </div>
+            <div class="metrics-grid" id="bilan-m-metrics"></div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Catégories vendues</div>
+                <div class="legend" id="bilan-m-leg"></div>
+                <div class="chart-wrap"><canvas id="bilan-c-cat-m"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Top 5 plus-values</div>
+                <div id="bilan-m-top"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Articles achetés ce mois</div>
+              <div id="bilan-m-achats"></div>
+            </div>
+          </div>
+
+          <!-- BILAN ANNUEL -->
+          <div id="bilan-year" style="display:none">
+            <div class="bilan-selector">
+              <label class="bilan-select-label">Choisir une année</label>
+              <select id="bilan-year-select" onchange="buildBilanYear()" class="bilan-select"></select>
+            </div>
+            <div class="metrics-grid" id="bilan-y-metrics"></div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Catégories vendues</div>
+                <div class="legend" id="bilan-y-leg"></div>
+                <div class="chart-wrap"><canvas id="bilan-c-cat-y"></canvas></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Bénéfice par mois</div>
+                <div class="chart-wrap"><canvas id="bilan-c-monthly-y"></canvas></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Top 10 plus-values</div>
+              <div id="bilan-y-top"></div>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- RADAR -->
+        <div id="panel-radar" class="panel">
+
+          <!-- Alerte marque niche -->
+          <div id="radar-alert" style="display:none" class="radar-alert">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0"><path d="M8 1l7 13H1L8 1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M8 6v4M8 11.5v.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <span id="radar-alert-text"></span>
+          </div>
+
+          <!-- Top bar -->
+          <div class="radar-topbar">
+            <div class="search-wrap" style="flex:1;margin-bottom:0">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              <input type="text" id="radar-search" placeholder="Rechercher une marque..." oninput="filterRadar()" class="search-input">
+            </div>
+            <button class="btn-primary" onclick="openRadarAddModal()" style="white-space:nowrap;flex-shrink:0">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              Ajouter une marque
+            </button>
+          </div>
+
+          <!-- Cards grid -->
+          <div class="radar-grid" id="radar-grid"></div>
+
+          <!-- Detail panel -->
+          <div id="radar-detail" style="display:none">
+            <div class="card" style="margin-top:1rem">
+              <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1rem">
+                <div>
+                  <div style="font-size:18px;font-weight:500;color:var(--text)" id="rd-name"></div>
+                  <div style="font-size:12px;color:var(--text3);margin-top:3px" id="rd-cat"></div>
+                </div>
+                <div style="display:flex;gap:6px">
+                  <button class="btn-action btn-action-cancel" onclick="openRadarEditModal()" style="padding:5px 10px;font-size:12px">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Modifier
+                  </button>
+                  <button class="btn-action btn-action-del" onclick="closeRadarDetail()" style="padding:5px 10px">
+                    <svg width="12" height="12" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="metrics-grid" id="rd-metrics" style="margin-bottom:1rem"></div>
+              <div id="rd-note" style="background:var(--bg3);border-radius:var(--radius-sm);padding:.75rem 1rem;font-size:13px;color:var(--text2);font-style:italic;margin-bottom:1rem"></div>
+              <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:1rem;margin-bottom:1rem">
+                <div class="section-title" style="margin-bottom:.75rem">Calculateur de marge rapide</div>
+                <div style="display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text2)">
+                  <span>Si j'achète à</span>
+                  <input type="number" id="rd-calc-input" value="5" min="0" step="0.5" oninput="updateCalc()" style="width:70px;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-family:'DM Mono',monospace">
+                  <span>€ →</span>
+                  <span id="rd-calc-result" style="color:var(--green-text);font-family:'DM Mono',monospace;font-size:15px;font-weight:500;margin-left:auto"></span>
+                </div>
+              </div>
+              <div class="section-title">Historique de tes trouvailles</div>
+              <div id="rd-history"></div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL AJOUTER -->
+  <div class="modal-overlay" id="add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Nouvel article</div>
+        <button class="btn-close" onclick="closeAddModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de l'article</label>
+        <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off" oninput="checkRadarAlert(this.value)">
+      </div>
+      <div class="fg">
+        <label>Catégorie</label>
+        <select id="f-cat">
+          <option value="">— Choisir une catégorie —</option>
+          <option value="Vêtements">Vêtements</option>
+          <option value="Chaussures">Chaussures</option>
+          <option value="Jeux vidéo">Jeux vidéo</option>
+          <option value="Consoles">Consoles</option>
+          <option value="Électronique">Électronique</option>
+          <option value="Jouets">Jouets</option>
+          <option value="Décoration">Décoration</option>
+          <option value="Ustensiles">Ustensiles</option>
+          <option value="Outils">Outils</option>
+          <option value="Livres">Livres</option>
+          <option value="Sport">Sport</option>
+          <option value="Autres">Autres</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix d'achat (€)</label>
+          <input type="number" id="f-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date d'achat</label>
+          <input type="date" id="f-date">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="addArticle()" id="btn-add-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Ajouter au stock
+        </button>
+        <button class="btn-secondary" onclick="closeAddModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- MODAL OBJECTIF -->
+  <div class="modal-overlay" id="goal-modal">
+    <div class="modal" style="max-width:340px">
+      <div class="modal-header">
+        <div class="modal-title">🎯 Objectif mensuel</div>
+        <button class="btn-close" onclick="closeGoalModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Recettes de vente visées ce mois (€)</label>
+        <input type="number" id="goal-input" placeholder="Ex : 300" min="0" step="10" inputmode="decimal">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:1rem">L'objectif est synchronisé sur tous vos appareils.</div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="saveGoal()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn-secondary" onclick="closeGoalModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL MODIFIER -->
+  <div class="modal-overlay" id="edit-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Modifier l'article</div>
+        <button class="btn-close" onclick="closeEditModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de l'article</label>
+        <input type="text" id="e-nom" placeholder="Nom de l'article" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>Catégorie</label>
+        <select id="e-cat">
+          <option value="">— Choisir une catégorie —</option>
+          <option value="Vêtements">Vêtements</option>
+          <option value="Chaussures">Chaussures</option>
+          <option value="Jeux vidéo">Jeux vidéo</option>
+          <option value="Consoles">Consoles</option>
+          <option value="Électronique">Électronique</option>
+          <option value="Jouets">Jouets</option>
+          <option value="Décoration">Décoration</option>
+          <option value="Ustensiles">Ustensiles</option>
+          <option value="Outils">Outils</option>
+          <option value="Livres">Livres</option>
+          <option value="Sport">Sport</option>
+          <option value="Autres">Autres</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix d'achat (€)</label>
+          <input type="number" id="e-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date d'achat</label>
+          <input type="date" id="e-date-achat">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix de vente (€) <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <input type="number" id="e-vente" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date de vente <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <input type="date" id="e-date-vente">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmEdit()" id="btn-edit-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn-secondary" onclick="closeEditModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL VENTE -->
+  <div class="modal-overlay" id="sell-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Enregistrer la vente</div>
+        <button class="btn-close" onclick="closeSellModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-item-box" id="modal-name"></div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix de vente (€)</label>
+          <input type="number" id="m-prix" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Date de vente</label>
+          <input type="date" id="m-date">
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmSell()" id="btn-sell-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Confirmer la vente
+        </button>
+        <button class="btn-secondary" onclick="closeSellModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- MODAL AJOUTER MARQUE NICHE -->
+  <div class="modal-overlay" id="radar-add-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Nouvelle marque niche</div>
+        <button class="btn-close" onclick="closeRadarAddModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="form-row">
+        <div class="fg" style="grid-column:1/-1">
+          <label>Nom de la marque</label>
+          <input type="text" id="rn-nom" placeholder="Ex : Carhartt, Stone Island…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Catégorie</label>
+          <input type="text" id="rn-cat" placeholder="Ex : Vêtements, Sport…">
+        </div>
+        <div class="fg">
+          <label>Rareté en brocante</label>
+          <select id="rn-rarete">
+            <option value="1">⭐ Rare</option>
+            <option value="2" selected>⭐⭐ Parfois</option>
+            <option value="3">⭐⭐⭐ Souvent</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Prix min Vinted (€)</label>
+          <input type="number" id="rn-pmin" placeholder="40" min="0" step="5" inputmode="decimal">
+        </div>
+        <div class="fg">
+          <label>Prix max Vinted (€)</label>
+          <input type="number" id="rn-pmax" placeholder="120" min="0" step="5" inputmode="decimal">
+        </div>
+      </div>
+      <div class="fg">
+        <label>Note personnelle</label>
+        <input type="text" id="rn-note" placeholder="Astuce, conseil, détail à vérifier…">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="saveRadarMarque()" id="btn-radar-save">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn-secondary" onclick="closeRadarAddModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL NOUVELLE BOUTIQUE -->
+  <div class="modal-overlay" id="new-boutique-modal">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-header">
+        <div class="modal-title">Nouvelle boutique</div>
+        <button class="btn-close" onclick="closeNewBoutiqueModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de la boutique</label>
+        <input type="text" id="new-boutique-name" placeholder="Ex : Vinted, Leboncoin…" onkeydown="if(event.key==='Enter')createBoutique()">
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-bottom:1rem">Chaque boutique a ses propres articles, stats et bilans.</div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-create-boutique" onclick="createBoutique()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Créer
+        </button>
+        <button class="btn-secondary" onclick="closeNewBoutiqueModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CONFIRMATION SUPPRESSION -->
+  <div class="modal-overlay" id="confirm-modal">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-header">
+        <div class="modal-title" id="confirm-title">Confirmer la suppression</div>
+        <button class="btn-close" onclick="closeConfirm(false)">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div id="confirm-body" style="font-size:13px;color:var(--text2);margin-bottom:1.25rem;line-height:1.6"></div>
+      <div class="modal-actions">
+        <button class="btn-confirm-delete" id="btn-confirm-yes" onclick="closeConfirm(true)">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M3 7h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Supprimer
+        </button>
+        <button class="btn-secondary" onclick="closeConfirm(false)">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
