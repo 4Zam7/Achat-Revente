@@ -1046,6 +1046,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .radar-topbar {
   display: flex; gap: 10px; align-items: center; margin-bottom: 1rem;
 }
+.radar-stars-filter {
+  height: 38px; padding: 0 10px; border-radius: var(--radius);
+  border: 1px solid var(--border); background: var(--bg2); color: var(--text);
+  font-size: 13px; cursor: pointer; flex-shrink: 0;
+}
+.radar-stars-filter:focus { outline: none; border-color: var(--accent); }
+.radar-stars-filter option { background: var(--bg3); }
 .radar-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 10px; margin-bottom: 1rem;

@@ -1378,7 +1378,11 @@ function renderRadarGrid(items) {
 
 window.filterRadar = function() {
   const q = document.getElementById('radar-search').value.toLowerCase();
-  renderRadarGrid(q ? MARQUES.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q)) : MARQUES);
+  const stars = parseInt(document.getElementById('radar-filter-stars').value) || 0;
+  let list = MARQUES;
+  if (q) list = list.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q));
+  if (stars) list = list.filter(m => (m.rarete || 4) === stars);
+  renderRadarGrid(list);
 };
 
 window.openRadarDetail = function(id) {
