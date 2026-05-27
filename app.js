@@ -1352,7 +1352,7 @@ function renderRadarGrid(items) {
     return;
   }
   grid.innerHTML = items.map(m => {
-    const stars = '⭐'.repeat(m.rarete || 2) + '<span style="opacity:.3">' + '⭐'.repeat(3 - (m.rarete || 2)) + '</span>';
+    const stars = '⭐'.repeat(m.rarete || 4) + '<span style="opacity:.3">' + '⭐'.repeat(7 - (m.rarete || 4)) + '</span>';
     const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
     const sold = found.filter(d => d.r !== null);
     const avgPv = sold.length > 0 ? sold.reduce((s, d) => s + (d.r - d.a), 0) / sold.length : null;
@@ -1386,7 +1386,7 @@ window.openRadarDetail = function(id) {
   if (!m) return;
   currentRadarId = id;
   document.getElementById('rd-name').textContent = m.nom;
-  document.getElementById('rd-cat').textContent = (m.categorie || '') + ' · ' + '⭐'.repeat(m.rarete||2);
+  document.getElementById('rd-cat').textContent = (m.categorie || '') + ' · ' + '⭐'.repeat(m.rarete||4);
   document.getElementById('rd-note').textContent = m.note || 'Aucune note';
   document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
 
@@ -1432,7 +1432,7 @@ window.openRadarAddModal = function() {
   radarEditMode = false;
   document.getElementById('rn-nom').value = '';
   document.getElementById('rn-cat').value = '';
-  document.getElementById('rn-rarete').value = '2';
+  document.getElementById('rn-rarete').value = '4';
   document.getElementById('rn-pmin').value = '';
   document.getElementById('rn-pmax').value = '';
   document.getElementById('rn-note').value = '';
@@ -1447,7 +1447,7 @@ window.openRadarEditModal = function() {
   radarEditMode = true;
   document.getElementById('rn-nom').value = m.nom;
   document.getElementById('rn-cat').value = m.categorie || '';
-  document.getElementById('rn-rarete').value = m.rarete || 2;
+  document.getElementById('rn-rarete').value = m.rarete || 4;
   document.getElementById('rn-pmin').value = m.prix_min;
   document.getElementById('rn-pmax').value = m.prix_max;
   document.getElementById('rn-note').value = m.note || '';
