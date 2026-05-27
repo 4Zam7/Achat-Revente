@@ -1329,6 +1329,10 @@ window.exportExcel = function () {
 };
 
 // ─── RADAR ────────────────────────────────────────────────────────────────────
+function normStr(s) {
+  return s.toLowerCase().replace(/[‘’ʼ`´]/g, "'");
+}
+
 let MARQUES = [];
 let currentRadarId = null;
 let radarEditMode = false;
@@ -1349,7 +1353,7 @@ function renderRadarGrid(items) {
   }
   grid.innerHTML = items.map(m => {
     const stars = '⭐'.repeat(m.rarete || 2) + '<span style="opacity:.3">' + '⭐'.repeat(3 - (m.rarete || 2)) + '</span>';
-    const found = D.filter(d => d.n.toLowerCase().includes(m.nom.toLowerCase()));
+    const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
     const sold = found.filter(d => d.r !== null);
     const avgPv = sold.length > 0 ? sold.reduce((s, d) => s + (d.r - d.a), 0) / sold.length : null;
     return `<div class="radar-card" onclick="openRadarDetail(${m.id})">
@@ -1386,7 +1390,7 @@ window.openRadarDetail = function(id) {
   document.getElementById('rd-note').textContent = m.note || 'Aucune note';
   document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
 
-  const found = D.filter(d => d.n.toLowerCase().includes(m.nom.toLowerCase()));
+  const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
   const sold = found.filter(d => d.r !== null);
   const avgPv = sold.length > 0 ? (sold.reduce((s,d) => s+(d.r-d.a),0)/sold.length).toFixed(0) : '—';
   document.getElementById('rd-metrics').innerHTML = `
@@ -1500,7 +1504,7 @@ window.deleteMarque = async function(id) {
 };
 
 function checkRadarAlert(nom) {
-  const match = MARQUES.find(m => nom.toLowerCase().includes(m.nom.toLowerCase()));
+  const match = MARQUES.find(m => normStr(nom).includes(normStr(m.nom)));
   const alert = document.getElementById('radar-alert');
   const alertText = document.getElementById('radar-alert-text');
   if (match && alert && alertText) {
