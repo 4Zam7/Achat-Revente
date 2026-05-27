@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.6-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.7-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -39,6 +39,7 @@
 - 📅 **Bilan mensuel amélioré** — sélecteur Année puis Mois, affiche tous les mois même sans vente
 - 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 3 onglets (Articles, Résumé, Bilan mensuel)
 - 📅 **Onglet Bilan** — bilan mensuel et annuel avec stats complètes, top plus-values, camembert catégories
+- 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
 
 ---
 
@@ -335,6 +336,38 @@ CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING 
 
 ---
 
+### Créer la table marques_niches (Radar)
+
+Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
+
+```sql
+CREATE TABLE marques_niches (
+  id bigserial PRIMARY KEY,
+  nom text NOT NULL,
+  categorie text,
+  rarete integer DEFAULT 4 CHECK (rarete >= 1 AND rarete <= 7),
+  prix_min numeric NOT NULL,
+  prix_max numeric NOT NULL,
+  note text,
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE marques_niches ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Auth lecture"      ON marques_niches FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Auth insertion"    ON marques_niches FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "Auth modification" ON marques_niches FOR UPDATE TO authenticated USING (true);
+CREATE POLICY "Auth suppression"  ON marques_niches FOR DELETE TO authenticated USING (true);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON marques_niches TO authenticated;
+GRANT SELECT ON marques_niches TO anon;
+GRANT ALL ON marques_niches TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE marques_niches_id_seq TO authenticated;
+```
+
+> N'oubliez pas d'exposer la table `marques_niches` dans **Integrations → Data API → Settings → Exposed tables**.
+
+---
+
 ### Accorder les droits API (obligatoire depuis mai 2026)
 
 Depuis le 30 mai 2026, Supabase exige des `GRANT` explicites pour exposer les tables via l'API. Dans **SQL Editor** → **Run** :
@@ -376,6 +409,14 @@ GRANT ALL ON settings TO service_role;
 ---
 
 ## 📝 Changelog
+
+### v1.7 — 27 Mai 2026
+- 🎯 **Radar marques** — nouvel onglet pour suivre les marques niches à surveiller en brocante
+- ⭐ Système de notation **1 à 7 étoiles** "Intérêt d'achat" (de Bof à Pépite !)
+- 🔗 Détection automatique des articles achetés appartenant à une marque du Radar
+- 🔔 Alerte à l'ajout d'un article si la marque est dans le Radar (avec fourchette Vinted)
+- 🐛 Fix : correspondance des marques insensible aux variantes d'apostrophe (`'` vs `'`)
+- 🐛 Fix : formulaire Radar — champs pleine largeur pour éviter le débordement du select
 
 ### v1.6 — 25 Mai 2026
 - 🏪 Système **multi-boutiques** — séparez vos activités (Brocante, Vinted, Leboncoin…)
