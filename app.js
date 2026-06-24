@@ -1440,6 +1440,18 @@ window.openRadarDetail = function(id) {
     <div class="metric"><div class="metric-label">Trouvé</div><div class="metric-value mv-green">${found.length}×</div></div>
     <div class="metric"><div class="metric-label">Moy. bénéfice</div><div class="metric-value mv-amber">${avgPv !== '—' ? '+'+avgPv+'€' : '—'}</div></div>`;
 
+  const catsEl = document.getElementById('rd-categories');
+  if (cats && cats.length) {
+    catsEl.innerHTML = cats.map(c => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.5rem .75rem;background:var(--bg3);border-radius:var(--radius-sm);margin-bottom:5px">
+        <span style="font-size:13px;color:var(--text)">${c.nom || '—'}</span>
+        <span style="font-size:13px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)">${c.pmin}–${c.pmax}€</span>
+      </div>`).join('');
+    catsEl.style.display = 'block';
+  } else {
+    catsEl.style.display = 'none';
+  }
+
   document.getElementById('rd-history').innerHTML = found.length
     ? found.map(d => `<div class="bilan-top-item">
         <div class="bilan-top-rank" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
