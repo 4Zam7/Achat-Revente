@@ -1360,7 +1360,7 @@ function renderRadarGrid(items) {
       <div class="rc-header">
         <div>
           <div class="rc-name">${m.nom}</div>
-          <div class="rc-cat">${m.categorie || '—'}</div>
+          <div class="rc-cat">${[m.categorie, m.sous_categorie].filter(Boolean).join(' · ') || '—'}</div>
         </div>
         <div class="rc-stars">${stars}</div>
       </div>
@@ -1380,7 +1380,7 @@ window.filterRadar = function() {
   const q = document.getElementById('radar-search').value.toLowerCase();
   const stars = parseInt(document.getElementById('radar-filter-stars').value) || 0;
   let list = MARQUES;
-  if (q) list = list.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q));
+  if (q) list = list.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q) || (m.sous_categorie||'').toLowerCase().includes(q));
   if (stars) list = list.filter(m => (m.rarete || 4) === stars);
   renderRadarGrid(list);
 };
@@ -1390,7 +1390,7 @@ window.openRadarDetail = function(id) {
   if (!m) return;
   currentRadarId = id;
   document.getElementById('rd-name').textContent = m.nom;
-  document.getElementById('rd-cat').textContent = (m.categorie || '') + ' · ' + '⭐'.repeat(m.rarete||4);
+  document.getElementById('rd-cat').textContent = [m.categorie, m.sous_categorie].filter(Boolean).join(' · ') + ' · ' + '⭐'.repeat(m.rarete||4);
   document.getElementById('rd-note').textContent = m.note || 'Aucune note';
   document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
 
@@ -1436,6 +1436,7 @@ window.openRadarAddModal = function() {
   radarEditMode = false;
   document.getElementById('rn-nom').value = '';
   document.getElementById('rn-cat').value = '';
+  document.getElementById('rn-sous-cat').value = '';
   document.getElementById('rn-rarete').value = '4';
   document.getElementById('rn-pmin').value = '';
   document.getElementById('rn-pmax').value = '';
@@ -1451,6 +1452,7 @@ window.openRadarEditModal = function() {
   radarEditMode = true;
   document.getElementById('rn-nom').value = m.nom;
   document.getElementById('rn-cat').value = m.categorie || '';
+  document.getElementById('rn-sous-cat').value = m.sous_categorie || '';
   document.getElementById('rn-rarete').value = m.rarete || 4;
   document.getElementById('rn-pmin').value = m.prix_min;
   document.getElementById('rn-pmax').value = m.prix_max;
@@ -1466,7 +1468,9 @@ window.saveRadarMarque = async function() {
   const btn = document.getElementById('btn-radar-save');
   btn.disabled = true;
   const payload = {
-    nom, categorie: document.getElementById('rn-cat').value.trim() || null,
+    nom,
+    categorie: document.getElementById('rn-cat').value || null,
+    sous_categorie: document.getElementById('rn-sous-cat').value.trim() || null,
     rarete: parseInt(document.getElementById('rn-rarete').value),
     prix_min: pmin, prix_max: pmax,
     note: document.getElementById('rn-note').value.trim() || null
