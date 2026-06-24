@@ -1440,9 +1440,6 @@ window.openRadarDetail = function(id) {
     <div class="metric"><div class="metric-label">Trouvé</div><div class="metric-value mv-green">${found.length}×</div></div>
     <div class="metric"><div class="metric-label">Moy. bénéfice</div><div class="metric-value mv-amber">${avgPv !== '—' ? '+'+avgPv+'€' : '—'}</div></div>`;
 
-  document.getElementById('rd-calc-input').value = 5;
-  updateCalc();
-
   document.getElementById('rd-history').innerHTML = found.length
     ? found.map(d => `<div class="bilan-top-item">
         <div class="bilan-top-rank" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
@@ -1461,27 +1458,6 @@ window.closeRadarDetail = function() {
   currentRadarId = null;
 };
 
-window.updateCalc = function() {
-  const m = MARQUES.find(x => x.id === currentRadarId);
-  if (!m) return;
-  const achat = parseFloat(document.getElementById('rd-calc-input').value) || 0;
-  const cats = m.categories;
-  const el = document.getElementById('rd-calc-result');
-  if (cats && cats.length) {
-    el.innerHTML = cats.map(c => {
-      const pvMin = (c.pmin - achat).toFixed(0);
-      const pvMax = (c.pmax - achat).toFixed(0);
-      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
-        <span style="color:var(--text2)">${c.nom || '—'}</span>
-        <span style="color:var(--green-text);font-weight:500">+${pvMin} à +${pvMax}€</span>
-      </div>`;
-    }).join('');
-  } else {
-    const pvMin = (m.prix_min - achat).toFixed(0);
-    const pvMax = (m.prix_max - achat).toFixed(0);
-    el.innerHTML = `<span style="color:var(--green-text);font-weight:500;font-size:15px">+${pvMin} à +${pvMax}€</span>`;
-  }
-};
 
 window.openRadarAddModal = function() {
   radarEditMode = false;
@@ -1506,8 +1482,6 @@ window.openRadarEditModal = function() {
   radarCategories = m.categories ? JSON.parse(JSON.stringify(m.categories))
     : (m.prix_min != null ? [{ nom: m.sous_categorie || '', pmin: m.prix_min, pmax: m.prix_max }] : []);
   renderRadarCategoriesForm();
-  document.getElementById('rn-pmin').value = m.prix_min;
-  document.getElementById('rn-pmax').value = m.prix_max;
   document.getElementById('rn-note').value = m.note || '';
   document.getElementById('radar-add-modal').classList.add('open');
 };
