@@ -1336,6 +1336,33 @@ function normStr(s) {
 let MARQUES = [];
 let currentRadarId = null;
 let radarEditMode = false;
+let radarCategories = [];
+
+function renderRadarCategoriesForm() {
+  const container = document.getElementById('rn-categories-list');
+  if (!radarCategories.length) { container.innerHTML = ''; return; }
+  container.innerHTML = radarCategories.map((c, i) => `
+    <div class="rn-cat-row">
+      <input class="rn-cat-nom" type="text" value="${(c.nom||'').replace(/"/g,'&quot;')}" oninput="radarCategories[${i}].nom=this.value" placeholder="Ex : Jean slim">
+      <input class="rn-cat-price" type="number" value="${c.pmin||''}" oninput="radarCategories[${i}].pmin=+this.value" placeholder="Min" min="0" inputmode="decimal">
+      <span class="rn-cat-sep">–</span>
+      <input class="rn-cat-price" type="number" value="${c.pmax||''}" oninput="radarCategories[${i}].pmax=+this.value" placeholder="Max" min="0" inputmode="decimal">
+      <span class="rn-cat-unit">€</span>
+      <button type="button" class="btn-remove-cat" onclick="removeRadarCategory(${i})">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+    </div>`).join('');
+}
+
+window.addRadarCategory = function() {
+  radarCategories.push({ nom: '', pmin: '', pmax: '' });
+  renderRadarCategoriesForm();
+};
+
+window.removeRadarCategory = function(i) {
+  radarCategories.splice(i, 1);
+  renderRadarCategoriesForm();
+};
 
 async function loadMarques() {
   try {
@@ -1360,11 +1387,18 @@ function renderRadarGrid(items) {
       <div class="rc-header">
         <div>
           <div class="rc-name">${m.nom}</div>
-          <div class="rc-cat">${[m.categorie, m.sous_categorie].filter(Boolean).join(' · ') || '—'}</div>
+          <div class="rc-cat">${m.categorie || '—'}</div>
         </div>
         <div class="rc-stars">${stars}</div>
       </div>
-      <div class="rc-range">${m.prix_min}–${m.prix_max}€ <span class="rc-range-label">Vinted</span></div>
+      ${(() => {
+        const cats = m.categories;
+        if (cats && cats.length) {
+          return cats.slice(0,2).map(c => `<div class="rc-range"><span>${c.nom||'—'}</span><span>${c.pmin}–${c.pmax}€</span></div>`).join('') +
+            (cats.length > 2 ? `<div class="rc-cat" style="margin-top:2px">+${cats.length-2} autre${cats.length-2>1?'s':''}</div>` : '');
+        }
+        return m.prix_min != null ? `<div class="rc-range">${m.prix_min}–${m.prix_max}€ <span class="rc-range-label">Vinted</span></div>` : '';
+      })()}
       ${m.note ? `<div class="rc-note">${m.note}</div>` : ''}
       <div class="rc-footer">
         <span class="rc-found">Trouvé <strong>${found.length}×</strong>${avgPv !== null ? ' · moy. <strong>+' + avgPv.toFixed(0) + '€</strong>' : ''}</span>
@@ -1380,7 +1414,7 @@ window.filterRadar = function() {
   const q = document.getElementById('radar-search').value.toLowerCase();
   const stars = parseInt(document.getElementById('radar-filter-stars').value) || 0;
   let list = MARQUES;
-  if (q) list = list.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q) || (m.sous_categorie||'').toLowerCase().includes(q));
+  if (q) list = list.filter(m => m.nom.toLowerCase().includes(q) || (m.categorie||'').toLowerCase().includes(q) || (m.categories||[]).some(c => (c.nom||'').toLowerCase().includes(q)));
   if (stars) list = list.filter(m => (m.rarete || 4) === stars);
   renderRadarGrid(list);
 };
@@ -1390,15 +1424,19 @@ window.openRadarDetail = function(id) {
   if (!m) return;
   currentRadarId = id;
   document.getElementById('rd-name').textContent = m.nom;
-  document.getElementById('rd-cat').textContent = [m.categorie, m.sous_categorie].filter(Boolean).join(' · ') + ' · ' + '⭐'.repeat(m.rarete||4);
+  document.getElementById('rd-cat').textContent = m.categorie ? m.categorie + ' · ' + '⭐'.repeat(m.rarete||4) : '⭐'.repeat(m.rarete||4);
   document.getElementById('rd-note').textContent = m.note || 'Aucune note';
   document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
 
   const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
   const sold = found.filter(d => d.r !== null);
   const avgPv = sold.length > 0 ? (sold.reduce((s,d) => s+(d.r-d.a),0)/sold.length).toFixed(0) : '—';
+  const cats = m.categories;
+  const prixLabel = cats && cats.length
+    ? `${Math.min(...cats.map(c=>c.pmin))}–${Math.max(...cats.map(c=>c.pmax))}€`
+    : (m.prix_min != null ? `${m.prix_min}–${m.prix_max}€` : '—');
   document.getElementById('rd-metrics').innerHTML = `
-    <div class="metric"><div class="metric-label">Prix Vinted</div><div class="metric-value">${m.prix_min}–${m.prix_max}€</div></div>
+    <div class="metric"><div class="metric-label">Prix Vinted</div><div class="metric-value">${prixLabel}</div></div>
     <div class="metric"><div class="metric-label">Trouvé</div><div class="metric-value mv-green">${found.length}×</div></div>
     <div class="metric"><div class="metric-label">Moy. bénéfice</div><div class="metric-value mv-amber">${avgPv !== '—' ? '+'+avgPv+'€' : '—'}</div></div>`;
 
@@ -1427,20 +1465,32 @@ window.updateCalc = function() {
   const m = MARQUES.find(x => x.id === currentRadarId);
   if (!m) return;
   const achat = parseFloat(document.getElementById('rd-calc-input').value) || 0;
-  const minPv = (m.prix_min - achat).toFixed(0);
-  const maxPv = (m.prix_max - achat).toFixed(0);
-  document.getElementById('rd-calc-result').textContent = `+${minPv} à +${maxPv}€`;
+  const cats = m.categories;
+  const el = document.getElementById('rd-calc-result');
+  if (cats && cats.length) {
+    el.innerHTML = cats.map(c => {
+      const pvMin = (c.pmin - achat).toFixed(0);
+      const pvMax = (c.pmax - achat).toFixed(0);
+      return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text2)">${c.nom || '—'}</span>
+        <span style="color:var(--green-text);font-weight:500">+${pvMin} à +${pvMax}€</span>
+      </div>`;
+    }).join('');
+  } else {
+    const pvMin = (m.prix_min - achat).toFixed(0);
+    const pvMax = (m.prix_max - achat).toFixed(0);
+    el.innerHTML = `<span style="color:var(--green-text);font-weight:500;font-size:15px">+${pvMin} à +${pvMax}€</span>`;
+  }
 };
 
 window.openRadarAddModal = function() {
   radarEditMode = false;
   document.getElementById('rn-nom').value = '';
   document.getElementById('rn-cat').value = '';
-  document.getElementById('rn-sous-cat').value = '';
   document.getElementById('rn-rarete').value = '4';
-  document.getElementById('rn-pmin').value = '';
-  document.getElementById('rn-pmax').value = '';
   document.getElementById('rn-note').value = '';
+  radarCategories = [];
+  renderRadarCategoriesForm();
   document.getElementById('radar-add-modal').classList.add('open');
   setTimeout(() => document.getElementById('rn-nom').focus(), 100);
 };
@@ -1452,8 +1502,10 @@ window.openRadarEditModal = function() {
   radarEditMode = true;
   document.getElementById('rn-nom').value = m.nom;
   document.getElementById('rn-cat').value = m.categorie || '';
-  document.getElementById('rn-sous-cat').value = m.sous_categorie || '';
   document.getElementById('rn-rarete').value = m.rarete || 4;
+  radarCategories = m.categories ? JSON.parse(JSON.stringify(m.categories))
+    : (m.prix_min != null ? [{ nom: m.sous_categorie || '', pmin: m.prix_min, pmax: m.prix_max }] : []);
+  renderRadarCategoriesForm();
   document.getElementById('rn-pmin').value = m.prix_min;
   document.getElementById('rn-pmax').value = m.prix_max;
   document.getElementById('rn-note').value = m.note || '';
@@ -1462,17 +1514,18 @@ window.openRadarEditModal = function() {
 
 window.saveRadarMarque = async function() {
   const nom = document.getElementById('rn-nom').value.trim();
-  const pmin = parseFloat(document.getElementById('rn-pmin').value);
-  const pmax = parseFloat(document.getElementById('rn-pmax').value);
-  if (!nom || isNaN(pmin) || isNaN(pmax)) { toast('Nom et prix requis', 'err'); return; }
+  const validCats = radarCategories.filter(c => c.nom.trim() && c.pmin >= 0 && c.pmax >= 0);
+  if (!nom || !validCats.length) { toast('Nom et au moins une catégorie avec prix requis', 'err'); return; }
   const btn = document.getElementById('btn-radar-save');
   btn.disabled = true;
   const payload = {
     nom,
     categorie: document.getElementById('rn-cat').value || null,
-    sous_categorie: document.getElementById('rn-sous-cat').value.trim() || null,
+    sous_categorie: validCats[0].nom || null,
+    categories: validCats,
+    prix_min: Math.min(...validCats.map(c => c.pmin)),
+    prix_max: Math.max(...validCats.map(c => c.pmax)),
     rarete: parseInt(document.getElementById('rn-rarete').value),
-    prix_min: pmin, prix_max: pmax,
     note: document.getElementById('rn-note').value.trim() || null
   };
   try {

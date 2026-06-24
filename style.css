@@ -607,6 +607,18 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .fg select option { background: var(--bg3); color: var(--text); }
 
+.rn-cat-row { display:flex; align-items:center; gap:6px; margin-bottom:7px; }
+.rn-cat-nom { flex:1; min-width:0; padding:8px 10px; font-size:13px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:'DM Sans',sans-serif; }
+.rn-cat-nom:focus { outline:none; border-color:var(--accent); }
+.rn-cat-price { width:60px; padding:8px 8px; font-size:13px; background:var(--bg3); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:'DM Mono',monospace; }
+.rn-cat-price:focus { outline:none; border-color:var(--accent); }
+.rn-cat-sep { font-size:13px; color:var(--text3); flex-shrink:0; }
+.rn-cat-unit { font-size:12px; color:var(--text3); flex-shrink:0; }
+.btn-remove-cat { background:none; border:none; color:var(--text3); cursor:pointer; padding:4px; flex-shrink:0; border-radius:4px; }
+.btn-remove-cat:hover { color:#e05252; background:rgba(224,82,82,.1); }
+.btn-add-radar-cat { width:100%; margin-top:6px; background:none; border:1px dashed var(--border); color:var(--text2); border-radius:var(--radius-sm); padding:8px; font-size:12px; cursor:pointer; font-family:'DM Sans',sans-serif; }
+.btn-add-radar-cat:hover { border-color:var(--accent); color:var(--accent); }
+
 /* ── OBJECTIF MENSUEL ────────────────────────────────────────────────────── */
 .goal-card {
   background: var(--bg2);
@@ -1067,7 +1079,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 .rc-name { font-size: 14px; font-weight: 500; color: var(--text); }
 .rc-cat { font-size: 10px; color: var(--text3); margin-top: 2px; }
 .rc-stars { font-size: 13px; }
-.rc-range { font-size: 13px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; margin-bottom: .5rem; }
+.rc-range { display:flex; justify-content:space-between; font-size: 12px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; margin-bottom: 3px; }
+.rc-range span:first-child { color: var(--text2); font-family: 'DM Sans', sans-serif; font-weight:400; }
 .rc-range-label { font-size: 10px; color: var(--text3); font-family: 'DM Sans', sans-serif; font-weight: 400; }
 .rc-note { font-size: 11px; color: var(--text2); font-style: italic; border-top: 0.5px solid var(--border); padding-top: .5rem; margin-bottom: .5rem; }
 .rc-footer { display: flex; align-items: center; justify-content: space-between; }
