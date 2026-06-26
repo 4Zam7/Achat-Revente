@@ -1033,6 +1033,19 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   font-size: 16px; color: var(--text3);
 }
 .btq-add:hover { color: var(--accent); }
+.btq-wrap {
+  display: flex; align-items: center; gap: 1px;
+}
+.btq-edit {
+  width: 20px; height: 20px; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; border-radius: 50%;
+  cursor: pointer; color: var(--text3);
+  opacity: 0; transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+.btq-wrap:hover .btq-edit { opacity: 1; }
+.btq-edit:hover { color: var(--accent); }
 
 @media (max-width: 600px) {
   .boutique-toggle { display: none; }

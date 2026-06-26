@@ -624,6 +624,32 @@
     </div>
   </div>
 
+  <!-- MODAL MODIFIER BOUTIQUE -->
+  <div class="modal-overlay" id="edit-boutique-modal">
+    <div class="modal" style="max-width:360px">
+      <div class="modal-header">
+        <div class="modal-title">Modifier la boutique</div>
+        <button class="btn-close" onclick="closeEditBoutiqueModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="fg">
+        <label>Nom de la boutique</label>
+        <input type="text" id="edit-boutique-name" onkeydown="if(event.key==='Enter')saveBoutiqueRename()">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="btn-rename-boutique" onclick="saveBoutiqueRename()">Sauvegarder</button>
+        <button class="btn-secondary" onclick="closeEditBoutiqueModal()">Annuler</button>
+      </div>
+      <div style="margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border)">
+        <button class="btn-del" id="btn-delete-boutique" onclick="deleteBoutique()">
+          <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Supprimer cette boutique
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL NOUVELLE BOUTIQUE -->
   <div class="modal-overlay" id="new-boutique-modal">
     <div class="modal" style="max-width:360px">

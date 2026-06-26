@@ -728,10 +728,11 @@ document.getElementById('add-modal').addEventListener('click', function (e) { if
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
 document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
 document.getElementById('goal-modal').addEventListener('click', function (e) { if (e.target === this) closeGoalModal(); });
+document.getElementById('edit-boutique-modal').addEventListener('click', function (e) { if (e.target === this) closeEditBoutiqueModal(); });
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -866,10 +867,15 @@ async function loadBoutiques() {
 
 function renderBoutiqueToggle() {
   const html = BOUTIQUES.map(b => `
-    <button class="btq-pill ${CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id ? 'active' : ''}"
-      onclick="switchBoutique(${b.id})">
-      ${b.nom}
-    </button>
+    <div class="btq-wrap">
+      <button class="btq-pill ${CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id ? 'active' : ''}"
+        onclick="switchBoutique(${b.id})">
+        ${b.nom}
+      </button>
+      <button class="btq-edit" onclick="openEditBoutiqueModal(${b.id})" title="Modifier">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10H2V8L8.5 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   `).join('') + `<button class="btq-pill btq-add" onclick="openNewBoutiqueModal()" title="Nouvelle boutique">+</button>`;
   const c1 = document.getElementById('boutique-toggle');
   const c2 = document.getElementById('mobile-boutique-toggle');
@@ -915,6 +921,74 @@ window.createBoutique = async function() {
     toast('Erreur lors de la création', 'err');
   } finally {
     btn.disabled = false;
+  }
+};
+
+// ─── EDIT / DELETE BOUTIQUE ───────────────────────────────────────────────────
+let editBoutiqueId = null;
+
+window.openEditBoutiqueModal = function(id) {
+  editBoutiqueId = id;
+  const b = BOUTIQUES.find(b => b.id === id);
+  if (!b) return;
+  document.getElementById('edit-boutique-name').value = b.nom;
+  document.getElementById('edit-boutique-modal').classList.add('open');
+  setTimeout(() => document.getElementById('edit-boutique-name').focus(), 100);
+};
+
+window.closeEditBoutiqueModal = function() {
+  document.getElementById('edit-boutique-modal').classList.remove('open');
+  editBoutiqueId = null;
+};
+
+window.saveBoutiqueRename = async function() {
+  const nom = document.getElementById('edit-boutique-name').value.trim();
+  if (!nom) { toast('Nomme ta boutique', 'err'); return; }
+  const btn = document.getElementById('btn-rename-boutique');
+  btn.disabled = true;
+  try {
+    const { error } = await sb.from('boutiques').update({ nom }).eq('id', editBoutiqueId);
+    if (error) throw error;
+    const b = BOUTIQUES.find(b => b.id === editBoutiqueId);
+    if (b) b.nom = nom;
+    if (CURRENT_BOUTIQUE && CURRENT_BOUTIQUE.id === editBoutiqueId) CURRENT_BOUTIQUE.nom = nom;
+    closeEditBoutiqueModal();
+    renderBoutiqueToggle();
+    toast(`Boutique renommée en "${nom}"`, 'ok');
+  } catch(e) {
+    toast('Erreur lors de la modification', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+window.deleteBoutique = async function() {
+  const b = BOUTIQUES.find(b => b.id === editBoutiqueId);
+  if (!b) return;
+  const ok = await showConfirm('Supprimer la boutique', `Supprimer <strong>${b.nom}</strong> ?<br><br>Tous les articles de cette boutique seront également supprimés. Cette action est irréversible.`);
+  if (!ok) return;
+  const btn = document.getElementById('btn-delete-boutique');
+  btn.disabled = true;
+  try {
+    const { error } = await sb.from('boutiques').delete().eq('id', editBoutiqueId);
+    if (error) throw error;
+    const nom = b.nom;
+    BOUTIQUES = BOUTIQUES.filter(b => b.id !== editBoutiqueId);
+    closeEditBoutiqueModal();
+    if (CURRENT_BOUTIQUE && CURRENT_BOUTIQUE.id === editBoutiqueId) {
+      CURRENT_BOUTIQUE = BOUTIQUES.length > 0 ? BOUTIQUES[0] : null;
+      if (CURRENT_BOUTIQUE) localStorage.setItem('ar_boutique_id', CURRENT_BOUTIQUE.id);
+      else localStorage.removeItem('ar_boutique_id');
+    }
+    renderBoutiqueToggle();
+    await Promise.all([loadData(), loadGoal()]);
+    refreshCurrentPanel();
+    toast(`Boutique "${nom}" supprimée`, 'ok');
+  } catch(e) {
+    toast('Erreur lors de la suppression', 'err');
+  } finally {
+    const btn2 = document.getElementById('btn-delete-boutique');
+    if (btn2) btn2.disabled = false;
   }
 };
 
