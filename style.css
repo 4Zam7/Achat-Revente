@@ -265,6 +265,8 @@ tr:hover td { background: var(--bg3); }
   box-shadow: var(--shadow);
   padding: 1.75rem;
   width: 100%; max-width: 440px;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   animation: modalIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 @keyframes modalIn { from { opacity: 0; transform: scale(0.92) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }

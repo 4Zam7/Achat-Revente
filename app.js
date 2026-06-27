@@ -163,7 +163,7 @@ const CC = {
   "Vêtements":"#5B8FF9","Chaussures":"#5AD8A6","Jeux vidéo":"#F6BD16",
   "Consoles":"#F4664A","Électronique":"#7B61FF","Jouets":"#FF9F7F",
   "Décoration":"#36CFC9","Ustensiles":"#9FDB1D","Outils":"#E8684A",
-  "Livres":"#6DC8EC","Sport":"#FF85C2","Autres":"#9B9890"
+  "Livres":"#6DC8EC","Sport":"#FF85C2","Accessoires":"#C47AFF","Autres":"#9B9890"
 };
 function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
 
