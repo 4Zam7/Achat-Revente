@@ -753,7 +753,7 @@ function getCurrentMonthRevenue() {
 }
 
 function goalKey() {
-  return CURRENT_BOUTIQUE ? `monthly_goal_${CURRENT_BOUTIQUE.id}` : 'monthly_goal';
+  return CURRENT_BOUTIQUE ? `monthly_goal_${CURRENT_BOUTIQUE.id}` : 'monthly_goal_all';
 }
 
 async function loadGoal() {
@@ -855,8 +855,10 @@ async function loadBoutiques() {
     const { data, error } = await sb.from('boutiques').select('*').order('created_at', { ascending: true });
     if (error) throw error;
     BOUTIQUES = data;
-    if (!CURRENT_BOUTIQUE && BOUTIQUES.length > 0) {
-      const saved = localStorage.getItem('ar_boutique_id');
+    const saved = localStorage.getItem('ar_boutique_id');
+    if (saved === 'all') {
+      CURRENT_BOUTIQUE = null;
+    } else if (!CURRENT_BOUTIQUE && BOUTIQUES.length > 0) {
       CURRENT_BOUTIQUE = BOUTIQUES.find(b => b.id === parseInt(saved)) || BOUTIQUES[0];
     }
     renderBoutiqueToggle();
@@ -866,22 +868,45 @@ async function loadBoutiques() {
 }
 
 function renderBoutiqueToggle() {
-  const html = BOUTIQUES.map(b => `
-    <div class="btq-wrap">
+  const allActive = CURRENT_BOUTIQUE === null ? 'active' : '';
+  const html = `<button class="btq-pill ${allActive}" onclick="switchToAll()">Toutes</button>` +
+    BOUTIQUES.map(b => `
       <button class="btq-pill ${CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id ? 'active' : ''}"
         onclick="switchBoutique(${b.id})">
         ${b.nom}
       </button>
-      <button class="btq-edit" onclick="openEditBoutiqueModal(${b.id})" title="Modifier">
-        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M8.5 1.5l2 2L4 10H2V8L8.5 1.5z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-    </div>
-  `).join('') + `<button class="btq-pill btq-add" onclick="openNewBoutiqueModal()" title="Nouvelle boutique">+</button>`;
+    `).join('') + `<button class="btq-pill btq-add" onclick="openNewBoutiqueModal()" title="Nouvelle boutique">+</button>`;
   const c1 = document.getElementById('boutique-toggle');
   const c2 = document.getElementById('mobile-boutique-toggle');
   if (c1) c1.innerHTML = html;
   if (c2) c2.innerHTML = html;
+  updateBoutiqueActionsBar();
 }
+
+function updateBoutiqueActionsBar() {
+  const bar = document.getElementById('boutique-actions-bar');
+  const nameEl = document.getElementById('boutique-actions-name');
+  if (!bar) return;
+  if (!CURRENT_BOUTIQUE) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  if (nameEl) nameEl.textContent = CURRENT_BOUTIQUE.nom;
+}
+
+window.switchToAll = async function() {
+  if (CURRENT_BOUTIQUE === null) return;
+  CURRENT_BOUTIQUE = null;
+  localStorage.setItem('ar_boutique_id', 'all');
+  renderBoutiqueToggle();
+  await Promise.all([loadData(), loadGoal()]);
+  refreshCurrentPanel();
+  toast('Toutes les boutiques', 'ok');
+};
+
+window.deleteBoutiqueFromPanel = async function() {
+  if (!CURRENT_BOUTIQUE) return;
+  editBoutiqueId = CURRENT_BOUTIQUE.id;
+  await deleteBoutique();
+};
 
 window.switchBoutique = async function(id) {
   const b = BOUTIQUES.find(b => b.id === id);
@@ -967,18 +992,17 @@ window.deleteBoutique = async function() {
   if (!b) return;
   const ok = await showConfirm('Supprimer la boutique', `Supprimer <strong>${b.nom}</strong> ?<br><br>Tous les articles de cette boutique seront également supprimés. Cette action est irréversible.`);
   if (!ok) return;
-  const btn = document.getElementById('btn-delete-boutique');
-  btn.disabled = true;
+  const deletedId = editBoutiqueId;
   try {
-    const { error } = await sb.from('boutiques').delete().eq('id', editBoutiqueId);
+    const { error } = await sb.from('boutiques').delete().eq('id', deletedId);
     if (error) throw error;
     const nom = b.nom;
-    BOUTIQUES = BOUTIQUES.filter(b => b.id !== editBoutiqueId);
+    BOUTIQUES = BOUTIQUES.filter(b => b.id !== deletedId);
     closeEditBoutiqueModal();
-    if (CURRENT_BOUTIQUE && CURRENT_BOUTIQUE.id === editBoutiqueId) {
+    if (CURRENT_BOUTIQUE && CURRENT_BOUTIQUE.id === deletedId) {
       CURRENT_BOUTIQUE = BOUTIQUES.length > 0 ? BOUTIQUES[0] : null;
       if (CURRENT_BOUTIQUE) localStorage.setItem('ar_boutique_id', CURRENT_BOUTIQUE.id);
-      else localStorage.removeItem('ar_boutique_id');
+      else localStorage.setItem('ar_boutique_id', 'all');
     }
     renderBoutiqueToggle();
     await Promise.all([loadData(), loadGoal()]);
@@ -986,9 +1010,6 @@ window.deleteBoutique = async function() {
     toast(`Boutique "${nom}" supprimée`, 'ok');
   } catch(e) {
     toast('Erreur lors de la suppression', 'err');
-  } finally {
-    const btn2 = document.getElementById('btn-delete-boutique');
-    if (btn2) btn2.disabled = false;
   }
 };
 
