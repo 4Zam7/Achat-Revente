@@ -1036,6 +1036,25 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 }
 .btq-add:hover { color: var(--accent); }
 
+/* ── ALL PILL (spécial) ──────────────────────────────────────────────────── */
+.btq-all { color: #7B61FF; font-weight: 600; letter-spacing: 0.03em; }
+.btq-all:hover { color: #9B80FF !important; }
+.btq-all.active {
+  background: linear-gradient(135deg, rgba(123,97,255,0.18), rgba(91,143,249,0.12)) !important;
+  color: #A08EFF !important;
+  border: 1px solid rgba(123,97,255,0.45) !important;
+  box-shadow: 0 0 12px rgba(123,97,255,0.18) !important;
+}
+
+/* ── DRAG & DROP ─────────────────────────────────────────────────────────── */
+.btq-pill[draggable="true"] { cursor: grab; }
+.btq-pill[draggable="true"]:active { cursor: grabbing; }
+.btq-dragging { opacity: 0.35; }
+.btq-drag-over {
+  outline: 2px dashed rgba(123,97,255,0.6);
+  outline-offset: 2px;
+}
+
 /* ── BOUTIQUE ACTIONS BAR ────────────────────────────────────────────────── */
 .boutique-actions-bar {
   display: flex; align-items: center; justify-content: space-between;

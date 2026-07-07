@@ -10,6 +10,8 @@ let currentTab = 'overview';
 const charts = {};
 let BOUTIQUES = [];
 let CURRENT_BOUTIQUE = null;
+let BOUTIQUE_ORDER = [];
+let draggingBoutiqueId = null;
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -850,11 +852,30 @@ window.saveGoal = async function () {
 
 
 // ─── BOUTIQUES ────────────────────────────────────────────────────────────────
+function loadBoutiqueOrder() {
+  try {
+    const raw = localStorage.getItem('ar_boutique_order');
+    BOUTIQUE_ORDER = raw ? JSON.parse(raw) : [];
+  } catch(e) { BOUTIQUE_ORDER = []; }
+}
+
+function saveBoutiqueOrder() {
+  localStorage.setItem('ar_boutique_order', JSON.stringify(BOUTIQUE_ORDER));
+}
+
+function sortedBoutiques() {
+  const ordered = [];
+  BOUTIQUE_ORDER.forEach(id => { const b = BOUTIQUES.find(b => b.id === id); if (b) ordered.push(b); });
+  BOUTIQUES.forEach(b => { if (!BOUTIQUE_ORDER.includes(b.id)) ordered.push(b); });
+  return ordered;
+}
+
 async function loadBoutiques() {
   try {
     const { data, error } = await sb.from('boutiques').select('*').order('created_at', { ascending: true });
     if (error) throw error;
     BOUTIQUES = data;
+    loadBoutiqueOrder();
     const saved = localStorage.getItem('ar_boutique_id');
     if (saved === 'all') {
       CURRENT_BOUTIQUE = null;
@@ -869,10 +890,18 @@ async function loadBoutiques() {
 
 function renderBoutiqueToggle() {
   const allActive = CURRENT_BOUTIQUE === null ? 'active' : '';
-  const html = `<button class="btq-pill ${allActive}" onclick="switchToAll()">Toutes</button>` +
-    BOUTIQUES.map(b => `
+  const html = `<button class="btq-pill btq-all ${allActive}" onclick="switchToAll()">All</button>` +
+    sortedBoutiques().map(b => `
       <button class="btq-pill ${CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id ? 'active' : ''}"
-        onclick="switchBoutique(${b.id})">
+        draggable="true"
+        data-btq-id="${b.id}"
+        onclick="switchBoutique(${b.id})"
+        ondragstart="btqDragStart(event,${b.id})"
+        ondragenter="btqDragEnter(event,${b.id})"
+        ondragleave="btqDragLeave(event)"
+        ondragover="event.preventDefault()"
+        ondrop="btqDrop(event,${b.id})"
+        ondragend="btqDragEnd(event)">
         ${b.nom}
       </button>
     `).join('') + `<button class="btq-pill btq-add" onclick="openNewBoutiqueModal()" title="Nouvelle boutique">+</button>`;
@@ -882,6 +911,47 @@ function renderBoutiqueToggle() {
   if (c2) c2.innerHTML = html;
   updateBoutiqueActionsBar();
 }
+
+// ─── DRAG & DROP BOUTIQUES ────────────────────────────────────────────────────
+window.btqDragStart = function(e, id) {
+  draggingBoutiqueId = id;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => e.target.classList.add('btq-dragging'), 0);
+};
+
+window.btqDragEnter = function(e, id) {
+  if (draggingBoutiqueId === null || draggingBoutiqueId === id) return;
+  e.preventDefault();
+  document.querySelectorAll('.btq-drag-over').forEach(el => el.classList.remove('btq-drag-over'));
+  e.currentTarget.classList.add('btq-drag-over');
+};
+
+window.btqDragLeave = function(e) {
+  e.currentTarget.classList.remove('btq-drag-over');
+};
+
+window.btqDrop = function(e, targetId) {
+  e.preventDefault();
+  if (draggingBoutiqueId === null || draggingBoutiqueId === targetId) return;
+  const sorted = sortedBoutiques();
+  const newOrder = sorted.map(b => b.id);
+  const fromIdx = newOrder.indexOf(draggingBoutiqueId);
+  const toIdx = newOrder.indexOf(targetId);
+  if (fromIdx === -1 || toIdx === -1) return;
+  newOrder.splice(fromIdx, 1);
+  newOrder.splice(toIdx, 0, draggingBoutiqueId);
+  BOUTIQUE_ORDER = newOrder;
+  saveBoutiqueOrder();
+  draggingBoutiqueId = null;
+  renderBoutiqueToggle();
+};
+
+window.btqDragEnd = function(e) {
+  draggingBoutiqueId = null;
+  document.querySelectorAll('.btq-dragging, .btq-drag-over').forEach(el => {
+    el.classList.remove('btq-dragging', 'btq-drag-over');
+  });
+};
 
 function updateBoutiqueActionsBar() {
   const bar = document.getElementById('boutique-actions-bar');
@@ -899,7 +969,7 @@ window.switchToAll = async function() {
   renderBoutiqueToggle();
   await Promise.all([loadData(), loadGoal()]);
   refreshCurrentPanel();
-  toast('Toutes les boutiques', 'ok');
+  toast('All — toutes les boutiques', 'ok');
 };
 
 window.deleteBoutiqueFromPanel = async function() {
@@ -939,6 +1009,8 @@ window.createBoutique = async function() {
     const { data, error } = await sb.from('boutiques').insert([{ nom, couleur }]).select().single();
     if (error) throw error;
     BOUTIQUES.push(data);
+    BOUTIQUE_ORDER.push(data.id);
+    saveBoutiqueOrder();
     closeNewBoutiqueModal();
     await switchBoutique(data.id);
     toast(`Boutique "${nom}" créée`, 'ok');
@@ -998,6 +1070,8 @@ window.deleteBoutique = async function() {
     if (error) throw error;
     const nom = b.nom;
     BOUTIQUES = BOUTIQUES.filter(b => b.id !== deletedId);
+    BOUTIQUE_ORDER = BOUTIQUE_ORDER.filter(id => id !== deletedId);
+    saveBoutiqueOrder();
     closeEditBoutiqueModal();
     if (CURRENT_BOUTIQUE && CURRENT_BOUTIQUE.id === deletedId) {
       CURRENT_BOUTIQUE = BOUTIQUES.length > 0 ? BOUTIQUES[0] : null;
