@@ -858,7 +858,15 @@ window.saveGoal = async function () {
 
 
 // ─── BOUTIQUES ────────────────────────────────────────────────────────────────
-function loadBoutiqueOrder() {
+async function loadBoutiqueOrder() {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key', 'boutique_order').single();
+    if (data && data.value) {
+      BOUTIQUE_ORDER = JSON.parse(data.value);
+      localStorage.setItem('ar_boutique_order', data.value);
+      return;
+    }
+  } catch(e) { /* ignore, fall through to localStorage */ }
   try {
     const raw = localStorage.getItem('ar_boutique_order');
     BOUTIQUE_ORDER = raw ? JSON.parse(raw) : [];
@@ -866,7 +874,9 @@ function loadBoutiqueOrder() {
 }
 
 function saveBoutiqueOrder() {
-  localStorage.setItem('ar_boutique_order', JSON.stringify(BOUTIQUE_ORDER));
+  const json = JSON.stringify(BOUTIQUE_ORDER);
+  localStorage.setItem('ar_boutique_order', json);
+  sb.from('settings').upsert({ key: 'boutique_order', value: json }).then(() => {});
 }
 
 function loadAllFilter() {
@@ -937,7 +947,7 @@ async function loadBoutiques() {
     const { data, error } = await sb.from('boutiques').select('*').order('created_at', { ascending: true });
     if (error) throw error;
     BOUTIQUES = data;
-    loadBoutiqueOrder();
+    await loadBoutiqueOrder();
     loadAllFilter();
     const saved = localStorage.getItem('ar_boutique_id');
     if (saved === 'all') {

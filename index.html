@@ -84,6 +84,18 @@
         </div>
       </header>
 
+      <!-- MOBILE BOUTIQUE TOGGLE -->
+      <div class="mobile-boutique-toggle" id="mobile-boutique-toggle"></div>
+
+      <!-- MOBILE SEARCH -->
+      <div class="mobile-search-wrap">
+        <div class="mobile-search-inner">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <input type="text" id="mobile-search" placeholder="Rechercher un article..." oninput="doMobileSearch()" autocomplete="off">
+          <div id="mobile-results" class="mobile-search-results"></div>
+        </div>
+      </div>
+
       <!-- NAV TABS -->
       <nav class="nav">
         <button class="tab active" data-tab="overview" onclick="showTab('overview')">
@@ -111,18 +123,6 @@
           <span>Radar</span>
         </button>
       </nav>
-
-      <!-- MOBILE SEARCH -->
-      <div class="mobile-search-wrap">
-        <div class="mobile-search-inner">
-          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <input type="text" id="mobile-search" placeholder="Rechercher un article..." oninput="doMobileSearch()" autocomplete="off">
-          <div id="mobile-results" class="mobile-search-results"></div>
-        </div>
-      </div>
-
-      <!-- MOBILE BOUTIQUE TOGGLE -->
-      <div class="mobile-boutique-toggle" id="mobile-boutique-toggle"></div>
 
       <!-- BOUTIQUE ACTIONS BAR -->
       <div id="boutique-actions-bar" class="boutique-actions-bar" style="display:none">
