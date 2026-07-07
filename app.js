@@ -11,7 +11,9 @@ const charts = {};
 let BOUTIQUES = [];
 let CURRENT_BOUTIQUE = null;
 let BOUTIQUE_ORDER = [];
+let ALL_FILTER = null; // null = toutes, sinon array d'IDs
 let draggingBoutiqueId = null;
+let _dragMoved = false; // évite le click après drag
 
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
@@ -67,7 +69,11 @@ async function loadData() {
   setSyncStatus('syncing');
   try {
     let query = sb.from('articles').select('*').order('created_at', { ascending: true });
-    if (CURRENT_BOUTIQUE) query = query.eq('boutique_id', CURRENT_BOUTIQUE.id);
+    if (CURRENT_BOUTIQUE) {
+      query = query.eq('boutique_id', CURRENT_BOUTIQUE.id);
+    } else if (ALL_FILTER !== null && ALL_FILTER.length > 0) {
+      query = query.in('boutique_id', ALL_FILTER);
+    }
     const { data, error } = await query;
     if (error) throw error;
     D = data.map(normalize);
@@ -863,6 +869,62 @@ function saveBoutiqueOrder() {
   localStorage.setItem('ar_boutique_order', JSON.stringify(BOUTIQUE_ORDER));
 }
 
+function loadAllFilter() {
+  try {
+    const raw = localStorage.getItem('ar_all_filter');
+    ALL_FILTER = raw ? JSON.parse(raw) : null;
+  } catch(e) { ALL_FILTER = null; }
+}
+
+function saveAllFilter() {
+  if (ALL_FILTER === null) localStorage.removeItem('ar_all_filter');
+  else localStorage.setItem('ar_all_filter', JSON.stringify(ALL_FILTER));
+}
+
+function renderAllFilter() {
+  const bar = document.getElementById('all-filter-bar');
+  if (!bar) return;
+  if (CURRENT_BOUTIQUE !== null) { bar.style.display = 'none'; return; }
+  const sorted = sortedBoutiques();
+  if (!sorted.length) { bar.style.display = 'none'; return; }
+  bar.style.display = 'flex';
+  const allIds = sorted.map(b => b.id);
+  // clean up stale IDs from deleted boutiques
+  if (ALL_FILTER !== null) {
+    const cleaned = ALL_FILTER.filter(id => allIds.includes(id));
+    if (cleaned.length !== ALL_FILTER.length) {
+      ALL_FILTER = cleaned.length === allIds.length ? null : (cleaned.length ? cleaned : null);
+      saveAllFilter();
+    }
+  }
+  const activeIds = ALL_FILTER !== null ? ALL_FILTER : allIds;
+  bar.innerHTML = `<span class="all-filter-label">Inclure :</span>` +
+    sorted.map(b => {
+      const on = activeIds.includes(b.id);
+      return `<button class="all-filter-pill ${on ? 'active' : ''}" onclick="toggleAllFilter(${b.id})">
+        ${on ? `<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>` : ''}
+        ${b.nom}
+      </button>`;
+    }).join('');
+}
+
+window.toggleAllFilter = async function(id) {
+  const allIds = sortedBoutiques().map(b => b.id);
+  const activeIds = ALL_FILTER !== null ? [...ALL_FILTER] : [...allIds];
+  const idx = activeIds.indexOf(id);
+  if (idx >= 0) {
+    if (activeIds.length <= 1) { toast('Sélectionne au moins une boutique', 'err'); return; }
+    activeIds.splice(idx, 1);
+  } else {
+    activeIds.push(id);
+  }
+  ALL_FILTER = activeIds.length === allIds.length ? null : activeIds;
+  saveAllFilter();
+  renderAllFilter();
+  await loadData();
+  refreshCurrentPanel();
+};
+
 function sortedBoutiques() {
   const ordered = [];
   BOUTIQUE_ORDER.forEach(id => { const b = BOUTIQUES.find(b => b.id === id); if (b) ordered.push(b); });
@@ -876,6 +938,7 @@ async function loadBoutiques() {
     if (error) throw error;
     BOUTIQUES = data;
     loadBoutiqueOrder();
+    loadAllFilter();
     const saved = localStorage.getItem('ar_boutique_id');
     if (saved === 'all') {
       CURRENT_BOUTIQUE = null;
@@ -910,11 +973,13 @@ function renderBoutiqueToggle() {
   if (c1) c1.innerHTML = html;
   if (c2) c2.innerHTML = html;
   updateBoutiqueActionsBar();
+  renderAllFilter();
 }
 
 // ─── DRAG & DROP BOUTIQUES ────────────────────────────────────────────────────
 window.btqDragStart = function(e, id) {
   draggingBoutiqueId = id;
+  _dragMoved = false;
   e.dataTransfer.effectAllowed = 'move';
   setTimeout(() => e.target.classList.add('btq-dragging'), 0);
 };
@@ -941,6 +1006,7 @@ window.btqDrop = function(e, targetId) {
   newOrder.splice(fromIdx, 1);
   newOrder.splice(toIdx, 0, draggingBoutiqueId);
   BOUTIQUE_ORDER = newOrder;
+  _dragMoved = true;
   saveBoutiqueOrder();
   draggingBoutiqueId = null;
   renderBoutiqueToggle();
@@ -951,6 +1017,7 @@ window.btqDragEnd = function(e) {
   document.querySelectorAll('.btq-dragging, .btq-drag-over').forEach(el => {
     el.classList.remove('btq-dragging', 'btq-drag-over');
   });
+  setTimeout(() => { _dragMoved = false; }, 100);
 };
 
 function updateBoutiqueActionsBar() {
@@ -967,6 +1034,7 @@ window.switchToAll = async function() {
   CURRENT_BOUTIQUE = null;
   localStorage.setItem('ar_boutique_id', 'all');
   renderBoutiqueToggle();
+  renderAllFilter();
   await Promise.all([loadData(), loadGoal()]);
   refreshCurrentPanel();
   toast('All — toutes les boutiques', 'ok');
@@ -979,6 +1047,7 @@ window.deleteBoutiqueFromPanel = async function() {
 };
 
 window.switchBoutique = async function(id) {
+  if (_dragMoved) return;
   const b = BOUTIQUES.find(b => b.id === id);
   if (!b || (CURRENT_BOUTIQUE && b.id === CURRENT_BOUTIQUE.id)) return;
   CURRENT_BOUTIQUE = b;
