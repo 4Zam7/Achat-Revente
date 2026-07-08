@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260707">
+  <link rel="stylesheet" href="style.css?v=20260708">
 </head>
 <body>
   <div id="app">
@@ -312,9 +312,15 @@
                 <div id="bilan-m-top"></div>
               </div>
             </div>
-            <div class="card">
-              <div class="card-title">Articles achetés ce mois</div>
-              <div id="bilan-m-achats"></div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Articles achetés ce mois</div>
+                <div id="bilan-m-achats"></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Articles vendus ce mois</div>
+                <div id="bilan-m-vendus"></div>
+              </div>
             </div>
           </div>
 
@@ -339,6 +345,16 @@
             <div class="card">
               <div class="card-title">Top 10 plus-values</div>
               <div id="bilan-y-top"></div>
+            </div>
+            <div class="chart-row">
+              <div class="card">
+                <div class="card-title">Articles achetés cette année</div>
+                <div id="bilan-y-achats"></div>
+              </div>
+              <div class="card">
+                <div class="card-title">Articles vendus cette année</div>
+                <div id="bilan-y-vendus"></div>
+              </div>
             </div>
           </div>
 
@@ -734,6 +750,6 @@
   <div id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260707"></script>
+  <script src="app.js?v=20260708"></script>
 </body>
 </html>

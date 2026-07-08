@@ -1300,6 +1300,17 @@ window.buildBilanMonth = function() {
           ${d.r !== null ? `<span class="badge b-green" style="margin-left:6px;font-size:10px">Vendu</span>` : `<span class="badge b-amber" style="margin-left:6px;font-size:10px">Stock</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article acheté ce mois</div>';
+
+  const soldThisMonth = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  document.getElementById('bilan-m-vendus').innerHTML = soldThisMonth.length
+    ? soldThisMonth.map(d => `
+        <div class="bilan-achat-item">
+          <div class="bilan-achat-name">${d.n}</div>
+          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
+          <span class="pv-pos" style="margin-left:6px;font-size:10px">+${(d.r - d.a).toFixed(0)}€</span>
+        </div>`).join('')
+    : '<div class="empty-state">Aucun article vendu ce mois</div>';
 };
 
 window.buildBilanYear = function() {
@@ -1368,6 +1379,28 @@ window.buildBilanYear = function() {
   const top10 = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
   document.getElementById('bilan-y-top').innerHTML = top10.length
     ? bilanTopHTML(top10, 10)
+    : '<div class="empty-state">Aucun article vendu cette année</div>';
+
+  const boughtSorted = bought.slice().sort((a, b) => (b.da || '').localeCompare(a.da || ''));
+  document.getElementById('bilan-y-achats').innerHTML = boughtSorted.length
+    ? boughtSorted.map(d => `
+        <div class="bilan-achat-item">
+          <div class="bilan-achat-name">${d.n}</div>
+          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
+          ${d.r !== null ? `<span class="badge b-green" style="margin-left:6px;font-size:10px">Vendu</span>` : `<span class="badge b-amber" style="margin-left:6px;font-size:10px">Stock</span>`}
+        </div>`).join('')
+    : '<div class="empty-state">Aucun article acheté cette année</div>';
+
+  const soldSorted = sold.slice().sort((a, b) => (b.dr || '').localeCompare(a.dr || ''));
+  document.getElementById('bilan-y-vendus').innerHTML = soldSorted.length
+    ? soldSorted.map(d => `
+        <div class="bilan-achat-item">
+          <div class="bilan-achat-name">${d.n}</div>
+          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
+          <span class="pv-pos" style="margin-left:6px;font-size:10px">+${(d.r - d.a).toFixed(0)}€</span>
+        </div>`).join('')
     : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
 
