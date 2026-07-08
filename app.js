@@ -1422,22 +1422,25 @@ window.doGlobalSearch = function () {
 
   container.innerHTML = `
     <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
-    ${results.slice(0, 8).map(d => {
+    ${results.slice(0, 10).map(d => {
       const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItem(${d.id})">
-        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
-        <div style="flex:1;min-width:0">
-          <div class="sri-name">${d.n}</div>
-          <div class="sri-meta">
-            <span class="sri-cat">${d.cat || '—'}</span>
-            <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
-            ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
-            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '○'}</div>
+        <div class="sri-body">
+          <div class="sri-top">
+            <span class="sri-name">${d.n}</span>
+            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}" style="flex-shrink:0">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+          </div>
+          <div class="sri-bottom">
+            ${d.cat ? `<span class="sri-cat">${d.cat}</span><span class="sri-sep">·</span>` : ''}
+            <span class="sri-price">Achat ${d.a.toFixed(2)}€</span>
+            ${d.r !== null ? `<span class="sri-arrow">→</span><span class="sri-price">${d.r.toFixed(2)}€</span>` : ''}
+            ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
           </div>
         </div>
       </div>`;
     }).join('')}
-    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres — affinez la recherche</div>` : ''}
+    ${results.length > 10 ? `<div class="search-empty">+ ${results.length - 10} autres — affinez la recherche</div>` : ''}
   `;
 };
 
@@ -1457,22 +1460,25 @@ window.doMobileSearch = function () {
 
   container.innerHTML = `
     <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
-    ${results.slice(0, 8).map(d => {
+    ${results.slice(0, 10).map(d => {
       const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItemMobile(${d.id})">
-        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
-        <div style="flex:1;min-width:0">
-          <div class="sri-name">${d.n}</div>
-          <div class="sri-meta">
-            <span class="sri-cat">${d.cat || '—'}</span>
-            <span class="sri-price">${d.a.toFixed(2)}€${d.r !== null ? ' → ' + d.r.toFixed(2) + '€' : ''}</span>
-            ${pv !== null ? `<span class="sri-pv">+${pv}€</span>` : ''}
-            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+        <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '○'}</div>
+        <div class="sri-body">
+          <div class="sri-top">
+            <span class="sri-name">${d.n}</span>
+            <span class="badge ${d.r !== null ? 'b-green' : 'b-amber'}" style="flex-shrink:0">${d.r !== null ? 'Vendu' : 'Stock'}</span>
+          </div>
+          <div class="sri-bottom">
+            ${d.cat ? `<span class="sri-cat">${d.cat}</span><span class="sri-sep">·</span>` : ''}
+            <span class="sri-price">Achat ${d.a.toFixed(2)}€</span>
+            ${d.r !== null ? `<span class="sri-arrow">→</span><span class="sri-price">${d.r.toFixed(2)}€</span>` : ''}
+            ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
           </div>
         </div>
       </div>`;
     }).join('')}
-    ${results.length > 8 ? `<div class="search-empty">+ ${results.length - 8} autres — affinez la recherche</div>` : ''}
+    ${results.length > 10 ? `<div class="search-empty">+ ${results.length - 10} autres — affinez la recherche</div>` : ''}
   `;
 };
 
