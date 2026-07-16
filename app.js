@@ -94,6 +94,8 @@ function normalize(row) {
     dr: row.date_revente || null,
     cat: row.categorie || '',
     boutique_id: row.boutique_id,
+    sku: row.sku || '',
+    cmd: row.num_commande || '',
   };
 }
 
@@ -133,6 +135,7 @@ window.showTab = function (id) {
   document.getElementById('panel-' + id).classList.add('active');
   if (id === 'bilan') buildBilanSelectors();
   else if (id === 'radar') { filterRadar(); }
+  else if (id === 'urssaf') buildUrssaf();
   else refreshCurrentPanel();
 };
 
@@ -143,6 +146,7 @@ function refreshCurrentPanel() {
   else if (currentTab === 'stock') buildStock();
   else if (currentTab === 'bilan') buildBilanSelectors();
   else if (currentTab === 'radar') filterRadar();
+  else if (currentTab === 'urssaf') buildUrssaf();
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
@@ -461,8 +465,11 @@ function renderItems(items) {
          <button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer">
            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
          </button>`;
+    const skuHtml = d.sku ? `<span class="td-meta-tag">SKU ${d.sku}</span>` : '';
+    const cmdHtml = d.cmd ? `<span class="td-meta-tag">Cmd ${d.cmd}</span>` : '';
+    const metaTags = skuHtml || cmdHtml ? `<div class="td-meta-row">${skuHtml}${cmdHtml}</div>` : '';
     return `<tr>
-      <td class="td-name td-clickable" title="Cliquer pour modifier" onclick="openEditModal(${d.id})">${d.n}</td>
+      <td class="td-name td-clickable" title="Cliquer pour modifier" onclick="openEditModal(${d.id})">${d.n}${metaTags}</td>
       <td>${catBadge}</td>
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
@@ -552,6 +559,31 @@ function buildStock() {
       }
     }
   });
+
+  // Stock par SKU
+  const skuMap = {};
+  D.filter(d => d.sku && d.r === null).forEach(d => {
+    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0 };
+    skuMap[d.sku].items.push(d);
+    skuMap[d.sku].total += d.a;
+  });
+  const skuList = Object.values(skuMap).sort((a, b) => b.items.length - a.items.length);
+  const skuWrap = document.getElementById('sku-stock-wrap');
+  if (skuWrap) {
+    if (!skuList.length) {
+      skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
+    } else {
+      skuWrap.innerHTML = `<table class="sku-table">
+        <thead><tr><th>SKU</th><th>Articles</th><th>Qté stock</th><th>Valeur</th></tr></thead>
+        <tbody>${skuList.map(g => `<tr>
+          <td class="sku-cell">${g.sku}</td>
+          <td class="sku-names">${g.items.map(d => d.n).join(', ')}</td>
+          <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
+          <td class="td-num">${g.total.toFixed(2)}€</td>
+        </tr>`).join('')}</tbody>
+      </table>`;
+    }
+  }
 }
 
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────
@@ -561,6 +593,8 @@ window.openAddModal = function () {
   document.getElementById('f-achat').value = '';
   document.getElementById('f-date').value = today();
   document.getElementById('f-cat').value = '';
+  document.getElementById('f-sku').value = '';
+  document.getElementById('f-cmd').value = '';
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-nom').focus(), 100);
 };
@@ -571,13 +605,15 @@ window.addArticle = async function () {
   const achat = parseFloat(document.getElementById('f-achat').value);
   const date = document.getElementById('f-date').value;
   const cat = document.getElementById('f-cat').value;
+  const sku = document.getElementById('f-sku').value.trim() || null;
+  const cmd = document.getElementById('f-cmd').value.trim() || null;
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
 
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
 
   try {
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null, boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null }]);
+    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null, boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null, sku, num_commande: cmd }]);
     if (error) throw error;
     const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
     if (inserted.data) D.push(normalize(inserted.data));
@@ -676,6 +712,8 @@ window.openEditModal = function (id) {
   document.getElementById('e-date-achat').value = it.da;
   document.getElementById('e-vente').value = it.r !== null ? it.r : '';
   document.getElementById('e-date-vente').value = it.dr || '';
+  document.getElementById('e-sku').value = it.sku || '';
+  document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('e-nom').focus(), 100);
 };
@@ -692,6 +730,8 @@ window.confirmEdit = async function () {
   const dateAchat = document.getElementById('e-date-achat').value;
   const venteVal = document.getElementById('e-vente').value;
   const dateVente = document.getElementById('e-date-vente').value;
+  const sku = document.getElementById('e-sku').value.trim() || null;
+  const cmd = document.getElementById('e-cmd').value.trim() || null;
   if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
@@ -704,10 +744,12 @@ window.confirmEdit = async function () {
       date_achat: dateAchat,
       prix_revente: vente,
       date_revente: (vente !== null && dateVente) ? dateVente : null,
+      sku,
+      num_commande: cmd,
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -1404,6 +1446,145 @@ window.buildBilanYear = function() {
     : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
 
+
+// ─── URSSAF ──────────────────────────────────────────────────────────────────
+
+const URSSAF_TAUX_SOCIAL = 0.123;  // 12.3% cotisations sociales 2025 (BIC ventes de marchandises)
+const URSSAF_TAUX_CFP    = 0.001;  // 0.1% CFP
+
+function urssafMonths() {
+  const now = new Date();
+  const months = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+  return months; // [current, -1, -2]
+}
+
+function urssafMonthLabel(key) {
+  const [y, m] = key.split('-');
+  const ms = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  return `${ms[parseInt(m) - 1]} ${y}`;
+}
+
+function urssafCaForMonth(key) {
+  const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
+  const total = sold.reduce((s, d) => s + d.r, 0);
+  // breakdown by boutique
+  const byBoutique = {};
+  sold.forEach(d => {
+    const bid = d.boutique_id;
+    if (!byBoutique[bid]) byBoutique[bid] = 0;
+    byBoutique[bid] += d.r;
+  });
+  return { total, byBoutique, count: sold.length };
+}
+
+async function loadUrssafStatus(key) {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key', `urssaf_${key}`).single();
+    return data ? JSON.parse(data.value) : null;
+  } catch(e) { return null; }
+}
+
+async function saveUrssafStatus(key, status) {
+  await sb.from('settings').upsert({ key: `urssaf_${key}`, value: JSON.stringify(status) });
+}
+
+async function cleanupOldUrssaf() {
+  const keep = new Set(urssafMonths().map(k => `urssaf_${k}`));
+  try {
+    const { data } = await sb.from('settings').select('key').like('key', 'urssaf_%');
+    if (!data) return;
+    const toDelete = data.map(r => r.key).filter(k => !keep.has(k));
+    if (toDelete.length) await sb.from('settings').delete().in('key', toDelete);
+  } catch(e) {}
+}
+
+async function buildUrssaf() {
+  const months = urssafMonths();
+  cleanupOldUrssaf();
+
+  const statuses = await Promise.all(months.map(k => loadUrssafStatus(k)));
+
+  const wrap = document.getElementById('urssaf-wrap');
+  if (!wrap) return;
+
+  const now = new Date();
+  const isCurrentMonth = (key) => {
+    const [y, m] = key.split('-');
+    return parseInt(y) === now.getFullYear() && parseInt(m) === now.getMonth() + 1;
+  };
+
+  wrap.innerHTML = months.map((key, i) => {
+    const ca = urssafCaForMonth(key);
+    const cotisations = ca.total * URSSAF_TAUX_SOCIAL;
+    const cfp = ca.total * URSSAF_TAUX_CFP;
+    const total = cotisations + cfp;
+    const status = statuses[i];
+    const declared = status?.declared;
+    const declaredAt = status?.declared_at || '';
+    const isCurrent = isCurrentMonth(key);
+
+    // Boutique breakdown
+    const boutiqueLines = Object.entries(ca.byBoutique).map(([bid, val]) => {
+      const b = BOUTIQUES.find(b => b.id === parseInt(bid));
+      return `<div class="urssaf-boutique-row">
+        <span>${b ? b.nom : 'Boutique'}</span>
+        <span class="td-num">${val.toFixed(2)}€</span>
+      </div>`;
+    }).join('');
+
+    return `<div class="urssaf-card ${declared ? 'urssaf-declared' : ''} ${isCurrent ? 'urssaf-current' : ''}">
+      <div class="urssaf-card-header">
+        <div>
+          <div class="urssaf-month">${urssafMonthLabel(key)}</div>
+          ${isCurrent ? '<div class="urssaf-tag urssaf-tag-current">Mois en cours</div>' : ''}
+          ${declared ? `<div class="urssaf-tag urssaf-tag-done">✓ Déclaré${declaredAt ? ' le ' + declaredAt : ''}</div>` : (!isCurrent ? '<div class="urssaf-tag urssaf-tag-pending">À déclarer</div>' : '')}
+        </div>
+        ${declared ? `<button class="urssaf-undeclare" onclick="toggleUrssafDeclared('${key}', false)">Annuler</button>` : ''}
+      </div>
+
+      <div class="urssaf-amounts">
+        <div class="urssaf-row urssaf-row-main">
+          <span>Chiffre d'affaires</span>
+          <span class="urssaf-ca">${ca.total.toFixed(2)}€</span>
+        </div>
+        <div class="urssaf-sub-label">Ventes de marchandises (BIC) — ${ca.count} article${ca.count > 1 ? 's' : ''} vendu${ca.count > 1 ? 's' : ''}</div>
+        ${boutiqueLines ? `<div class="urssaf-boutiques">${boutiqueLines}</div>` : ''}
+      </div>
+
+      <div class="urssaf-cotisations">
+        <div class="urssaf-row">
+          <span>Cotisations sociales <span class="urssaf-rate">12.3%</span></span>
+          <span>${cotisations.toFixed(2)}€</span>
+        </div>
+        <div class="urssaf-row">
+          <span>CFP <span class="urssaf-rate">0.1%</span></span>
+          <span>${cfp.toFixed(2)}€</span>
+        </div>
+        <div class="urssaf-row urssaf-row-total">
+          <span>Total estimé</span>
+          <span>${total.toFixed(2)}€</span>
+        </div>
+      </div>
+
+      ${!declared ? `<button class="urssaf-declare-btn" onclick="toggleUrssafDeclared('${key}', true)">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Marquer comme déclaré
+      </button>` : ''}
+    </div>`;
+  }).join('');
+}
+
+window.toggleUrssafDeclared = async function(key, declared) {
+  const today_str = new Date().toLocaleDateString('fr-FR');
+  const status = declared ? { declared: true, declared_at: today_str } : { declared: false };
+  await saveUrssafStatus(key, status);
+  buildUrssaf();
+  toast(declared ? 'Déclaration enregistrée' : 'Déclaration annulée', 'ok');
+};
 
 // ─── RECHERCHE GLOBALE ────────────────────────────────────────────────────────
 window.doGlobalSearch = function () {

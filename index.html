@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260708b">
+  <link rel="stylesheet" href="style.css?v=20260709">
 </head>
 <body>
   <div id="app">
@@ -121,6 +121,10 @@
         <button class="tab" data-tab="radar" onclick="showTab('radar')">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5"/><circle cx="8" cy="8" r="3.5" stroke="currentColor" stroke-width="1.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="8" r="1" fill="currentColor"/></svg>
           <span>Radar</span>
+        </button>
+        <button class="tab" data-tab="urssaf" onclick="showTab('urssaf')">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 8h6M5 5h6M5 11h3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span>URSSAF</span>
         </button>
       </nav>
 
@@ -280,6 +284,10 @@
             <div class="card-title">Stock — valeur investie par article</div>
             <div id="pv-wrap2"></div>
           </div>
+          <div class="card">
+            <div class="card-title">Stock par SKU</div>
+            <div id="sku-stock-wrap"></div>
+          </div>
         </div>
 
 
@@ -360,6 +368,17 @@
 
         </div>
 
+
+        <!-- URSSAF -->
+        <div id="panel-urssaf" class="panel">
+          <div class="urssaf-header">
+            <div>
+              <div class="urssaf-title">Déclarations URSSAF</div>
+              <div class="urssaf-subtitle">Auto-entrepreneur · Ventes de marchandises (BIC) · Taux 2025</div>
+            </div>
+          </div>
+          <div id="urssaf-wrap" class="urssaf-grid"></div>
+        </div>
 
         <!-- RADAR -->
         <div id="panel-radar" class="panel">
@@ -468,6 +487,16 @@
           <input type="date" id="f-date">
         </div>
       </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>SKU <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="f-sku" placeholder="Ex : VEST-ADI-001" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>N° commande <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="f-cmd" placeholder="Ex : CMD-2024-001" autocomplete="off">
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="addArticle()" id="btn-add-confirm">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -548,12 +577,22 @@
       </div>
       <div class="form-row">
         <div class="fg">
-          <label>Prix de vente (€) <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <label>Prix de vente (€) <span class="fg-opt">optionnel</span></label>
           <input type="number" id="e-vente" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
         </div>
         <div class="fg">
-          <label>Date de vente <span style="opacity:0.5;font-size:10px">optionnel</span></label>
+          <label>Date de vente <span class="fg-opt">optionnel</span></label>
           <input type="date" id="e-date-vente">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>SKU <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="e-sku" placeholder="Ex : VEST-ADI-001" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>N° commande <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="e-cmd" placeholder="Ex : CMD-2024-001" autocomplete="off">
         </div>
       </div>
       <div class="modal-actions">
@@ -750,6 +789,6 @@
   <div id="toast"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260708b"></script>
+  <script src="app.js?v=20260709"></script>
 </body>
 </html>
