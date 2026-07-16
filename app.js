@@ -62,7 +62,7 @@ async function showApp() {
   hideLoading();
   buildOverview();
   setupRealtimeSync();
-  document.getElementById('f-date').value = today();
+  dpSetValue('f-date', today());
 }
 
 async function loadData() {
@@ -583,7 +583,7 @@ window.openAddModal = function () {
   document.getElementById('f-nom').value = '';
   const alertEl = document.getElementById('radar-alert'); if(alertEl) alertEl.style.display='none';
   document.getElementById('f-achat').value = '';
-  document.getElementById('f-date').value = today();
+  dpSetValue('f-date', today());
   document.getElementById('f-cat').value = '';
   document.getElementById('f-sku').value = '';
   document.getElementById('f-cmd').value = '';
@@ -625,7 +625,7 @@ window.openSellModal = function (id) {
   const it = D.find(d => d.id === id);
   document.getElementById('modal-name').textContent = it.n + ' — acheté ' + it.a.toFixed(2) + '€ le ' + it.da;
   document.getElementById('m-prix').value = '';
-  document.getElementById('m-date').value = today();
+  dpSetValue('m-date', today());
   document.getElementById('sell-modal').classList.add('open');
   setTimeout(() => document.getElementById('m-prix').focus(), 100);
 };
@@ -701,9 +701,9 @@ window.openEditModal = function (id) {
   document.getElementById('e-nom').value = it.n;
   document.getElementById('e-cat').value = it.cat || '';
   document.getElementById('e-achat').value = it.a;
-  document.getElementById('e-date-achat').value = it.da;
+  dpSetValue('e-date-achat', it.da);
   document.getElementById('e-vente').value = it.r !== null ? it.r : '';
-  document.getElementById('e-date-vente').value = it.dr || '';
+  dpSetValue('e-date-vente', it.dr || '');
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('edit-modal').classList.add('open');
@@ -1443,6 +1443,7 @@ window.buildBilanYear = function() {
 
 const URSSAF_TAUX_SOCIAL = 0.123;  // 12.3% cotisations sociales 2025 (BIC ventes de marchandises)
 const URSSAF_TAUX_CFP    = 0.001;  // 0.1% CFP
+let URSSAF_EXCLUDED = new Set(); // boutique IDs excluded from URSSAF
 
 function urssafMonths() {
   const now = new Date();
@@ -1461,7 +1462,7 @@ function urssafMonthLabel(key) {
 }
 
 function urssafCaForMonth(key) {
-  const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
+  const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key) && !URSSAF_EXCLUDED.has(d.boutique_id));
   const total = sold.reduce((s, d) => s + d.r, 0);
   // breakdown by boutique
   const byBoutique = {};
@@ -1484,8 +1485,27 @@ async function saveUrssafStatus(key, status) {
   await sb.from('settings').upsert({ key: `urssaf_${key}`, value: JSON.stringify(status) });
 }
 
+async function loadUrssafExcluded() {
+  try {
+    const { data } = await sb.from('settings').select('value').eq('key', 'urssaf_excluded').single();
+    URSSAF_EXCLUDED = data ? new Set(JSON.parse(data.value)) : new Set();
+  } catch(e) { URSSAF_EXCLUDED = new Set(); }
+}
+
+async function saveUrssafExcluded() {
+  await sb.from('settings').upsert({ key: 'urssaf_excluded', value: JSON.stringify(Array.from(URSSAF_EXCLUDED)) });
+}
+
+window.toggleUrssafBoutique = async function(bid) {
+  bid = parseInt(bid);
+  if (URSSAF_EXCLUDED.has(bid)) URSSAF_EXCLUDED.delete(bid);
+  else URSSAF_EXCLUDED.add(bid);
+  await saveUrssafExcluded();
+  buildUrssaf();
+};
+
 async function cleanupOldUrssaf() {
-  const keep = new Set(urssafMonths().map(k => `urssaf_${k}`));
+  const keep = new Set([...urssafMonths().map(k => `urssaf_${k}`), 'urssaf_excluded']);
   try {
     const { data } = await sb.from('settings').select('key').like('key', 'urssaf_%');
     if (!data) return;
@@ -1497,11 +1517,26 @@ async function cleanupOldUrssaf() {
 async function buildUrssaf() {
   const months = urssafMonths();
   cleanupOldUrssaf();
+  await loadUrssafExcluded();
 
   const statuses = await Promise.all(months.map(k => loadUrssafStatus(k)));
 
   const wrap = document.getElementById('urssaf-wrap');
   if (!wrap) return;
+
+  const configEl = document.getElementById('urssaf-config');
+  if (configEl) {
+    const checkIcon = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    configEl.innerHTML = BOUTIQUES.length ? `<div class="urssaf-config">
+      <div class="urssaf-config-title">Boutiques incluses dans la déclaration</div>
+      <div class="urssaf-config-btqs">${BOUTIQUES.map(b => {
+        const active = !URSSAF_EXCLUDED.has(b.id);
+        return `<label class="urssaf-btq-label${active ? ' urssaf-btq-active' : ''}" onclick="toggleUrssafBoutique(${b.id})">
+          ${active ? checkIcon : ''}${b.nom}
+        </label>`;
+      }).join('')}</div>
+    </div>` : '';
+  }
 
   const now = new Date();
   const isCurrentMonth = (key) => {
@@ -1576,6 +1611,85 @@ window.toggleUrssafDeclared = async function(key, declared) {
   await saveUrssafStatus(key, status);
   buildUrssaf();
   toast(declared ? 'Déclaration enregistrée' : 'Déclaration annulée', 'ok');
+};
+
+// ─── DATE PICKER ─────────────────────────────────────────────────────────────
+let _dpTarget = null, _dpYear = 0, _dpMonth = 0;
+
+function _dpRender() {
+  const MO = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  document.getElementById('dp-title').textContent = `${MO[_dpMonth]} ${_dpYear}`;
+  const now = new Date();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const sel = _dpTarget?.value || '';
+  const firstDay = new Date(_dpYear, _dpMonth, 1).getDay();
+  const offset = (firstDay + 6) % 7;
+  const dim = new Date(_dpYear, _dpMonth + 1, 0).getDate();
+  let h = '';
+  for (let i = 0; i < offset; i++) h += '<span class="dp-empty"></span>';
+  for (let d = 1; d <= dim; d++) {
+    const ymd = `${_dpYear}-${String(_dpMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = 'dp-cell' + (ymd === todayStr ? ' dp-today' : '') + (ymd === sel ? ' dp-sel' : '');
+    h += `<button class="${cls}" onclick="dpSelect('${ymd}')">${d}</button>`;
+  }
+  document.getElementById('dp-grid').innerHTML = h;
+}
+
+window.dpOpen = function(input) {
+  _dpTarget = input;
+  const val = input.value;
+  const now = new Date();
+  if (val && /^\d{4}-\d{2}-\d{2}$/.test(val)) {
+    _dpYear = parseInt(val.slice(0,4)); _dpMonth = parseInt(val.slice(5,7)) - 1;
+  } else {
+    _dpYear = now.getFullYear(); _dpMonth = now.getMonth();
+  }
+  _dpRender();
+  const rect = input.getBoundingClientRect();
+  const panel = document.getElementById('dp-panel');
+  document.getElementById('dp').style.display = 'block';
+  let top = rect.bottom + 6, left = rect.left;
+  if (left + 284 > window.innerWidth - 8) left = window.innerWidth - 284 - 8;
+  if (top + 290 > window.innerHeight) top = rect.top - 290 - 6;
+  panel.style.top = Math.max(8, top) + 'px';
+  panel.style.left = Math.max(8, left) + 'px';
+};
+
+window.dpClose = function() {
+  document.getElementById('dp').style.display = 'none';
+  _dpTarget = null;
+};
+
+window.dpMove = function(dir) {
+  _dpMonth += dir;
+  if (_dpMonth < 0) { _dpMonth = 11; _dpYear--; }
+  if (_dpMonth > 11) { _dpMonth = 0; _dpYear++; }
+  _dpRender();
+};
+
+window.dpSelect = function(ymd) {
+  if (_dpTarget) {
+    _dpTarget.value = ymd;
+    const clr = document.getElementById('clr-' + _dpTarget.id);
+    if (clr) clr.style.display = 'inline-flex';
+    _dpTarget.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  dpClose();
+};
+
+window.dpClear = function(id) {
+  const el = document.getElementById(id);
+  if (el) { el.value = ''; el.dispatchEvent(new Event('change', { bubbles: true })); }
+  const clr = document.getElementById('clr-' + id);
+  if (clr) clr.style.display = 'none';
+};
+
+window.dpSetValue = function(id, val) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = val || '';
+  const clr = document.getElementById('clr-' + id);
+  if (clr) clr.style.display = val ? 'inline-flex' : 'none';
 };
 
 // ─── RECHERCHE GLOBALE ────────────────────────────────────────────────────────

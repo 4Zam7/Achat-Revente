@@ -359,11 +359,70 @@ tr:hover td { background: var(--bg3); }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 99px; }
 
-/* DATE INPUT */
-input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(0.6);
-  cursor: pointer;
+/* DATE WRAP + CUSTOM PICKER INPUT */
+.date-wrap { position: relative; display: flex; align-items: center; }
+.date-input {
+  width: 100%; padding: 10px 36px 10px 13px;
+  font-size: 14px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  font-family: 'DM Mono', monospace; cursor: pointer; box-sizing: border-box;
 }
+.date-input::placeholder { color: var(--text3); }
+.date-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,143,249,0.12); }
+.date-cal-icon {
+  position: absolute; right: 11px; color: var(--text3); pointer-events: none; flex-shrink: 0;
+}
+.date-clear-btn {
+  display: none; position: absolute; right: 30px;
+  background: none; border: none; cursor: pointer;
+  color: var(--text3); font-size: 16px; line-height: 1; padding: 0 2px;
+  align-items: center; justify-content: center;
+  transition: color 0.15s;
+}
+.date-clear-btn:hover { color: var(--red-text); }
+
+/* DATE PICKER PANEL */
+.dp-panel {
+  position: fixed; background: var(--bg2); border: 1px solid var(--border2);
+  border-radius: var(--radius); padding: 14px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  width: 284px; z-index: 9001;
+}
+.dp-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
+}
+.dp-title { font-size: 14px; font-weight: 600; color: var(--text); }
+.dp-nav {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text2);
+  width: 28px; height: 28px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; line-height: 1; transition: all 0.15s;
+  font-family: sans-serif;
+}
+.dp-nav:hover { background: var(--bg4); color: var(--text); }
+.dp-wkdays {
+  display: grid; grid-template-columns: repeat(7, 1fr);
+  margin-bottom: 6px;
+}
+.dp-wkdays span {
+  text-align: center; font-size: 10px; font-weight: 600;
+  color: var(--text3); text-transform: uppercase; padding: 2px 0;
+}
+.dp-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+}
+.dp-empty { aspect-ratio: 1; }
+.dp-cell {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  font-size: 13px; border-radius: 6px; cursor: pointer;
+  background: none; border: none; color: var(--text2);
+  font-family: 'DM Sans', sans-serif; transition: all 0.12s;
+}
+.dp-cell:hover { background: var(--bg4); color: var(--text); }
+.dp-cell.dp-today { color: var(--accent); font-weight: 700; border: 1px solid rgba(91,143,249,0.4); }
+.dp-cell.dp-sel { background: var(--accent); color: #fff; font-weight: 600; border: none; }
+.dp-cell.dp-sel:hover { background: var(--accent); }
 
 /* REFRESH BUTTON */
 .btn-refresh-header {
@@ -1362,3 +1421,26 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   text-decoration: underline; padding: 0; flex-shrink: 0;
 }
 .urssaf-undeclare:hover { color: var(--red-text); }
+
+.urssaf-config {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: .875rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.urssaf-config-title {
+  font-size: 10px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--text3); margin-bottom: 10px;
+}
+.urssaf-config-btqs { display: flex; flex-wrap: wrap; gap: 8px; }
+.urssaf-btq-label {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 13px; color: var(--text3); cursor: pointer;
+  padding: 5px 12px; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--bg3);
+  transition: all 0.15s; user-select: none;
+}
+.urssaf-btq-label:hover { border-color: var(--border2); color: var(--text2); }
+.urssaf-btq-label.urssaf-btq-active {
+  border-color: rgba(90,216,166,0.35); background: rgba(90,216,166,0.06);
+  color: var(--green-text);
+}

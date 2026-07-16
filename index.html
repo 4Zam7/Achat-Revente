@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260716">
+  <link rel="stylesheet" href="style.css?v=20260717">
 </head>
 <body>
   <div id="app">
@@ -377,6 +377,7 @@
               <div class="urssaf-subtitle">Auto-entrepreneur · Ventes de marchandises (BIC) · Taux 2025</div>
             </div>
           </div>
+          <div id="urssaf-config"></div>
           <div id="urssaf-wrap" class="urssaf-grid"></div>
         </div>
 
@@ -484,7 +485,10 @@
         </div>
         <div class="fg">
           <label>Date d'achat</label>
-          <input type="date" id="f-date">
+          <div class="date-wrap">
+            <input type="text" id="f-date" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -572,7 +576,10 @@
         </div>
         <div class="fg">
           <label>Date d'achat</label>
-          <input type="date" id="e-date-achat">
+          <div class="date-wrap">
+            <input type="text" id="e-date-achat" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -582,7 +589,11 @@
         </div>
         <div class="fg">
           <label>Date de vente <span class="fg-opt">optionnel</span></label>
-          <input type="date" id="e-date-vente">
+          <div class="date-wrap">
+            <input type="text" id="e-date-vente" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <button class="date-clear-btn" id="clr-e-date-vente" onclick="dpClear('e-date-vente')" style="display:none" title="Effacer">×</button>
+            <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
         </div>
       </div>
       <div class="form-row">
@@ -622,7 +633,10 @@
         </div>
         <div class="fg">
           <label>Date de vente</label>
-          <input type="date" id="m-date">
+          <div class="date-wrap">
+            <input type="text" id="m-date" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
         </div>
       </div>
       <div class="modal-actions">
@@ -788,7 +802,22 @@
   <!-- TOAST -->
   <div id="toast"></div>
 
+  <!-- DATE PICKER OVERLAY -->
+  <div id="dp" style="display:none;position:fixed;inset:0;z-index:9000" onclick="if(event.target===this)dpClose()">
+    <div id="dp-panel" class="dp-panel">
+      <div class="dp-head">
+        <button class="dp-nav" onclick="dpMove(-1)">‹</button>
+        <span id="dp-title" class="dp-title"></span>
+        <button class="dp-nav" onclick="dpMove(1)">›</button>
+      </div>
+      <div class="dp-wkdays">
+        <span>Lu</span><span>Ma</span><span>Me</span><span>Je</span><span>Ve</span><span>Sa</span><span>Di</span>
+      </div>
+      <div id="dp-grid" class="dp-grid"></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260716"></script>
+  <script src="app.js?v=20260717"></script>
 </body>
 </html>
