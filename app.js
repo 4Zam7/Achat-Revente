@@ -450,9 +450,9 @@ function renderItems(items) {
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
-    const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
-    const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
-    const metaTags = skuHtml || cmdHtml ? `<div class="td-meta-row">${skuHtml}${cmdHtml}</div>` : '';
+    const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
+    const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
+    const metaInline = [skuHtml, cmdHtml].filter(Boolean).join('');
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
     const statusCell = d.r === null
       ? `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>`
@@ -461,7 +461,7 @@ function renderItems(items) {
       ? delBtn
       : `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>${delBtn}`;
     return `<tr>
-      <td class="td-name td-clickable" title="Cliquer pour modifier" onclick="openEditModal(${d.id})">${d.n}${metaTags}</td>
+      <td class="td-name"><span class="name-link" onclick="openEditModal(${d.id})">${d.n}</span>${metaInline}</td>
       <td>${catBadge}</td>
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
@@ -1525,18 +1525,14 @@ async function buildUrssaf() {
   if (!wrap) return;
 
   const configEl = document.getElementById('urssaf-config');
-  if (configEl) {
-    const checkIcon = `<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-    configEl.innerHTML = BOUTIQUES.length ? `<div class="urssaf-config">
-      <div class="urssaf-config-title">Boutiques incluses dans la déclaration</div>
-      <div class="urssaf-config-btqs">${BOUTIQUES.map(b => {
-        const active = !URSSAF_EXCLUDED.has(b.id);
-        return `<label class="urssaf-btq-label${active ? ' urssaf-btq-active' : ''}" onclick="toggleUrssafBoutique(${b.id})">
-          ${active ? checkIcon : ''}${b.nom}
-        </label>`;
-      }).join('')}</div>
-    </div>` : '';
+  if (configEl && BOUTIQUES.length) {
+    configEl.innerHTML = `<div class="urssaf-btq-row">${BOUTIQUES.map(b => {
+      const on = !URSSAF_EXCLUDED.has(b.id);
+      return `<button class="urssaf-btq-pill${on ? ' urssaf-btq-pill-on' : ''}" onclick="toggleUrssafBoutique(${b.id})">${b.nom}</button>`;
+    }).join('')}</div>`;
   }
+  const allOff = BOUTIQUES.length > 0 && BOUTIQUES.every(b => URSSAF_EXCLUDED.has(b.id));
+  wrap.className = 'urssaf-grid' + (allOff ? ' urssaf-grid-off' : '');
 
   const now = new Date();
   const isCurrentMonth = (key) => {
