@@ -1236,11 +1236,23 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 /* ── ITEMS TABLE — SKU / CMD META TAGS ───────────────────────────────────── */
 .td-meta-row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
 .td-meta-tag {
+  display: inline-flex; align-items: center; gap: 3px;
   font-size: 9px; font-family: 'DM Mono', monospace; font-weight: 500;
   color: var(--text3); background: var(--bg4);
   border: 1px solid var(--border); border-radius: 4px;
   padding: 1px 5px; white-space: nowrap;
 }
+.td-meta-tag.td-meta-orange {
+  color: var(--amber-text);
+  background: var(--amber-bg);
+  border-color: rgba(246,189,22,0.25);
+}
+.td-copy-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; padding: 0;
+  color: inherit; opacity: 0.6; transition: opacity 0.15s; line-height: 1;
+}
+.td-copy-btn:hover { opacity: 1; }
 
 /* ── FORM OPT LABEL ──────────────────────────────────────────────────────── */
 .fg-opt {

@@ -441,41 +441,33 @@ function buildMonthly() {
 // ─── ITEMS ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
-    document.getElementById('items-body').innerHTML = `<tr><td colspan="6" class="empty-state">Aucun article trouvé</td></tr>`;
+    document.getElementById('items-body').innerHTML = `<tr><td colspan="7" class="empty-state">Aucun article trouvé</td></tr>`;
     return;
   }
+  const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   document.getElementById('items-body').innerHTML = items.map(d => {
     const pv = d.r !== null ? d.r - d.a : null;
-    const m = d.r !== null && d.a > 0 ? d.r / d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
-    const actionBtns = d.r === null
-      ? `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})">
-           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-           Vendu
-         </button>
-         <button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer">
-           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-         </button>`
-      : `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})">
-           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-           Annuler
-         </button>
-         <button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer">
-           <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-         </button>`;
-    const skuHtml = d.sku ? `<span class="td-meta-tag">SKU ${d.sku}</span>` : '';
-    const cmdHtml = d.cmd ? `<span class="td-meta-tag">Cmd ${d.cmd}</span>` : '';
+    const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
+    const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="event.stopPropagation();navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
     const metaTags = skuHtml || cmdHtml ? `<div class="td-meta-row">${skuHtml}${cmdHtml}</div>` : '';
+    const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
+    const statusCell = d.r === null
+      ? `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>`
+      : `<span class="badge b-green">Vendu</span>`;
+    const actionsCell = d.r === null
+      ? delBtn
+      : `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>${delBtn}`;
     return `<tr>
       <td class="td-name td-clickable" title="Cliquer pour modifier" onclick="openEditModal(${d.id})">${d.n}${metaTags}</td>
       <td>${catBadge}</td>
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
-      <td>${d.r !== null ? '<span class="badge b-green">Vendu</span>' : '<span class="badge b-amber">Stock</span>'}</td>
-      <td class="td-actions">${actionBtns}</td>
+      <td class="td-actions">${statusCell}</td>
+      <td class="td-actions">${actionsCell}</td>
     </tr>`;
   }).join('');
 }
