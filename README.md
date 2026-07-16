@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.7-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.8-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -25,20 +25,22 @@
 - 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase
 - 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix et dates
+- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU et n° commande
+- 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
 - 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
+- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU (quantité + valeur totale)
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
-- 🏷️ **Catégorie sauvegardée** — correctement enregistrée lors de l'ajout d'un article
-- 🔍 **Recherche globale** — barre de recherche dans le header (desktop) et sous la nav (mobile), résultats en temps réel avec prix et plus-value
-- 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic
+- 🔍 **Recherche globale** — barre de recherche dans le header (desktop) et sous la nav (mobile), résultats larges avec nom complet, prix d'achat/vente et plus-value
+- 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie et trier par plus-value, prix, date ou nom
-- 📅 **Bilan mensuel amélioré** — sélecteur Année puis Mois, affiche tous les mois même sans vente
+- 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
 - 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 3 onglets (Articles, Résumé, Bilan mensuel)
-- 📅 **Onglet Bilan** — bilan mensuel et annuel avec stats complètes, top plus-values, camembert catégories
+- 🗓️ **Calendrier personnalisé** — sélecteur de date sur mesure (navigation mois par mois, aujourd'hui mis en valeur, sélection en un clic)
+- 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois (mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
 - 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
 
 ---
@@ -316,6 +318,17 @@ UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
 
 ---
 
+### Ajouter les colonnes SKU et N° commande
+
+Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
+
+```sql
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
+```
+
+---
+
 ### Créer la table settings (objectif mensuel)
 
 Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
@@ -404,11 +417,28 @@ GRANT ALL ON settings TO service_role;
 | La recherche mobile ne s'affiche pas | Vérifiez que `style.css` est bien à jour — le `display:none` de base a été supprimé en v1.5 |
 | Les boutiques ne s'affichent pas | Vérifiez que la table `boutiques` est bien créée, exposée dans Data API, et que les articles existants ont bien un `boutique_id` assigné |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
+| SKU / N° commande ne se sauvegardent pas | Exécutez la migration `ALTER TABLE articles ADD COLUMN sku text; ALTER TABLE articles ADD COLUMN num_commande text;` dans le SQL Editor |
+| L'onglet URSSAF affiche 0€ partout | Vérifiez que des articles ont une `date_revente` renseignée pour les mois affichés, et que la boutique n'est pas désactivée (toggle URSSAF) |
 | Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
 
 ---
 
 ## 📝 Changelog
+
+### v1.8 — 16 Juillet 2026
+
+- 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA mensuel par boutique, cotisations estimées (12,3 % cotisations sociales + 0,1 % CFP), mois en cours + 2 mois précédents, marquage "Déclaré" avec date, nettoyage automatique des mois expirés
+- 🔀 **Toggle URSSAF par boutique** — activez/désactivez la déclaration URSSAF pour une boutique spécifique via un switch ; les 3 cartes mensuelles se grisent quand désactivé
+- 🔖 **Champ SKU** — identifiant article optionnel (ex : `VEST-ADI-001`), sauvegardé en base, affiché en orange sous le nom avec bouton copie
+- 📋 **Champ N° commande** — référence commande optionnelle (ex : `CMD-2024-001`), même traitement que le SKU
+- 📊 **Stock par SKU** — nouvelle section dans l'onglet Stock : articles regroupés par SKU avec quantité en stock et valeur totale
+- 📅 **Calendrier personnalisé** — remplacement du sélecteur de date natif par un calendrier sur mesure : navigation mois par mois, aujourd'hui cerclé en bleu, date sélectionnée en fond bleu, bouton effacer pour les dates optionnelles
+- 🔍 **Recherche redessinée** — dropdown plus large, nom complet sans troncature, prix d'achat → vente et plus-value lisibles d'un coup d'œil
+- 📅 **Bilan : articles vendus** — listes "Articles achetés" et "Articles vendus" côte à côte, aussi bien en bilan mensuel qu'annuel
+- 📱 **Mobile : boutiques au-dessus des onglets** — les pills de boutique et la barre de recherche s'affichent maintenant au-dessus des onglets Vue d'ensemble / Par mois / etc.
+- 🔃 **Ordre des boutiques synchronisé** — le glisser-déposer sur PC se reflète sur mobile via Supabase (clé `boutique_order` dans la table `settings`)
+- 🐛 Fix : bouton Vendu aligné avec Annuler sur toutes les lignes du tableau Articles
+- 🐛 Fix : bouton × (supprimer) toujours aligné avec les autres actions
 
 ### v1.7 — 27 Mai 2026
 - 🎯 **Radar marques** — nouvel onglet pour suivre les marques niches à surveiller en brocante
