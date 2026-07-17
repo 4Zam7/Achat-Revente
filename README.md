@@ -8,12 +8,12 @@
 
 ## 📸 Aperçu
 
-![Aperçu de l'application](screenshot.png)
+![Aperçu de l'application](assets/screenshot.png)
 
 <p align="center">
-  <a href="screenshot-mois.png"><img src="screenshot-mois.png" width="30%" alt="Par mois"/></a>&nbsp;&nbsp;
-  <a href="screenshot-articles.png"><img src="screenshot-articles.png" width="30%" alt="Articles"/></a>&nbsp;&nbsp;
-  <a href="screenshot-login.png"><img src="screenshot-login.png" width="30%" alt="Login"/></a>
+  <a href="assets/screenshot-mois.png"><img src="assets/screenshot-mois.png" width="30%" alt="Par mois"/></a>&nbsp;&nbsp;
+  <a href="assets/screenshot-articles.png"><img src="assets/screenshot-articles.png" width="30%" alt="Articles"/></a>&nbsp;&nbsp;
+  <a href="assets/screenshot-login.png"><img src="assets/screenshot-login.png" width="30%" alt="Login"/></a>
 </p>
 
 ---
@@ -160,10 +160,7 @@ Sauvegardez le fichier.
    - `app.js` *(celui que vous venez de modifier)*
    - `manifest.json`
    - `vercel.json`
-   - `favicon.png`
-   - `apple-touch-icon.png`
-   - `icon-192.png`
-   - `icon-512.png`
+   - le dossier `assets/` *(remplacez les icônes par les vôtres)*
 4. Cliquez **Commit changes**
 
 ---
@@ -220,12 +217,20 @@ achat-revente/
 ├── app.js            # Logique applicative + connexion Supabase
 ├── manifest.json     # Configuration PWA
 ├── vercel.json       # Configuration déploiement Vercel
-├── favicon.png       # Logo Laney (onglet navigateur)
-├── apple-touch-icon.png # Icône iPhone/iPad
-├── icon-192.png          # Icône Android
-├── icon-512.png          # Icône haute résolution
-└── README.md         # Ce fichier
+├── README.md         # Ce fichier
+└── assets/           # Icônes et captures d'écran (à remplacer par les vôtres)
+    ├── favicon.png          # Icône onglet navigateur
+    ├── favicon-64.png       # Icône header app
+    ├── apple-touch-icon.png # Icône iPhone/iPad
+    ├── icon-192.png         # Icône Android
+    ├── icon-512.png         # Icône haute résolution
+    ├── screenshot.png       # Capture d'écran README
+    ├── screenshot-mois.png
+    ├── screenshot-articles.png
+    └── screenshot-login.png
 ```
+
+> **Icônes** : remplacez les fichiers dans `assets/` par vos propres images pour personnaliser l'app. Les captures d'écran ne sont utilisées que dans ce README.
 
 ---
 
