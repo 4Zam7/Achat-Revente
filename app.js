@@ -796,11 +796,19 @@ function goalKey() {
 }
 
 async function loadGoal() {
-  try {
-    const { data } = await sb.from('settings').select('value').eq('key', goalKey()).single();
-    cachedGoal = data ? parseFloat(data.value) || 0 : 0;
-  } catch(e) {
-    cachedGoal = 0;
+  if (!CURRENT_BOUTIQUE) {
+    // All : somme des objectifs de chaque boutique
+    try {
+      const keys = BOUTIQUES.map(b => `monthly_goal_${b.id}`);
+      if (!keys.length) { cachedGoal = 0; return; }
+      const { data } = await sb.from('settings').select('key,value').in('key', keys);
+      cachedGoal = data ? data.reduce((s, r) => s + (parseFloat(r.value) || 0), 0) : 0;
+    } catch(e) { cachedGoal = 0; }
+  } else {
+    try {
+      const { data } = await sb.from('settings').select('value').eq('key', goalKey()).single();
+      cachedGoal = data ? parseFloat(data.value) || 0 : 0;
+    } catch(e) { cachedGoal = 0; }
   }
 }
 
@@ -810,9 +818,21 @@ function buildGoal() {
   const pct = goal > 0 ? Math.min((current / goal) * 100, 100) : 0;
   const pctReal = goal > 0 ? (current / goal) * 100 : 0;
 
-  document.getElementById('goal-month-label').textContent = getMonthLabel();
+  // Bouton édition : visible uniquement sur une boutique spécifique
+  const editBtn = document.querySelector('.goal-edit-btn');
+  if (editBtn) editBtn.style.display = CURRENT_BOUTIQUE ? '' : 'none';
+
+  // Sous-titre adapté au mode
+  const subtitle = document.getElementById('goal-subtitle');
+  if (subtitle) {
+    subtitle.innerHTML = CURRENT_BOUTIQUE
+      ? `Recettes de vente — <span id="goal-month-label">${getMonthLabel()}</span>`
+      : `Somme des objectifs boutiques — <span id="goal-month-label">${getMonthLabel()}</span>`;
+  } else {
+    document.getElementById('goal-month-label').textContent = getMonthLabel();
+  }
   document.getElementById('goal-current').textContent = current.toFixed(0) + '€';
-  document.getElementById('goal-target-display').textContent = goal > 0 ? goal.toFixed(0) + '€' : 'Non défini';
+  document.getElementById('goal-target-display').textContent = goal > 0 ? goal.toFixed(0) + '€' : (CURRENT_BOUTIQUE ? 'Non défini' : '—');
 
   const fill = document.getElementById('goal-bar-fill');
   const pctEl = document.getElementById('goal-pct');
@@ -860,6 +880,7 @@ function buildGoal() {
 }
 
 window.openGoalModal = function () {
+  if (!CURRENT_BOUTIQUE) return; // En mode All, l'objectif est la somme des boutiques
   document.getElementById('goal-input').value = cachedGoal > 0 ? cachedGoal : '';
   document.getElementById('goal-modal').classList.add('open');
   setTimeout(() => document.getElementById('goal-input').focus(), 100);
