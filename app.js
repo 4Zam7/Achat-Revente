@@ -1847,16 +1847,21 @@ window.closeConfirm = function(result) {
 window.exportExcel = function () {
   const wb = XLSX.utils.book_new();
   const ms = ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
+  const boutiqueLabel = CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.nom : 'Toutes';
 
   // ── Feuille 1 : Tous les articles ──────────────────────────────────────────
   const articlesData = [
-    ['ID', 'Nom', 'Catégorie', 'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente', 'Plus-value (€)', 'Multiplicateur', 'Statut']
+    ['ID', 'Nom', 'SKU', 'N° commande', 'Catégorie', 'Boutique',
+     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente',
+     'Plus-value (€)', 'Multiplicateur', 'Statut']
   ];
   D.forEach(d => {
-    const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
+    const pv   = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
     const mult = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
+    const btq  = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
     articlesData.push([
-      d.id, d.n, d.cat || '', d.a, d.da,
+      d.id, d.n, d.sku || '', d.cmd || '', d.cat || '', btq,
+      d.a, d.da,
       d.r !== null ? d.r : '', d.dr || '',
       pv, mult,
       d.r !== null ? 'Vendu' : 'En stock'
@@ -1864,16 +1869,17 @@ window.exportExcel = function () {
   });
   const ws1 = XLSX.utils.aoa_to_sheet(articlesData);
   ws1['!cols'] = [
-    {wch:6},{wch:32},{wch:16},{wch:14},{wch:12},
-    {wch:14},{wch:12},{wch:14},{wch:13},{wch:10}
+    {wch:6},{wch:32},{wch:18},{wch:18},{wch:16},{wch:18},
+    {wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:13},{wch:10}
   ];
   XLSX.utils.book_append_sheet(wb, ws1, 'Articles');
 
   // ── Feuille 2 : Résumé global ──────────────────────────────────────────────
   const s = stats();
   const resumeData = [
-    ['📊 RÉSUMÉ GLOBAL', ''],
+    ['📊 RÉSUMÉ', ''],
     ['Date export', new Date().toLocaleDateString('fr-FR')],
+    ['Boutique', boutiqueLabel],
     ['', ''],
     ['Articles achetés', s.count],
     ['Articles vendus', s.sold.length],
@@ -1896,12 +1902,12 @@ window.exportExcel = function () {
   D.forEach(d => {
     if (d.dr) {
       const k = d.dr.slice(0,7);
-      if (!mm[k]) mm[k] = { vendus: 0, recettes: 0, cout: 0, achetes: 0, montantAchete: 0 };
+      if (!mm[k]) mm[k] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
       mm[k].vendus++; mm[k].recettes += d.r; mm[k].cout += d.a;
     }
     if (d.da) {
       const ka = d.da.slice(0,7);
-      if (!mm[ka]) mm[ka] = { vendus: 0, recettes: 0, cout: 0, achetes: 0, montantAchete: 0 };
+      if (!mm[ka]) mm[ka] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
       mm[ka].achetes++; mm[ka].montantAchete += d.a;
     }
   });
@@ -1923,9 +1929,36 @@ window.exportExcel = function () {
   ws3['!cols'] = [{wch:16},{wch:16},{wch:14},{wch:16},{wch:14},{wch:8},{wch:16},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws3, 'Bilan mensuel');
 
+  // ── Feuille 4 : Stock par SKU ──────────────────────────────────────────────
+  const skuMap = {};
+  D.filter(d => d.sku && d.r === null).forEach(d => {
+    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, articles: [], totalAchat: 0 };
+    skuMap[d.sku].articles.push(d.n);
+    skuMap[d.sku].totalAchat += d.a;
+  });
+  const skuData = [
+    ['SKU', 'Quantité en stock', 'Valeur totale (€)', 'Articles']
+  ];
+  Object.values(skuMap)
+    .sort((a, b) => b.articles.length - a.articles.length)
+    .forEach(g => {
+      skuData.push([
+        g.sku,
+        g.articles.length,
+        +g.totalAchat.toFixed(2),
+        g.articles.join(', ')
+      ]);
+    });
+  if (skuData.length > 1) {
+    const ws4 = XLSX.utils.aoa_to_sheet(skuData);
+    ws4['!cols'] = [{wch:22},{wch:18},{wch:18},{wch:60}];
+    XLSX.utils.book_append_sheet(wb, ws4, 'Stock par SKU');
+  }
+
   // ── Génération du fichier ──────────────────────────────────────────────────
   const date = new Date().toISOString().slice(0,10);
-  XLSX.writeFile(wb, `Laney_backup_${date}.xlsx`);
+  const suffix = CURRENT_BOUTIQUE ? `_${CURRENT_BOUTIQUE.nom.replace(/\s+/g,'_')}` : '';
+  XLSX.writeFile(wb, `Laney_${date}${suffix}.xlsx`);
   toast('Export Excel téléchargé ✓', 'ok');
 };
 
