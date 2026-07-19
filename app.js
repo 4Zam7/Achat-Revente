@@ -97,6 +97,7 @@ function normalize(row) {
     sku: row.sku || '',
     cmd: row.num_commande || '',
     grossiste: row.grossiste || '',
+    qty: row.quantite || 1,
   };
 }
 
@@ -154,13 +155,16 @@ function refreshCurrentPanel() {
 function stats() {
   const sold = D.filter(d => d.r !== null);
   const stock = D.filter(d => d.r === null);
-  const totalRevente = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus = sold.reduce((s, d) => s + d.a, 0);
-  const benefice = totalRevente - coutVendus;
-  const roi = coutVendus > 0 ? (benefice / coutVendus) * 100 : 0;
-  const capitalStock = stock.reduce((s, d) => s + d.a, 0);
-  const totalAchat = D.reduce((s, d) => s + d.a, 0);
-  return { sold, stock, totalAchat, totalRevente, coutVendus, benefice, roi, count: D.length, capitalStock };
+  const totalRevente  = sold.reduce((s, d) => s + d.r * d.qty, 0);
+  const coutVendus    = sold.reduce((s, d) => s + d.a * d.qty, 0);
+  const benefice      = totalRevente - coutVendus;
+  const roi           = coutVendus > 0 ? (benefice / coutVendus) * 100 : 0;
+  const capitalStock  = stock.reduce((s, d) => s + d.a * d.qty, 0);
+  const totalAchat    = D.reduce((s, d) => s + d.a * d.qty, 0);
+  const count         = D.reduce((s, d) => s + d.qty, 0);
+  const soldCount     = sold.reduce((s, d) => s + d.qty, 0);
+  const stockCount    = stock.reduce((s, d) => s + d.qty, 0);
+  return { sold, stock, totalAchat, totalRevente, coutVendus, benefice, roi, count, soldCount, stockCount, capitalStock };
 }
 
 function mkKey(ds) { return ds ? ds.slice(0, 7) : null; }
@@ -221,11 +225,11 @@ function buildMonthMap() {
     if (d.r !== null) {
       const k = mkKey(d.dr);
       if (!m[k]) m[k] = { v: 0, b: 0, cnt: 0, a: 0 };
-      m[k].v += d.r; m[k].b += (d.r - d.a); m[k].cnt++;
+      m[k].v += d.r * d.qty; m[k].b += (d.r - d.a) * d.qty; m[k].cnt += d.qty;
     }
     const ka = mkKey(d.da);
     if (!m[ka]) m[ka] = { v: 0, b: 0, cnt: 0, a: 0 };
-    m[ka].a += d.a;
+    m[ka].a += d.a * d.qty;
   });
   return m;
 }
@@ -233,11 +237,11 @@ function buildMonthMap() {
 // ─── OVERVIEW ────────────────────────────────────────────────────────────────
 function buildOverview() {
   const s = stats();
-  const pct = s.count > 0 ? Math.round(s.sold.length / s.count * 100) : 0;
+  const pct = s.count > 0 ? Math.round(s.soldCount / s.count * 100) : 0;
   document.getElementById('m-overview').innerHTML = `
     <div class="metric"><div class="metric-label">Achetés</div><div class="metric-value">${s.count}</div><div class="metric-sub">articles</div></div>
-    <div class="metric"><div class="metric-label">Vendus</div><div class="metric-value">${s.sold.length}</div><div class="metric-sub">${pct}% du stock</div></div>
-    <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stock.length}</div><div class="metric-sub">${s.capitalStock.toFixed(0)}€ immo.</div></div>
+    <div class="metric"><div class="metric-label">Vendus</div><div class="metric-value">${s.soldCount}</div><div class="metric-sub">${pct}% du stock</div></div>
+    <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stockCount}</div><div class="metric-sub">${s.capitalStock.toFixed(0)}€ immo.</div></div>
     <div class="metric"><div class="metric-label">Coût vendus</div><div class="metric-value mv-amber">${s.coutVendus.toFixed(0)}€</div><div class="metric-sub">articles vendus</div></div>
     <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
     <div class="metric"><div class="metric-label">Bénéfice</div><div class="metric-value mv-green">${s.benefice.toFixed(0)}€</div><div class="metric-sub">+${s.roi.toFixed(0)}% ROI</div></div>`;
@@ -453,7 +457,8 @@ function renderItems(items) {
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
     const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
     const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
-    const metaTags = (skuHtml || cmdHtml) ? `<div class="td-meta-row">${skuHtml}${cmdHtml}</div>` : '';
+    const qtyTag  = d.qty > 1 ? `<span class="td-meta-tag td-meta-qty">×${d.qty}</span>` : '';
+    const metaTags = (skuHtml || cmdHtml || qtyTag) ? `<div class="td-meta-row">${qtyTag}${skuHtml}${cmdHtml}</div>` : '';
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
     const ghostBadge = `<span class="badge b-green" aria-hidden="true" style="visibility:hidden;pointer-events:none">Vendu</span>`;
     const actionsCell = d.r === null
@@ -596,6 +601,10 @@ window.changeQty = function(delta) {
   const el = document.getElementById('f-quantite');
   el.value = Math.max(1, Math.min(99, (parseInt(el.value) || 1) + delta));
 };
+window.changeEditQty = function(delta) {
+  const el = document.getElementById('e-quantite');
+  el.value = Math.max(1, Math.min(99, (parseInt(el.value) || 1) + delta));
+};
 window.closeAddModal = function () { document.getElementById('add-modal').classList.remove('open'); };
 
 window.addArticle = async function () {
@@ -613,16 +622,15 @@ window.addArticle = async function () {
   btn.disabled = true;
 
   try {
-    const rows = Array.from({ length: qty }, () => ({
+    const { error } = await sb.from('articles').insert([{
       nom, prix_achat: achat, date_achat: date,
       categorie: cat || null,
       boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
-      sku, num_commande: cmd, grossiste,
-    }));
-    const { error } = await sb.from('articles').insert(rows);
+      sku, num_commande: cmd, grossiste, quantite: qty,
+    }]);
     if (error) throw error;
-    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(qty);
-    if (inserted.data) inserted.data.forEach(row => D.push(normalize(row)));
+    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
+    if (inserted.data) D.push(normalize(inserted.data));
     closeAddModal();
     refreshCurrentPanel();
     toast(qty > 1 ? `${qty}× "${nom}" ajoutés au stock` : `"${nom}" ajouté au stock`, 'ok');
@@ -721,6 +729,7 @@ window.openEditModal = function (id) {
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('e-grossiste').value = it.grossiste || '';
+  document.getElementById('e-quantite').value = it.qty || 1;
   document.getElementById('edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('e-nom').focus(), 100);
 };
@@ -740,6 +749,7 @@ window.confirmEdit = async function () {
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
   const grossiste = document.getElementById('e-grossiste').value.trim() || null;
+  const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('e-quantite').value) || 1));
   if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
@@ -755,10 +765,11 @@ window.confirmEdit = async function () {
       sku,
       num_commande: cmd,
       grossiste,
+      quantite: qty,
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.qty = qty; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -808,7 +819,7 @@ function getCurrentMonthRevenue() {
   const now = new Date();
   const key = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
   return D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key))
-          .reduce((s, d) => s + d.r, 0);
+          .reduce((s, d) => s + d.r * d.qty, 0);
 }
 
 function goalKey() {
@@ -1343,19 +1354,21 @@ window.buildBilanMonth = function() {
 
   const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
   const bought = D.filter(d => d.da && d.da.startsWith(key));
-  const recettes = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus = sold.reduce((s, d) => s + d.a, 0);
-  const benefice = recettes - coutVendus;
-  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const soldCount    = sold.reduce((s, d) => s + d.qty, 0);
+  const boughtCount  = bought.reduce((s, d) => s + d.qty, 0);
+  const recettes     = sold.reduce((s, d) => s + d.r * d.qty, 0);
+  const coutVendus   = sold.reduce((s, d) => s + d.a * d.qty, 0);
+  const benefice     = recettes - coutVendus;
+  const montantAchete = bought.reduce((s, d) => s + d.a * d.qty, 0);
   const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
 
   document.getElementById('bilan-m-metrics').innerHTML = bilanMetricsHTML([
-    { label: 'Articles vendus', value: sold.length, sub: `ce mois` },
-    { label: 'Articles achetés', value: bought.length, sub: `${montantAchete.toFixed(0)}€ investis` },
+    { label: 'Articles vendus', value: soldCount, sub: `ce mois` },
+    { label: 'Articles achetés', value: boughtCount, sub: `${montantAchete.toFixed(0)}€ investis` },
     { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
     { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
     { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
-    { label: 'Marge moy./article', value: sold.length > 0 ? (benefice/sold.length).toFixed(0)+'€' : '—' },
+    { label: 'Marge moy./article', value: soldCount > 0 ? (benefice/soldCount).toFixed(0)+'€' : '—' },
   ]);
 
   bilanCatChart('bilan-c-cat-m', sold, 'bilan-m-leg');
@@ -1393,14 +1406,16 @@ window.buildBilanYear = function() {
 
   const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(year));
   const bought = D.filter(d => d.da && d.da.startsWith(year));
-  const recettes = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus = sold.reduce((s, d) => s + d.a, 0);
-  const benefice = recettes - coutVendus;
-  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const soldCount    = sold.reduce((s, d) => s + d.qty, 0);
+  const boughtCount  = bought.reduce((s, d) => s + d.qty, 0);
+  const recettes     = sold.reduce((s, d) => s + d.r * d.qty, 0);
+  const coutVendus   = sold.reduce((s, d) => s + d.a * d.qty, 0);
+  const benefice     = recettes - coutVendus;
+  const montantAchete = bought.reduce((s, d) => s + d.a * d.qty, 0);
   const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
   const meilleurMois = () => {
     const mm = {};
-    sold.forEach(d => { const k = d.dr.slice(0,7); mm[k] = (mm[k]||0) + (d.r - d.a); });
+    sold.forEach(d => { const k = d.dr.slice(0,7); mm[k] = (mm[k]||0) + (d.r - d.a) * d.qty; });
     const best = Object.entries(mm).sort((a,b) => b[1]-a[1])[0];
     if (!best) return '—';
     const ms = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
@@ -1409,8 +1424,8 @@ window.buildBilanYear = function() {
   };
 
   document.getElementById('bilan-y-metrics').innerHTML = bilanMetricsHTML([
-    { label: 'Articles vendus', value: sold.length, sub: `en ${year}` },
-    { label: 'Articles achetés', value: bought.length, sub: `${montantAchete.toFixed(0)}€ investis` },
+    { label: 'Articles vendus', value: soldCount, sub: `en ${year}` },
+    { label: 'Articles achetés', value: boughtCount, sub: `${montantAchete.toFixed(0)}€ investis` },
     { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
     { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
     { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
@@ -1508,15 +1523,14 @@ function urssafCaForMonth(key) {
     if (CURRENT_BOUTIQUE && d.boutique_id !== CURRENT_BOUTIQUE.id) return false;
     return true;
   });
-  const total = sold.reduce((s, d) => s + d.r, 0);
-  // breakdown by boutique
+  const total = sold.reduce((s, d) => s + d.r * d.qty, 0);
   const byBoutique = {};
   sold.forEach(d => {
     const bid = d.boutique_id;
     if (!byBoutique[bid]) byBoutique[bid] = 0;
-    byBoutique[bid] += d.r;
+    byBoutique[bid] += d.r * d.qty;
   });
-  return { total, byBoutique, count: sold.length };
+  return { total, byBoutique, count: sold.reduce((s, d) => s + d.qty, 0) };
 }
 
 async function loadUrssafStatus(key) {
@@ -1873,26 +1887,26 @@ window.exportExcel = function () {
 
   // ── Feuille 1 : Tous les articles ──────────────────────────────────────────
   const articlesData = [
-    ['ID', 'Nom', 'SKU', 'N° commande', 'Catégorie', 'Boutique',
-     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente',
-     'Plus-value (€)', 'Multiplicateur', 'Statut']
+    ['ID', 'Nom', 'Quantité', 'SKU', 'N° commande', 'Grossiste', 'Catégorie', 'Boutique',
+     'Prix achat unit. (€)', 'Date achat', 'Prix vente unit. (€)', 'Date vente',
+     'Plus-value totale (€)', 'Multiplicateur', 'Statut']
   ];
   D.forEach(d => {
-    const pv   = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
-    const mult = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
-    const btq  = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
+    const pvTot = d.r !== null ? +((d.r - d.a) * d.qty).toFixed(2) : '';
+    const mult  = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
+    const btq   = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
     articlesData.push([
-      d.id, d.n, d.sku || '', d.cmd || '', d.cat || '', btq,
+      d.id, d.n, d.qty, d.sku || '', d.cmd || '', d.grossiste || '', d.cat || '', btq,
       d.a, d.da,
       d.r !== null ? d.r : '', d.dr || '',
-      pv, mult,
+      pvTot, mult,
       d.r !== null ? 'Vendu' : 'En stock'
     ]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(articlesData);
   ws1['!cols'] = [
-    {wch:6},{wch:32},{wch:18},{wch:18},{wch:16},{wch:18},
-    {wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:13},{wch:10}
+    {wch:6},{wch:32},{wch:9},{wch:18},{wch:18},{wch:18},{wch:16},{wch:18},
+    {wch:18},{wch:12},{wch:18},{wch:12},{wch:18},{wch:13},{wch:10}
   ];
   XLSX.utils.book_append_sheet(wb, ws1, 'Articles');
 
@@ -1925,12 +1939,12 @@ window.exportExcel = function () {
     if (d.dr) {
       const k = d.dr.slice(0,7);
       if (!mm[k]) mm[k] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
-      mm[k].vendus++; mm[k].recettes += d.r; mm[k].cout += d.a;
+      mm[k].vendus += d.qty; mm[k].recettes += d.r * d.qty; mm[k].cout += d.a * d.qty;
     }
     if (d.da) {
       const ka = d.da.slice(0,7);
       if (!mm[ka]) mm[ka] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
-      mm[ka].achetes++; mm[ka].montantAchete += d.a;
+      mm[ka].achetes += d.qty; mm[ka].montantAchete += d.a * d.qty;
     }
   });
   const mensuelData = [
@@ -1954,19 +1968,20 @@ window.exportExcel = function () {
   // ── Feuille 4 : Stock par SKU ──────────────────────────────────────────────
   const skuMap = {};
   D.filter(d => d.sku && d.r === null).forEach(d => {
-    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, articles: [], totalAchat: 0 };
-    skuMap[d.sku].articles.push(d.n);
-    skuMap[d.sku].totalAchat += d.a;
+    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, qty: 0, articles: [], totalAchat: 0 };
+    skuMap[d.sku].qty += d.qty;
+    skuMap[d.sku].articles.push(d.qty > 1 ? `${d.n} (×${d.qty})` : d.n);
+    skuMap[d.sku].totalAchat += d.a * d.qty;
   });
   const skuData = [
     ['SKU', 'Quantité en stock', 'Valeur totale (€)', 'Articles']
   ];
   Object.values(skuMap)
-    .sort((a, b) => b.articles.length - a.articles.length)
+    .sort((a, b) => b.qty - a.qty)
     .forEach(g => {
       skuData.push([
         g.sku,
-        g.articles.length,
+        g.qty,
         +g.totalAchat.toFixed(2),
         g.articles.join(', ')
       ]);
