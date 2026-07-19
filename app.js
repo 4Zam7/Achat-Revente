@@ -96,6 +96,7 @@ function normalize(row) {
     boutique_id: row.boutique_id,
     sku: row.sku || '',
     cmd: row.num_commande || '',
+    grossiste: row.grossiste || '',
   };
 }
 
@@ -464,7 +465,7 @@ function renderItems(items) {
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
-      <td class="td-actions">${actionsCell}</td>
+      <td class="td-actions"><div class="td-actions-inner">${actionsCell}</div></td>
     </tr>`;
   }).join('');
 }
@@ -577,6 +578,7 @@ function buildStock() {
 
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────
 window.openAddModal = function () {
+  if (!CURRENT_BOUTIQUE) return;
   document.getElementById('f-nom').value = '';
   const alertEl = document.getElementById('radar-alert'); if(alertEl) alertEl.style.display='none';
   document.getElementById('f-achat').value = '';
@@ -584,8 +586,15 @@ window.openAddModal = function () {
   document.getElementById('f-cat').value = '';
   document.getElementById('f-sku').value = '';
   document.getElementById('f-cmd').value = '';
+  document.getElementById('f-grossiste').value = '';
+  document.getElementById('f-quantite').value = '1';
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-nom').focus(), 100);
+};
+
+window.changeQty = function(delta) {
+  const el = document.getElementById('f-quantite');
+  el.value = Math.max(1, Math.min(99, (parseInt(el.value) || 1) + delta));
 };
 window.closeAddModal = function () { document.getElementById('add-modal').classList.remove('open'); };
 
@@ -596,19 +605,27 @@ window.addArticle = async function () {
   const cat = document.getElementById('f-cat').value;
   const sku = document.getElementById('f-sku').value.trim() || null;
   const cmd = document.getElementById('f-cmd').value.trim() || null;
+  const grossiste = document.getElementById('f-grossiste').value.trim() || null;
+  const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('f-quantite').value) || 1));
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
 
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
 
   try {
-    const { error } = await sb.from('articles').insert([{ nom, prix_achat: achat, date_achat: date, categorie: cat || null, boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null, sku, num_commande: cmd }]);
+    const rows = Array.from({ length: qty }, () => ({
+      nom, prix_achat: achat, date_achat: date,
+      categorie: cat || null,
+      boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
+      sku, num_commande: cmd, grossiste,
+    }));
+    const { error } = await sb.from('articles').insert(rows);
     if (error) throw error;
-    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(1).single();
-    if (inserted.data) D.push(normalize(inserted.data));
+    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(qty);
+    if (inserted.data) inserted.data.forEach(row => D.push(normalize(row)));
     closeAddModal();
     refreshCurrentPanel();
-    toast(`"${nom}" ajouté au stock`, 'ok');
+    toast(qty > 1 ? `${qty}× "${nom}" ajoutés au stock` : `"${nom}" ajouté au stock`, 'ok');
   } catch (e) {
     toast('Erreur lors de l\'ajout', 'err');
   } finally {
@@ -703,6 +720,7 @@ window.openEditModal = function (id) {
   dpSetValue('e-date-vente', it.dr || '');
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
+  document.getElementById('e-grossiste').value = it.grossiste || '';
   document.getElementById('edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('e-nom').focus(), 100);
 };
@@ -721,6 +739,7 @@ window.confirmEdit = async function () {
   const dateVente = document.getElementById('e-date-vente').value;
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
+  const grossiste = document.getElementById('e-grossiste').value.trim() || null;
   if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
@@ -735,10 +754,11 @@ window.confirmEdit = async function () {
       date_revente: (vente !== null && dateVente) ? dateVente : null,
       sku,
       num_commande: cmd,
+      grossiste,
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -1036,6 +1056,8 @@ function renderBoutiqueToggle() {
   if (c2) c2.innerHTML = html;
   updateBoutiqueActionsBar();
   renderAllFilter();
+  const addBtn = document.querySelector('.btn-add-header');
+  if (addBtn) addBtn.style.display = CURRENT_BOUTIQUE ? '' : 'none';
 }
 
 // ─── DRAG & DROP BOUTIQUES ────────────────────────────────────────────────────

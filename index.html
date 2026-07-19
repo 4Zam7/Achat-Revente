@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260717">
+  <link rel="stylesheet" href="style.css?v=20260720">
 </head>
 <body>
   <div id="app">
@@ -500,6 +500,20 @@
           <input type="text" id="f-cmd" placeholder="Ex : CMD-2024-001" autocomplete="off">
         </div>
       </div>
+      <div class="form-row">
+        <div class="fg">
+          <label>Grossiste <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="f-grossiste" placeholder="Ex : Aliexpress, Temu…" autocomplete="off">
+        </div>
+        <div class="fg">
+          <label>Quantité</label>
+          <div class="qty-selector">
+            <button type="button" class="qty-btn" onclick="changeQty(-1)">−</button>
+            <input type="number" id="f-quantite" value="1" min="1" max="99" inputmode="numeric">
+            <button type="button" class="qty-btn" onclick="changeQty(1)">+</button>
+          </div>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="addArticle()" id="btn-add-confirm">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -604,6 +618,10 @@
           <label>N° commande <span class="fg-opt">optionnel</span></label>
           <input type="text" id="e-cmd" placeholder="Ex : CMD-2024-001" autocomplete="off">
         </div>
+      </div>
+      <div class="fg">
+        <label>Grossiste <span class="fg-opt">optionnel</span></label>
+        <input type="text" id="e-grossiste" placeholder="Ex : Aliexpress, Temu…" autocomplete="off">
       </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="confirmEdit()" id="btn-edit-confirm">
@@ -817,6 +835,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260717"></script>
+  <script src="app.js?v=20260720"></script>
 </body>
 </html>
