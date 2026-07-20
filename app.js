@@ -552,11 +552,14 @@ function buildStock() {
   });
 
   // Stock par SKU
+  const copyIcoSku = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   const skuMap = {};
   D.filter(d => d.sku && d.r === null).forEach(d => {
-    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0 };
+    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0, grossistes: new Set(), prices: new Set() };
     skuMap[d.sku].items.push(d);
     skuMap[d.sku].total += d.a;
+    if (d.grossiste) skuMap[d.sku].grossistes.add(d.grossiste);
+    skuMap[d.sku].prices.add(d.a);
   });
   const skuList = Object.values(skuMap).sort((a, b) => b.items.length - a.items.length);
   const skuWrap = document.getElementById('sku-stock-wrap');
@@ -565,13 +568,21 @@ function buildStock() {
       skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
     } else {
       skuWrap.innerHTML = `<table class="sku-table">
-        <thead><tr><th>SKU</th><th>Articles</th><th>Qté stock</th><th>Valeur</th></tr></thead>
-        <tbody>${skuList.map(g => `<tr>
-          <td class="sku-cell">${g.sku}</td>
-          <td class="sku-names">${g.items.map(d => d.n).join(', ')}</td>
-          <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
-          <td class="td-num">${g.total.toFixed(2)}€</td>
-        </tr>`).join('')}</tbody>
+        <thead><tr><th>SKU</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
+        <tbody>${skuList.map(g => {
+          const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIcoSku}</button></span>`;
+          const grossisteCell = g.grossistes.size ? [...g.grossistes].join(', ') : '—';
+          const prices = [...g.prices].sort((a,b) => a - b);
+          const unitCell = prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
+          return `<tr>
+            <td class="sku-cell-tag">${skuTag}</td>
+            <td class="sku-grossiste">${grossisteCell}</td>
+            <td class="sku-names">${g.items.map(d => d.n).join(', ')}</td>
+            <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
+            <td class="td-num">${unitCell}</td>
+            <td class="td-num">${g.total.toFixed(2)}€</td>
+          </tr>`;
+        }).join('')}</tbody>
       </table>`;
     }
   }
