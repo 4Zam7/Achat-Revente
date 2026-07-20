@@ -152,6 +152,7 @@ function buildGrossisteFilter() {
 }
 
 function refreshCurrentPanel() {
+  buildGrossisteFilter();
   if (currentTab === 'overview') buildOverview();
   else if (currentTab === 'monthly') buildMonthly();
   else if (currentTab === 'items') renderItems(D);
@@ -453,7 +454,7 @@ function buildMonthly() {
 // ─── ITEMS ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
-    document.getElementById('items-body').innerHTML = `<tr><td colspan="6" class="empty-state">Aucun article trouvé</td></tr>`;
+    document.getElementById('items-body').innerHTML = `<tr><td colspan="7" class="empty-state">Aucun article trouvé</td></tr>`;
     return;
   }
   const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
@@ -470,9 +471,11 @@ function renderItems(items) {
     const actionsCell = d.r === null
       ? `${ghostBadge}<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>${delBtn}`
       : `<span class="badge b-green">Vendu</span><button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>${delBtn}`;
+    const grossisteHtml = d.grossiste ? `<span class="td-grossiste">${d.grossiste}</span>` : '<span class="td-empty">—</span>';
     return `<tr>
       <td class="td-name"><span class="name-link" onclick="openEditModal(${d.id})">${d.n}</span>${metaTags}</td>
       <td>${catBadge}</td>
+      <td class="td-grossiste-cell">${grossisteHtml}</td>
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
@@ -650,10 +653,9 @@ window.addArticle = async function () {
       boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
       sku, num_commande: cmd, grossiste,
     }));
-    const { error } = await sb.from('articles').insert(rows);
+    const { data: insertedData, error } = await sb.from('articles').insert(rows).select('*');
     if (error) throw error;
-    const inserted = await sb.from('articles').select('*').eq('nom', nom).eq('date_achat', date).order('created_at', { ascending: false }).limit(qty);
-    if (inserted.data) inserted.data.forEach(row => D.push(normalize(row)));
+    if (insertedData) insertedData.forEach(row => D.push(normalize(row)));
     closeAddModal();
     refreshCurrentPanel();
     toast(qty > 1 ? `${qty}× "${nom}" ajoutés au stock` : `"${nom}" ajouté au stock`, 'ok');
