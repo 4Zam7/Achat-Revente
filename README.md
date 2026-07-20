@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.8-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-1.9-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -22,23 +22,25 @@
 
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
 - 📈 **Graphiques avec valeurs affichées** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
-- 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase
+- 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase. En mode All, l'objectif est la somme des objectifs de chaque boutique
 - 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU et n° commande
+- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande et grossiste
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
+- 🏭 **Grossiste** — champ optionnel pour noter la source d'achat (Aliexpress, Temu, Brocante…), visible en colonne dans Articles et dans Stock par SKU
+- 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en un clic (chaque exemplaire est une ligne indépendante, vendable séparément)
 - 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
-- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU (quantité + valeur totale)
+- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
-- 🔍 **Recherche globale** — barre de recherche dans le header (desktop) et sous la nav (mobile), résultats larges avec nom complet, prix d'achat/vente et plus-value
-- 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils
-- 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie et trier par plus-value, prix, date ou nom
+- 🔍 **Recherche étendue** — barre de recherche dans le header (desktop) et sous la nav (mobile) ; cherche dans le **nom**, le **SKU**, le **N° commande** et le **grossiste**
+- 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils. Le bouton Ajouter est masqué en mode All
+- 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie, par **grossiste** (liste dynamique) et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
-- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 3 onglets (Articles, Résumé, Bilan mensuel)
+- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (avec SKU, N° commande, grossiste, boutique), Résumé, Bilan mensuel, Stock par SKU
 - 🗓️ **Calendrier personnalisé** — sélecteur de date sur mesure (navigation mois par mois, aujourd'hui mis en valeur, sélection en un clic)
 - 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois (mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
 - 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
@@ -323,13 +325,14 @@ UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
 
 ---
 
-### Ajouter les colonnes SKU et N° commande
+### Ajouter les colonnes SKU, N° commande et Grossiste
 
 Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
 
 ```sql
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
 ```
 
 ---
@@ -422,13 +425,27 @@ GRANT ALL ON settings TO service_role;
 | La recherche mobile ne s'affiche pas | Vérifiez que `style.css` est bien à jour — le `display:none` de base a été supprimé en v1.5 |
 | Les boutiques ne s'affichent pas | Vérifiez que la table `boutiques` est bien créée, exposée dans Data API, et que les articles existants ont bien un `boutique_id` assigné |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
-| SKU / N° commande ne se sauvegardent pas | Exécutez la migration `ALTER TABLE articles ADD COLUMN sku text; ALTER TABLE articles ADD COLUMN num_commande text;` dans le SQL Editor |
+| SKU / N° commande / Grossiste ne se sauvegardent pas | Exécutez la migration `ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text; ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text; ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;` dans le SQL Editor |
 | L'onglet URSSAF affiche 0€ partout | Vérifiez que des articles ont une `date_revente` renseignée pour les mois affichés, et que la boutique n'est pas désactivée (toggle URSSAF) |
+| Le filtre Grossiste est vide | Normal si aucun article n'a de grossiste renseigné — la liste se peuple automatiquement dès qu'un grossiste est saisi sur un article |
 | Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
 
 ---
 
 ## 📝 Changelog
+
+### v1.9 — 20 Juillet 2026
+
+- 🏭 **Champ Grossiste** — nouveau champ optionnel sur chaque article (Aliexpress, Temu, Brocante…), disponible à l'ajout et en modification
+- 📋 **Colonne Grossiste dans Articles** — visible directement dans le tableau entre Catégorie et Achat
+- 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en une seule action ; chaque exemplaire est une ligne indépendante avec son propre bouton Vendu
+- 🔍 **Recherche étendue** — la barre de recherche cherche maintenant dans le nom, le SKU, le N° commande **et** le grossiste
+- 🔽 **Filtre Grossiste** — nouveau menu déroulant dans la barre de filtres Articles, peuplé dynamiquement depuis vos articles, mis à jour en temps réel après chaque ajout/modification
+- 📊 **Stock par SKU enrichi** — nouvelles colonnes Grossiste et Valeur à l'unité (fourchette si prix différents) ; SKU en badge orange avec bouton copie
+- 📤 **Export Excel mis à jour** — colonne Grossiste dans la feuille Articles + 4ᵉ feuille Stock par SKU avec grossiste et valeurs unitaires
+- 🐛 Fix : saccade visuelle entre les colonnes +Value et Statut/Actions corrigée (wrapper div dans `td-actions`)
+- 🐛 Fix : bouton Ajouter masqué en mode All (impossible d'ajouter un article sans boutique sélectionnée)
+- 🐛 Fix : `addArticle()` utilise désormais `.insert().select()` pour récupérer exactement les lignes insérées, sans risque de conflit avec des articles homonymes
 
 ### v1.8 — 16 Juillet 2026
 
