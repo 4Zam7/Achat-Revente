@@ -77,6 +77,7 @@ async function loadData() {
     const { data, error } = await query;
     if (error) throw error;
     D = data.map(normalize);
+    buildGrossisteFilter();
     setSyncStatus('ok');
   } catch (e) {
     setSyncStatus('error');
@@ -140,6 +141,15 @@ window.showTab = function (id) {
   else if (id === 'urssaf') buildUrssaf();
   else refreshCurrentPanel();
 };
+
+function buildGrossisteFilter() {
+  const sel = document.getElementById('f-grossiste-filter');
+  if (!sel) return;
+  const current = sel.value;
+  const vals = [...new Set(D.map(d => d.grossiste).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+  sel.innerHTML = `<option value="">Tous grossistes</option>` +
+    vals.map(v => `<option value="${v.replace(/"/g, '&quot;')}"${v === current ? ' selected' : ''}>${v}</option>`).join('');
+}
 
 function refreshCurrentPanel() {
   if (currentTab === 'overview') buildOverview();
@@ -476,12 +486,20 @@ window.filterTable = function () {
   const statut = document.getElementById('f-statut').value;
   const cat = document.getElementById('f-categorie').value;
   const tri = document.getElementById('f-tri').value;
+  const grossisteFilter = document.getElementById('f-grossiste-filter').value;
 
   let items = D.filter(d => {
-    if (q && !d.n.toLowerCase().includes(q)) return false;
+    if (q) {
+      const inName = d.n.toLowerCase().includes(q);
+      const inSku  = d.sku  && d.sku.toLowerCase().includes(q);
+      const inCmd  = d.cmd  && d.cmd.toLowerCase().includes(q);
+      const inGros = d.grossiste && d.grossiste.toLowerCase().includes(q);
+      if (!inName && !inSku && !inCmd && !inGros) return false;
+    }
     if (statut === 'stock' && d.r !== null) return false;
     if (statut === 'vendu' && d.r === null) return false;
     if (cat && d.cat !== cat) return false;
+    if (grossisteFilter && d.grossiste !== grossisteFilter) return false;
     return true;
   });
 
@@ -494,7 +512,7 @@ window.filterTable = function () {
   else if (tri === 'nom-asc') items = items.slice().sort((a, b) => a.n.localeCompare(b.n));
 
   const countEl = document.getElementById('filter-count');
-  const hasFilter = q || statut || cat || tri !== 'default';
+  const hasFilter = q || statut || cat || grossisteFilter || tri !== 'default';
   countEl.textContent = hasFilter ? `${items.length} article${items.length > 1 ? 's' : ''}` : '';
 
   renderItems(items);
@@ -504,6 +522,7 @@ window.resetFilters = function () {
   document.getElementById('srch').value = '';
   document.getElementById('f-statut').value = '';
   document.getElementById('f-categorie').value = '';
+  document.getElementById('f-grossiste-filter').value = '';
   document.getElementById('f-tri').value = 'default';
   document.getElementById('filter-count').textContent = '';
   renderItems(D);

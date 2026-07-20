@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260723">
+  <link rel="stylesheet" href="style.css?v=20260724">
 </head>
 <body>
   <div id="app">
@@ -247,6 +247,9 @@
               <option>Sport</option>
               <option>Accessoires</option>
               <option>Autres</option>
+            </select>
+            <select id="f-grossiste-filter" onchange="filterTable()" class="filter-select">
+              <option value="">Tous grossistes</option>
             </select>
             <select id="f-tri" onchange="filterTable()" class="filter-select">
               <option value="default">Tri : Par défaut</option>
@@ -835,6 +838,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260723"></script>
+  <script src="app.js?v=20260724"></script>
 </body>
 </html>
