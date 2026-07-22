@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-1.9-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.0-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -25,18 +25,19 @@
 - 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase. En mode All, l'objectif est la somme des objectifs de chaque boutique
 - 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande et grossiste
+- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande, grossiste et ID
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
+- 🆔 **ID unique par article** — identifiant optionnel et unique par article, affiché en badge bleu sous le nom. Générateur intégré (⚡ Générer) qui produit un code de 6 caractères garanti non utilisé. La saisie manuelle est aussi possible ; l'application bloque toute collision
 - 🏭 **Grossiste** — champ optionnel pour noter la source d'achat (Aliexpress, Temu, Brocante…), visible en colonne dans Articles et dans Stock par SKU
-- 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en un clic (chaque exemplaire est une ligne indépendante, vendable séparément)
+- 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en un clic (chaque exemplaire est une ligne indépendante, vendable séparément). Design pill avec chiffre contrasté
 - 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
-- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie
+- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie. Défilement horizontal sur mobile, colonnes jamais tronquées
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
-- 🔍 **Recherche étendue** — barre de recherche dans le header (desktop) et sous la nav (mobile) ; cherche dans le **nom**, le **SKU**, le **N° commande** et le **grossiste**
+- 🔍 **Recherche étendue** — barre de recherche dans le header (desktop) et sous la nav (mobile) ; cherche dans le **nom**, le **SKU**, le **N° commande**, le **grossiste** et l'**ID**
 - 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils. Le bouton Ajouter est masqué en mode All
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie, par **grossiste** (liste dynamique) et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
@@ -105,6 +106,11 @@ CREATE TABLE articles (
   prix_revente numeric,
   date_revente date,
   categorie text,
+  boutique_id bigint,
+  sku text,
+  num_commande text,
+  grossiste text,
+  identifiant text UNIQUE,
   created_at timestamptz DEFAULT now()
 );
 
@@ -116,6 +122,12 @@ CREATE POLICY "Auth lecture"      ON articles FOR SELECT TO authenticated USING 
 CREATE POLICY "Auth insertion"    ON articles FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON articles FOR UPDATE TO authenticated USING (true);
 CREATE POLICY "Auth suppression"  ON articles FOR DELETE TO authenticated USING (true);
+
+-- Droits API
+GRANT SELECT, INSERT, UPDATE, DELETE ON articles TO authenticated;
+GRANT SELECT ON articles TO anon;
+GRANT ALL ON articles TO service_role;
+GRANT USAGE, SELECT ON SEQUENCE articles_id_seq TO authenticated;
 ```
 
 ---
@@ -284,13 +296,30 @@ INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, c
 ('Perceuse Bosch', 15, '2025-08-01', NULL, NULL, 'Outils');
 ```
 
-> Les catégories disponibles sont : `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Autres`
+> Les catégories disponibles sont : `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Accessoires`, `Autres`
 
 ---
 
-### Créer la table boutiques (multi-boutiques)
+## 🔧 Migrations (instances existantes)
 
-Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
+Si vous avez déjà installé une version antérieure de l'app, appliquez ces migrations dans Supabase → **SQL Editor** selon la version dont vous partez.
+
+### Ajouter les colonnes boutique, SKU, N° commande, Grossiste
+
+```sql
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
+```
+
+### Ajouter la colonne ID unique (v2.0)
+
+```sql
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS identifiant TEXT UNIQUE;
+```
+
+### Créer la table boutiques (multi-boutiques)
 
 ```sql
 CREATE TABLE boutiques (
@@ -311,35 +340,14 @@ GRANT SELECT ON boutiques TO anon;
 GRANT ALL ON boutiques TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE boutiques_id_seq TO authenticated;
 
--- Ajouter boutique_id à articles
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint REFERENCES boutiques(id);
-
--- Créer la boutique par défaut
+-- Assigner les articles existants à la boutique par défaut
 INSERT INTO boutiques (nom, couleur) VALUES ('Brocante', '#185FA5');
-
--- Assigner tous les articles existants à cette boutique
 UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
 ```
 
 > N'oubliez pas d'exposer la table `boutiques` dans **Integrations → Data API → Settings → Exposed tables**.
 
----
-
-### Ajouter les colonnes SKU, N° commande et Grossiste
-
-Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
-
-```sql
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
-```
-
----
-
 ### Créer la table settings (objectif mensuel)
-
-Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
 
 ```sql
 CREATE TABLE settings (
@@ -351,15 +359,15 @@ ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Auth lecture"      ON settings FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Auth insertion"    ON settings FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING (true);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON settings TO authenticated;
+GRANT SELECT ON settings TO anon;
+GRANT ALL ON settings TO service_role;
 ```
 
 > N'oubliez pas d'exposer la table `settings` dans **Integrations → Data API → Settings → Exposed tables**.
 
----
-
 ### Créer la table marques_niches (Radar)
-
-Dans Supabase → **SQL Editor** → collez ce code et cliquez **Run** :
 
 ```sql
 CREATE TABLE marques_niches (
@@ -387,20 +395,16 @@ GRANT USAGE, SELECT ON SEQUENCE marques_niches_id_seq TO authenticated;
 
 > N'oubliez pas d'exposer la table `marques_niches` dans **Integrations → Data API → Settings → Exposed tables**.
 
----
-
 ### Accorder les droits API (obligatoire depuis mai 2026)
 
 Depuis le 30 mai 2026, Supabase exige des `GRANT` explicites pour exposer les tables via l'API. Dans **SQL Editor** → **Run** :
 
 ```sql
--- Table articles
 GRANT SELECT, INSERT, UPDATE, DELETE ON articles TO authenticated;
 GRANT SELECT ON articles TO anon;
 GRANT ALL ON articles TO service_role;
 GRANT USAGE, SELECT ON SEQUENCE articles_id_seq TO authenticated;
 
--- Table settings
 GRANT SELECT, INSERT, UPDATE, DELETE ON settings TO authenticated;
 GRANT SELECT ON settings TO anon;
 GRANT ALL ON settings TO service_role;
@@ -425,14 +429,26 @@ GRANT ALL ON settings TO service_role;
 | La recherche mobile ne s'affiche pas | Vérifiez que `style.css` est bien à jour — le `display:none` de base a été supprimé en v1.5 |
 | Les boutiques ne s'affichent pas | Vérifiez que la table `boutiques` est bien créée, exposée dans Data API, et que les articles existants ont bien un `boutique_id` assigné |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
-| SKU / N° commande / Grossiste ne se sauvegardent pas | Exécutez la migration `ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text; ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text; ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;` dans le SQL Editor |
+| SKU / N° commande / Grossiste ne se sauvegardent pas | Exécutez la migration correspondante dans le SQL Editor (voir section Migrations) |
+| L'ID ne se sauvegarde pas | Exécutez `ALTER TABLE articles ADD COLUMN IF NOT EXISTS identifiant TEXT UNIQUE;` dans le SQL Editor |
+| Message "Cet ID est déjà utilisé" | Chaque article doit avoir un identifiant différent — utilisez le bouton ⚡ Générer pour en créer un automatiquement |
+| Message "L'ID ne peut être assigné qu'à un seul article" | Lors d'un ajout en quantité (qty > 1), l'ID est désactivé — ajoutez d'abord les articles, puis assignez un ID à chacun via Modifier |
 | L'onglet URSSAF affiche 0€ partout | Vérifiez que des articles ont une `date_revente` renseignée pour les mois affichés, et que la boutique n'est pas désactivée (toggle URSSAF) |
 | Le filtre Grossiste est vide | Normal si aucun article n'a de grossiste renseigné — la liste se peuple automatiquement dès qu'un grossiste est saisi sur un article |
-| Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section dédiée) |
+| Erreur API après oct. 2026 | Exécutez les `GRANT` explicites dans le SQL Editor (voir section Migrations) |
 
 ---
 
 ## 📝 Changelog
+
+### v2.0 — 22 Juillet 2026
+
+- 🆔 **ID unique par article** — nouveau champ optionnel `identifiant` sur chaque article. Chaque ID est unique : l'application bloque toute collision à la saisie et à la sauvegarde
+- ⚡ **Générateur d'ID** — bouton intégré dans les formulaires d'ajout et de modification, génère un code de 6 caractères alphanumériques garanti non utilisé
+- 🔍 **Recherche par ID** — la barre de recherche cherche maintenant aussi dans l'ID
+- 🏷️ **Badge ID** — affiché en bleu sous le nom de l'article dans la liste Articles
+- 🎨 **Sélecteur de quantité redesigné** — forme pill avec chiffre en bloc sombre contrasté, boutons `−/+` plus larges et plus lisibles
+- 📊 **Stock par SKU** — défilement horizontal sur mobile, colonnes SKU et articles jamais tronquées (`width:max-content`), noms d'articles dédupliqués quand plusieurs exemplaires du même article partagent un SKU
 
 ### v1.9 — 20 Juillet 2026
 
@@ -460,7 +476,6 @@ GRANT ALL ON settings TO service_role;
 - 📱 **Mobile : boutiques au-dessus des onglets** — les pills de boutique et la barre de recherche s'affichent maintenant au-dessus des onglets Vue d'ensemble / Par mois / etc.
 - 🔃 **Ordre des boutiques synchronisé** — le glisser-déposer sur PC se reflète sur mobile via Supabase (clé `boutique_order` dans la table `settings`)
 - 🐛 Fix : bouton Vendu aligné avec Annuler sur toutes les lignes du tableau Articles
-- 🐛 Fix : bouton × (supprimer) toujours aligné avec les autres actions
 
 ### v1.7 — 27 Mai 2026
 - 🎯 **Radar marques** — nouvel onglet pour suivre les marques niches à surveiller en brocante
