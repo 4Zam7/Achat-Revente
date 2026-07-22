@@ -589,7 +589,7 @@ function buildStock() {
     if (!skuList.length) {
       skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
     } else {
-      skuWrap.innerHTML = `<table class="sku-table">
+      skuWrap.innerHTML = `<div class="sku-scroll-wrap"><table class="sku-table">
         <thead><tr><th>SKU</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
         <tbody>${skuList.map(g => {
           const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIcoSku}</button></span>`;
@@ -605,7 +605,7 @@ function buildStock() {
             <td class="td-num">${g.total.toFixed(2)}€</td>
           </tr>`;
         }).join('')}</tbody>
-      </table>`;
+      </table></div>`;
     }
   }
 }
