@@ -1357,9 +1357,10 @@ tr:hover td { background: var(--bg3); }
 .sku-table tr:hover td { background: var(--bg3); }
 .sku-cell { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: var(--accent); }
 .sku-cell-tag { white-space: nowrap; }
-.sku-tag { display: inline-flex; align-items: center; gap: 5px; }
-.sku-grossiste { font-size: 11px; color: var(--text2); }
-.sku-names { font-size: 11px; color: var(--text2); max-width: 280px; }
+.sku-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.sku-grossiste { font-size: 11px; color: var(--text2); white-space: nowrap; }
+.sku-names { font-size: 11px; color: var(--text2); white-space: nowrap; }
+.sku-table td { white-space: nowrap; }
 .sku-qty { }
 .sku-badge {
   display: inline-flex; align-items: center; justify-content: center;
