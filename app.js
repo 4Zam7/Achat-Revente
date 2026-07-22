@@ -599,7 +599,7 @@ function buildStock() {
           return `<tr>
             <td class="sku-cell-tag">${skuTag}</td>
             <td class="sku-grossiste">${grossisteCell}</td>
-            <td class="sku-names">${g.items.map(d => d.n).join(', ')}</td>
+            <td class="sku-names">${[...new Set(g.items.map(d => d.n))].join(', ')}</td>
             <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
             <td class="td-num">${unitCell}</td>
             <td class="td-num">${g.total.toFixed(2)}€</td>
