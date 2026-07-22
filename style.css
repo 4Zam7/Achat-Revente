@@ -1344,7 +1344,7 @@ tr:hover td { background: var(--bg3); }
   scrollbar-width: none;
 }
 .sku-scroll-wrap::-webkit-scrollbar { display: none; }
-.sku-table { width: 100%; min-width: 560px; border-collapse: collapse; font-size: 12px; }
+.sku-table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 12px; }
 .sku-table th {
   text-align: left; padding: 8px 10px;
   font-size: 10px; font-weight: 500; color: var(--text3);
