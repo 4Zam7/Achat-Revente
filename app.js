@@ -1111,6 +1111,8 @@ function renderBoutiqueToggle() {
   renderAllFilter();
   const addBtn = document.querySelector('.btn-add-header');
   if (addBtn) addBtn.style.display = CURRENT_BOUTIQUE ? '' : 'none';
+  const importBtn = document.querySelector('.btn-import-header');
+  if (importBtn) importBtn.style.display = CURRENT_BOUTIQUE ? '' : 'none';
 }
 
 // ─── DRAG & DROP BOUTIQUES ────────────────────────────────────────────────────
