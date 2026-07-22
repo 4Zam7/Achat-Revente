@@ -99,6 +99,7 @@ function normalize(row) {
     cmd: row.num_commande || '',
     grossiste: row.grossiste || '',
     qty: row.quantite || 1,
+    ref: row.identifiant || '',
   };
 }
 
@@ -463,9 +464,10 @@ function renderItems(items) {
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
+    const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${d.ref}</span>` : '';
     const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
     const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
-    const metaTags = (skuHtml || cmdHtml) ? `<div class="td-meta-row">${skuHtml}${cmdHtml}</div>` : '';
+    const metaTags = (refHtml || skuHtml || cmdHtml) ? `<div class="td-meta-row">${refHtml}${skuHtml}${cmdHtml}</div>` : '';
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
     const ghostBadge = `<span class="badge b-green" aria-hidden="true" style="visibility:hidden;pointer-events:none">Vendu</span>`;
     const actionsCell = d.r === null
@@ -497,7 +499,8 @@ window.filterTable = function () {
       const inSku  = d.sku  && d.sku.toLowerCase().includes(q);
       const inCmd  = d.cmd  && d.cmd.toLowerCase().includes(q);
       const inGros = d.grossiste && d.grossiste.toLowerCase().includes(q);
-      if (!inName && !inSku && !inCmd && !inGros) return false;
+      const inRef  = d.ref  && d.ref.toLowerCase().includes(q);
+      if (!inName && !inSku && !inCmd && !inGros && !inRef) return false;
     }
     if (statut === 'stock' && d.r !== null) return false;
     if (statut === 'vendu' && d.r === null) return false;
@@ -622,8 +625,18 @@ window.openAddModal = function () {
   document.getElementById('f-cmd').value = '';
   document.getElementById('f-grossiste').value = '';
   document.getElementById('f-quantite').value = '1';
+  document.getElementById('f-ref').value = '';
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-nom').focus(), 100);
+};
+
+window.generateRef = function(fieldId) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
+  const existing = new Set(D.map(d => d.ref).filter(Boolean));
+  let id;
+  do { id = Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
+  while (existing.has(id));
+  document.getElementById(fieldId).value = id;
 };
 
 window.changeQty = function(delta) {
@@ -641,7 +654,10 @@ window.addArticle = async function () {
   const cmd = document.getElementById('f-cmd').value.trim() || null;
   const grossiste = document.getElementById('f-grossiste').value.trim() || null;
   const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('f-quantite').value) || 1));
+  const ref = document.getElementById('f-ref').value.trim().toUpperCase() || null;
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
+  if (ref && qty > 1) { toast("L'ID ne peut être assigné qu'à un seul article", 'err'); return; }
+  if (ref && D.some(d => d.ref === ref)) { toast('Cet ID est déjà utilisé', 'err'); return; }
 
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
@@ -651,7 +667,7 @@ window.addArticle = async function () {
       nom, prix_achat: achat, date_achat: date,
       categorie: cat || null,
       boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
-      sku, num_commande: cmd, grossiste,
+      sku, num_commande: cmd, grossiste, identifiant: ref || null,
     }));
     const { data: insertedData, error } = await sb.from('articles').insert(rows).select('*');
     if (error) throw error;
@@ -754,6 +770,7 @@ window.openEditModal = function (id) {
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('e-grossiste').value = it.grossiste || '';
+  document.getElementById('e-ref').value = it.ref || '';
   document.getElementById('edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('e-nom').focus(), 100);
 };
@@ -773,7 +790,9 @@ window.confirmEdit = async function () {
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
   const grossiste = document.getElementById('e-grossiste').value.trim() || null;
+  const ref = document.getElementById('e-ref').value.trim().toUpperCase() || null;
   if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
+  if (ref && D.some(d => d.ref === ref && d.id !== editId)) { toast('Cet ID est déjà utilisé', 'err'); return; }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
   btn.disabled = true;
@@ -788,10 +807,11 @@ window.confirmEdit = async function () {
       sku,
       num_commande: cmd,
       grossiste,
+      identifiant: ref || null,
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');

@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260722">
+  <link rel="stylesheet" href="style.css?v=20260722b">
 </head>
 <body>
   <div id="app">
@@ -518,6 +518,13 @@
           </div>
         </div>
       </div>
+      <div class="fg">
+        <label>ID <span class="fg-opt">optionnel — unique par article</span></label>
+        <div class="id-gen-row">
+          <input type="text" id="f-ref" placeholder="Ex : ABC123" autocomplete="off" maxlength="20" oninput="this.value=this.value.toUpperCase()">
+          <button type="button" class="btn-gen-id" onclick="generateRef('f-ref')">⚡ Générer</button>
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="addArticle()" id="btn-add-confirm">
           <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -626,6 +633,13 @@
       <div class="fg">
         <label>Grossiste <span class="fg-opt">optionnel</span></label>
         <input type="text" id="e-grossiste" placeholder="Ex : Aliexpress, Temu…" autocomplete="off">
+      </div>
+      <div class="fg">
+        <label>ID <span class="fg-opt">optionnel — unique par article</span></label>
+        <div class="id-gen-row">
+          <input type="text" id="e-ref" placeholder="Ex : ABC123" autocomplete="off" maxlength="20" oninput="this.value=this.value.toUpperCase()">
+          <button type="button" class="btn-gen-id" onclick="generateRef('e-ref')">⚡ Générer</button>
+        </div>
       </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="confirmEdit()" id="btn-edit-confirm">
@@ -839,6 +853,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260722"></script>
+  <script src="app.js?v=20260722b"></script>
 </body>
 </html>
