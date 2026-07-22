@@ -892,17 +892,65 @@ tr:hover td { background: var(--bg3); }
 .bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
 
 /* ── EXPORT BUTTON ───────────────────────────────────────────────────────── */
-.btn-export-header {
+.btn-import-header, .btn-export-header {
   display: flex; align-items: center; justify-content: center;
   width: 36px; height: 36px;
   background: var(--bg3); color: var(--text2);
   border: 1px solid var(--border2); border-radius: var(--radius-sm);
   cursor: pointer; transition: all 0.2s;
 }
+.btn-import-header:hover {
+  background: var(--blue-bg);
+  color: var(--accent);
+  border-color: rgba(91,143,249,0.3);
+}
 .btn-export-header:hover {
   background: var(--green-bg);
   color: var(--green-text);
   border-color: rgba(90,216,166,0.3);
+}
+
+/* ── IMPORT MODAL ────────────────────────────────────────────────────────── */
+.import-info {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 12px; color: var(--text2); margin-bottom: 1rem;
+}
+.import-info.warn { border-color: rgba(246,189,22,0.35); background: rgba(246,189,22,0.06); color: var(--amber-text); }
+.import-format-section { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; }
+.import-format-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.import-format-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text3); }
+.btn-copy-template {
+  background: var(--bg4); border: 1px solid var(--border); color: var(--text2);
+  border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 500;
+  cursor: pointer; font-family: inherit; transition: background 0.12s, color 0.12s;
+}
+.btn-copy-template:hover { background: var(--bg2); color: var(--text); }
+.import-sql-block {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px 12px; font-size: 11px; font-family: 'DM Mono', monospace;
+  color: var(--text2); white-space: pre; overflow-x: auto; scrollbar-width: none;
+  margin: 0; line-height: 1.55;
+}
+.import-sql-block::-webkit-scrollbar { display: none; }
+.import-format-note { font-size: 11px; color: var(--text3); margin-top: 8px; line-height: 1.7; }
+.import-format-note code { font-family: 'DM Mono', monospace; color: var(--text2); }
+.import-textarea {
+  width: 100%; min-height: 110px; resize: vertical;
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text);
+  padding: 10px 12px; font-size: 12px; font-family: 'DM Mono', monospace;
+  line-height: 1.5; box-sizing: border-box;
+}
+.import-textarea:focus { outline: none; border-color: var(--accent); }
+#import-result { margin-top: 12px; }
+.import-result-ok {
+  font-size: 12px; color: var(--green-text); background: var(--green-bg);
+  border: 1px solid rgba(90,216,166,0.2); border-radius: var(--radius-sm); padding: 8px 12px;
+}
+.import-result-err {
+  font-size: 12px; color: #f87171; background: rgba(248,113,113,0.08);
+  border: 1px solid rgba(248,113,113,0.2); border-radius: var(--radius-sm); padding: 8px 12px;
 }
 
 /* ── SEARCH HEADER BUTTON ────────────────────────────────────────────────── */

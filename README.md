@@ -286,17 +286,44 @@ achat-revente/
 
 ## 📊 Importer des données existantes
 
-Si vous avez déjà des articles à importer, créez un fichier SQL avec ce format et collez-le dans le **SQL Editor** de Supabase :
+### Via l'application (recommandé)
+
+Depuis la v2.0, un bouton **Importer** est disponible dans le header (icône flèche vers le bas). Il suffit de coller votre SQL directement dans l'application — les articles sont insérés instantanément sans passer par Supabase.
+
+### Via le SQL Editor de Supabase
+
+Pour des imports massifs, collez votre SQL dans Supabase → **SQL Editor** → **Run** :
 
 ```sql
-INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, categorie) VALUES
-('Veste Adidas', 5, '2025-06-01', 18, '2025-09-10', 'Vêtements'),
-('Jean Levi''s 501', 3, '2025-06-15', NULL, NULL, 'Vêtements'),
-('PS5', 200, '2025-07-01', 350, '2025-08-20', 'Consoles'),
-('Perceuse Bosch', 15, '2025-08-01', NULL, NULL, 'Outils');
+INSERT INTO articles (
+  nom, prix_achat, date_achat,
+  prix_revente, date_revente,
+  categorie, sku, num_commande, grossiste, identifiant
+) VALUES
+('Veste Adidas',    5.00, '2025-06-01', 18.00, '2025-09-10', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL,  NULL,         'Vêtements', NULL,           NULL,           'Temu',     NULL),
+('PS5',           200.00, '2025-07-01', 350.00,'2025-08-20', 'Consoles',  NULL,           NULL,           NULL,       NULL),
+('Perceuse Bosch', 15.00, '2025-08-01', NULL,  NULL,         'Outils',    NULL,           NULL,           'Brocante', NULL);
 ```
 
-> Les catégories disponibles sont : `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Accessoires`, `Autres`
+**Colonnes disponibles**
+
+| Colonne | Type | Obligatoire | Description |
+|---------|------|-------------|-------------|
+| `nom` | text | ✅ | Nom de l'article |
+| `prix_achat` | numeric | ✅ | Prix d'achat (ex : `5.00`) |
+| `date_achat` | date | ✅ | Format `YYYY-MM-DD` |
+| `prix_revente` | numeric | — | Laisser `NULL` si non vendu |
+| `date_revente` | date | — | Format `YYYY-MM-DD`, ou `NULL` |
+| `categorie` | text | — | Voir liste ci-dessous |
+| `sku` | text | — | Référence article (ex : `VEST-ADI-001`) |
+| `num_commande` | text | — | N° de commande fournisseur |
+| `grossiste` | text | — | Source d'achat (ex : `Aliexpress`) |
+| `identifiant` | text | — | ID unique par article (ex : `ABC123`) |
+
+> **Catégories disponibles :** `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Accessoires`, `Autres`
+>
+> **Apostrophe dans un nom :** doublez la quote — `Jean Levi''s 501`
 
 ---
 

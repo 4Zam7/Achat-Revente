@@ -2269,3 +2269,138 @@ function checkRadarAlert(nom) {
     alert.style.display = 'none';
   }
 }
+
+// ─── IMPORT SQL ───────────────────────────────────────────────────────────────
+const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, categorie, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, 'Vêtements', NULL, NULL, 'Temu', NULL);`;
+
+window.openImportModal = function () {
+  const info = document.getElementById('import-boutique-info');
+  if (CURRENT_BOUTIQUE) {
+    info.textContent = `Les articles seront importés dans : ${CURRENT_BOUTIQUE.nom}`;
+    info.className = 'import-info';
+  } else {
+    info.textContent = '⚠️ Mode All — les articles seront importés sans boutique assignée.';
+    info.className = 'import-info warn';
+  }
+  document.getElementById('import-result').innerHTML = '';
+  document.getElementById('import-modal').classList.add('open');
+};
+
+window.closeImportModal = function () {
+  document.getElementById('import-modal').classList.remove('open');
+};
+
+window.copyImportTemplate = function () {
+  navigator.clipboard.writeText(IMPORT_TEMPLATE);
+  toast('Modèle copié', 'ok');
+};
+
+function parseSQLInsert(sql) {
+  const clean = sql.replace(/--[^\n]*/g, '').trim();
+  const colMatch = clean.match(/INSERT\s+INTO\s+articles\s*\(\s*([^)]+)\s*\)/i);
+  if (!colMatch) throw new Error('Format invalide — attendu : INSERT INTO articles (...) VALUES ...');
+  const columns = colMatch[1].split(',').map(c => c.trim().toLowerCase().replace(/[`"[\]]/g, ''));
+
+  const valIdx = clean.search(/\bVALUES\b/i);
+  if (valIdx === -1) throw new Error('Clause VALUES introuvable');
+  const str = clean.slice(valIdx + 6).trim().replace(/;\s*$/, '');
+
+  const rows = [];
+  let pos = 0;
+
+  while (pos < str.length) {
+    while (pos < str.length && /[\s,]/.test(str[pos])) pos++;
+    if (pos >= str.length || str[pos] !== '(') break;
+    pos++;
+    const vals = [];
+
+    while (pos < str.length) {
+      while (pos < str.length && /\s/.test(str[pos])) pos++;
+      if (str[pos] === ')') { pos++; break; }
+
+      if (str[pos] === "'") {
+        pos++;
+        let s = '';
+        while (pos < str.length) {
+          if (str[pos] === "'" && str[pos + 1] === "'") { s += "'"; pos += 2; }
+          else if (str[pos] === "'") { pos++; break; }
+          else s += str[pos++];
+        }
+        vals.push(s);
+      } else if (/^null/i.test(str.slice(pos))) {
+        vals.push(null); pos += 4;
+      } else {
+        let n = '';
+        while (pos < str.length && /[0-9.\-]/.test(str[pos])) n += str[pos++];
+        vals.push(n !== '' ? parseFloat(n) : null);
+      }
+
+      while (pos < str.length && /\s/.test(str[pos])) pos++;
+      if (str[pos] === ',') pos++;
+    }
+
+    const obj = {};
+    columns.forEach((col, i) => { obj[col] = i < vals.length ? vals[i] : null; });
+    rows.push(obj);
+  }
+
+  if (!rows.length) throw new Error('Aucune ligne trouvée — vérifiez la syntaxe SQL');
+  return rows;
+}
+
+function showImportResult(msg, type) {
+  document.getElementById('import-result').innerHTML =
+    `<div class="import-result-${type === 'ok' ? 'ok' : 'err'}">${msg}</div>`;
+}
+
+window.importSQL = async function () {
+  const sql = document.getElementById('import-sql-input').value.trim();
+  if (!sql) { showImportResult('Aucun SQL saisi', 'err'); return; }
+
+  let parsed;
+  try { parsed = parseSQLInsert(sql); }
+  catch (e) { showImportResult(e.message, 'err'); return; }
+
+  const invalid = parsed.filter(r => !r.nom || r.prix_achat == null || !r.date_achat);
+  if (invalid.length) {
+    showImportResult(`${invalid.length} ligne(s) sans nom, prix_achat ou date_achat — importation annulée`, 'err'); return;
+  }
+
+  const existingRefs = new Set(D.map(d => d.ref).filter(Boolean));
+  const conflict = parsed.find(r => r.identifiant && existingRefs.has(r.identifiant));
+  if (conflict) {
+    showImportResult(`ID "${conflict.identifiant}" déjà utilisé — importation annulée`, 'err'); return;
+  }
+
+  const btn = document.getElementById('btn-import-confirm');
+  btn.disabled = true;
+  try {
+    const rows = parsed.map(r => ({
+      nom: r.nom,
+      prix_achat: r.prix_achat,
+      date_achat: r.date_achat,
+      prix_revente: r.prix_revente != null ? r.prix_revente : null,
+      date_revente: r.date_revente || null,
+      categorie: r.categorie || null,
+      sku: r.sku || null,
+      num_commande: r.num_commande || null,
+      grossiste: r.grossiste || null,
+      identifiant: r.identifiant || null,
+      boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
+    }));
+
+    const { data: inserted, error } = await sb.from('articles').insert(rows).select('*');
+    if (error) throw error;
+    if (inserted) inserted.forEach(row => D.push(normalize(row)));
+
+    document.getElementById('import-sql-input').value = '';
+    refreshCurrentPanel();
+    const n = inserted.length;
+    showImportResult(`${n} article${n > 1 ? 's' : ''} importé${n > 1 ? 's' : ''} avec succès`, 'ok');
+    toast(`${n} article${n > 1 ? 's' : ''} importé${n > 1 ? 's' : ''}`, 'ok');
+  } catch (e) {
+    showImportResult(`Erreur : ${e.message || 'inconnue'}`, 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};

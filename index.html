@@ -15,7 +15,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
-  <link rel="stylesheet" href="style.css?v=20260722b">
+  <link rel="stylesheet" href="style.css?v=20260723">
 </head>
 <body>
   <div id="app">
@@ -69,6 +69,9 @@
           <div style="display:flex;gap:8px">
 <button class="btn-logout-header" onclick="doLogout()" title="Se déconnecter">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M11 11l4-4-4-4M15 7H6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="btn-import-header" onclick="openImportModal()" title="Importer des articles">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 11V2M5 8l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <button class="btn-export-header" onclick="exportExcel()" title="Exporter en Excel">
             <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1v9M5 7l3 3 3-3M2 11v2a1 1 0 001 1h10a1 1 0 001-1v-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -834,6 +837,48 @@
     </div>
   </div>
 
+  <!-- MODAL IMPORT -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header">
+        <div class="modal-title">Importer des articles</div>
+        <button class="btn-close" onclick="closeImportModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="import-info" id="import-boutique-info"></div>
+      <div class="import-format-section">
+        <div class="import-format-header">
+          <span class="import-format-label">Format SQL attendu</span>
+          <button type="button" class="btn-copy-template" onclick="copyImportTemplate()">Copier le modèle</button>
+        </div>
+        <pre class="import-sql-block">INSERT INTO articles (nom, prix_achat, date_achat, prix_revente,
+  date_revente, categorie, sku, num_commande, grossiste, identifiant) VALUES
+('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10',
+  'Vêtements', 'VEST-ADI-001', 'CMD-001', 'Brocante', 'A1B2C3'),
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL,
+  'Vêtements', NULL, NULL, 'Temu', NULL);</pre>
+        <div class="import-format-note">
+          <strong>Obligatoires :</strong> nom, prix_achat, date_achat &nbsp;|&nbsp;
+          <strong>Date :</strong> YYYY-MM-DD &nbsp;|&nbsp;
+          <strong>Apostrophe :</strong> doubler la quote <code>''</code>
+        </div>
+      </div>
+      <div class="fg" style="margin-top:1rem">
+        <label>Coller votre SQL ici</label>
+        <textarea id="import-sql-input" class="import-textarea" placeholder="INSERT INTO articles ..."></textarea>
+      </div>
+      <div id="import-result"></div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="importSQL()" id="btn-import-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v9M4 7l3 3 3-3M2 13h10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Importer
+        </button>
+        <button class="btn-secondary" onclick="closeImportModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="toast"></div>
 
@@ -853,6 +898,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <script src="app.js?v=20260722b"></script>
+  <script src="app.js?v=20260723"></script>
 </body>
 </html>
