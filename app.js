@@ -30,6 +30,8 @@ window.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('loading-screen').style.display = 'none';
     document.getElementById('login-screen').style.display = 'flex';
     setTimeout(() => document.getElementById('email-input').focus(), 300);
+    const msg = sessionStorage.getItem('laney_auth_msg');
+    if (msg) { sessionStorage.removeItem('laney_auth_msg'); toast(msg, 'err'); }
   }
 });
 
@@ -2296,13 +2298,18 @@ function checkRadarAlert(nom) {
 // ─── PROFILS & PERMISSIONS ───────────────────────────────────────────────────
 async function loadUserProfile() {
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
+  if (!user) {
+    // JWT périmé ou invalide → déconnexion + rechargement propre
+    await sb.auth.signOut();
+    location.reload();
+    return;
+  }
   const { data: profile } = await sb.from('profiles').select('*').eq('user_id', user.id).single();
   if (!profile) {
-    // Aucun profil = compte supprimé ou non autorisé → déconnexion immédiate
+    // Aucun profil = compte supprimé par l'admin → déconnexion + rechargement
     await sb.auth.signOut();
-    showAuth();
-    toast('Compte supprimé ou non autorisé.', 'err');
+    sessionStorage.setItem('laney_auth_msg', 'Compte supprimé ou non autorisé.');
+    location.reload();
     return;
   }
   USER_PROFILE = profile;
