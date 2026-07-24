@@ -255,6 +255,15 @@ function buildOverview() {
     <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
     <div class="metric"><div class="metric-label">Bénéfice</div><div class="metric-value mv-green">${s.benefice.toFixed(0)}€</div><div class="metric-sub">+${s.roi.toFixed(0)}% ROI</div></div>`;
 
+  const coutTotal = s.coutVendus + s.capitalStock;
+  const posGlobale = s.totalRevente - coutTotal;
+  const posClass = posGlobale >= 0 ? 'mv-green' : 'mv-red';
+  const posSign  = posGlobale >= 0 ? '+' : '';
+  document.getElementById('m-overview-global').innerHTML = `
+    <div class="metric"><div class="metric-label">Coût total investi</div><div class="metric-value mv-amber">${coutTotal.toFixed(0)}€</div><div class="metric-sub">${s.coutVendus.toFixed(0)}€ vendus + ${s.capitalStock.toFixed(0)}€ stock</div></div>
+    <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
+    <div class="metric"><div class="metric-label">Position globale</div><div class="metric-value ${posClass}">${posSign}${posGlobale.toFixed(0)}€</div><div class="metric-sub">recettes − coût total</div></div>`;
+
   const mm = buildMonthMap();
   const keys = Object.keys(mm).sort().slice(-10);
   const lbls = keys.map(fmtM);

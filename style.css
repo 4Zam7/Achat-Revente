@@ -167,6 +167,17 @@ body {
 .mv-green { color: var(--green) !important; }
 .mv-blue { color: var(--accent) !important; }
 .mv-amber { color: var(--amber) !important; }
+.mv-red { color: #f87171 !important; }
+.overview-global-wrap { margin-bottom: 1rem; }
+.overview-global-label {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 6px;
+  font-size: 10px; font-weight: 500; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.overview-global-label::before,
+.overview-global-label::after { content: ''; display: block; height: 1px; flex: 1; background: var(--border); }
+.metrics-grid-global { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
 /* CARDS */
 .card {
