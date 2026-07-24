@@ -1920,11 +1920,17 @@ document.addEventListener('click', function(e) {
 // ─── CONFIRM DIALOG ───────────────────────────────────────────────────────────
 let confirmResolve = null;
 
-function showConfirm(title, body) {
+function showConfirm(title, body, opts = {}) {
   return new Promise(resolve => {
     confirmResolve = resolve;
     document.getElementById('confirm-title').textContent = title;
     document.getElementById('confirm-body').innerHTML = body;
+    const btn = document.getElementById('btn-confirm-yes');
+    btn.className = opts.btnClass || 'btn-confirm-delete';
+    document.getElementById('confirm-yes-label').textContent = opts.okLabel || 'Supprimer';
+    const icon = document.getElementById('confirm-yes-icon');
+    if (opts.icon) icon.innerHTML = opts.icon;
+    else icon.innerHTML = '<path d="M3 7h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>';
     document.getElementById('confirm-modal').classList.add('open');
   });
 }
@@ -2437,7 +2443,11 @@ function showAdminMsg(msg, type) {
 }
 
 window.deleteUserProfile = async function (userId, email) {
-  if (!confirm(`Supprimer le profil de ${email} ?\n\nLe compte restera actif dans Supabase Auth — supprimez-le manuellement là-bas si vous voulez le retirer complètement.`)) return;
+  const ok = await showConfirm(
+    'Supprimer le profil',
+    `Supprimer le profil de <strong>${email}</strong> ?<br><br>Le compte Supabase Auth reste actif — supprimez-le depuis le dashboard si vous voulez le retirer complètement.`
+  );
+  if (!ok) return;
   const { error } = await sb.from('profiles').delete().eq('user_id', userId);
   if (error) { toast('Erreur lors de la suppression', 'err'); return; }
   ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
@@ -2446,8 +2456,20 @@ window.deleteUserProfile = async function (userId, email) {
 };
 
 window.resetUserPassword = async function (email) {
-  const { error } = await sb.auth.resetPasswordForEmail(email);
-  if (error) { toast('Erreur lors de l\'envoi', 'err'); return; }
+  const ok = await showConfirm(
+    'Réinitialiser le mot de passe',
+    `Envoyer un email de réinitialisation à <strong>${email}</strong> ?<br><br>L'utilisateur recevra un lien pour choisir un nouveau mot de passe.`,
+    {
+      okLabel: 'Envoyer',
+      btnClass: 'btn-confirm-blue',
+      icon: '<path d="M1 3h12v8H1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 3l6 5 6-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'
+    }
+  );
+  if (!ok) return;
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+  if (error) { toast('Erreur : ' + (error.message || 'vérifiez la config Supabase'), 'err'); return; }
   toast(`Email de réinitialisation envoyé à ${email}`, 'ok');
 };
 
