@@ -476,14 +476,15 @@ function renderItems(items) {
     return;
   }
   const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  const tr = s => s.length > 12 ? s.slice(0, 12) + '…' : s;
   document.getElementById('items-body').innerHTML = items.map(d => {
     const pv = d.r !== null ? d.r - d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
-    const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${d.ref}<button class="td-copy-btn" data-copy="${d.ref}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier ID">${copyIco}</button></span>` : '';
-    const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
-    const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
+    const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${tr(d.ref)}<button class="td-copy-btn" data-copy="${d.ref}" onclick="copyToClip(this.dataset.copy)" title="Copier ID">${copyIco}</button></span>` : '';
+    const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${tr(d.sku)}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIco}</button></span>` : '';
+    const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${tr(d.cmd)}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier Cmd">${copyIco}</button></span>` : '';
     const metaTags = (refHtml || skuHtml || cmdHtml) ? `<div class="td-meta-row">${refHtml}${skuHtml}${cmdHtml}</div>` : '';
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
     const ghostBadge = `<span class="badge b-green" aria-hidden="true" style="visibility:hidden;pointer-events:none">Vendu</span>`;
@@ -612,9 +613,9 @@ function buildStock() {
       skuWrap.innerHTML = `<div class="sku-scroll-wrap"><table class="sku-table">
         <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
         <tbody>${skuList.map(g => {
-          const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIcoSku}</button></span>`;
+          const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIcoSku}</button></span>`;
           const ref = g.items.find(d => d.ref)?.ref || null;
-          const idCell = ref ? `<span class="td-meta-tag td-meta-blue sku-tag">${ref}<button class="td-copy-btn" data-copy="${ref}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier ID">${copyIcoSku}</button></span>` : '<span class="sku-no-id">—</span>';
+          const idCell = ref ? `<span class="td-meta-tag td-meta-blue sku-tag">${ref}<button class="td-copy-btn" data-copy="${ref}" onclick="copyToClip(this.dataset.copy)" title="Copier ID">${copyIcoSku}</button></span>` : '<span class="sku-no-id">—</span>';
           const grossisteCell = g.grossistes.size ? [...g.grossistes].join(', ') : '—';
           const prices = [...g.prices].sort((a,b) => a - b);
           const unitCell = prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
@@ -880,6 +881,10 @@ window.confirmEdit = async function () {
   } finally {
     btn.disabled = false;
   }
+};
+
+window.copyToClip = function(text) {
+  navigator.clipboard.writeText(text).then(() => toast('Copié !', 'ok'));
 };
 
 // ─── TOAST ────────────────────────────────────────────────────────────────────
