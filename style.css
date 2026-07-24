@@ -1557,6 +1557,7 @@ tr:hover td { background: var(--bg3); }
 .sku-cell { font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500; color: var(--accent); }
 .sku-cell-tag { white-space: nowrap; }
 .sku-tag { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.sku-no-id { color: var(--text3); font-size: 12px; }
 .sku-grossiste { font-size: 11px; color: var(--text2); white-space: nowrap; }
 .sku-names { font-size: 11px; color: var(--text2); white-space: nowrap; }
 .sku-table td { white-space: nowrap; }

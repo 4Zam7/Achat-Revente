@@ -610,14 +610,17 @@ function buildStock() {
       skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
     } else {
       skuWrap.innerHTML = `<div class="sku-scroll-wrap"><table class="sku-table">
-        <thead><tr><th>SKU</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
+        <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
         <tbody>${skuList.map(g => {
           const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIcoSku}</button></span>`;
+          const ref = g.items.find(d => d.ref)?.ref || null;
+          const idCell = ref ? `<span class="td-meta-tag td-meta-blue sku-tag">${ref}<button class="td-copy-btn" data-copy="${ref}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier ID">${copyIcoSku}</button></span>` : '<span class="sku-no-id">—</span>';
           const grossisteCell = g.grossistes.size ? [...g.grossistes].join(', ') : '—';
           const prices = [...g.prices].sort((a,b) => a - b);
           const unitCell = prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
           return `<tr>
             <td class="sku-cell-tag">${skuTag}</td>
+            <td class="sku-cell-tag">${idCell}</td>
             <td class="sku-grossiste">${grossisteCell}</td>
             <td class="sku-names">${[...new Set(g.items.map(d => d.n))].join(', ')}</td>
             <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
