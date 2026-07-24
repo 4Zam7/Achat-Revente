@@ -2299,12 +2299,13 @@ async function loadUserProfile() {
   if (!user) return;
   const { data: profile } = await sb.from('profiles').select('*').eq('user_id', user.id).single();
   if (!profile) {
-    const newProfile = { user_id: user.id, email: user.email, is_admin: false, permissions: ALL_TABS };
-    await sb.from('profiles').insert(newProfile);
-    USER_PROFILE = newProfile;
-  } else {
-    USER_PROFILE = profile;
+    // Aucun profil = compte supprimé ou non autorisé → déconnexion immédiate
+    await sb.auth.signOut();
+    showAuth();
+    toast('Compte supprimé ou non autorisé.', 'err');
+    return;
   }
+  USER_PROFILE = profile;
   applyPermissions();
 }
 
