@@ -340,6 +340,46 @@ ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
 ```
 
+### Créer la table profiles (admin & permissions) — v2.1
+
+```sql
+CREATE TABLE profiles (
+  user_id uuid PRIMARY KEY,
+  email text NOT NULL,
+  is_admin boolean DEFAULT false,
+  permissions text[] DEFAULT ARRAY['overview','monthly','items','stock','bilan','radar','urssaf'],
+  created_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "read all"    ON profiles FOR SELECT TO authenticated USING (true);
+CREATE POLICY "insert own"  ON profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "admin write" ON profiles FOR ALL    TO authenticated
+  USING     ((SELECT is_admin FROM profiles WHERE user_id = auth.uid()))
+  WITH CHECK((SELECT is_admin FROM profiles WHERE user_id = auth.uid()));
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON profiles TO authenticated;
+GRANT ALL ON profiles TO service_role;
+```
+
+> N'oubliez pas d'exposer la table `profiles` dans **Integrations → Data API → Settings → Exposed tables**.
+
+**Se déclarer admin (à faire une seule fois) :**
+
+Récupérez votre `user_id` dans Supabase → Authentication → Users → cliquez sur votre compte → copiez le champ **User UID**. Puis dans le SQL Editor :
+
+```sql
+INSERT INTO profiles (user_id, email, is_admin, permissions)
+VALUES (
+  'VOTRE-USER-UUID',
+  'votre@email.com',
+  true,
+  ARRAY['overview','monthly','items','stock','bilan','radar','urssaf']
+);
+```
+
+> **Pour un collègue qui reprend le projet :** même démarche — il crée son compte via Supabase Auth, note son User UID, et insère sa ligne dans `profiles` avec `is_admin = true`. Une fois connecté dans l'app, le bouton 🛡️ Admin apparaît dans son header.
+
 ### Ajouter la colonne ID unique (v2.0)
 
 ```sql

@@ -15,6 +15,12 @@ let ALL_FILTER = null; // null = toutes, sinon array d'IDs
 let draggingBoutiqueId = null;
 let _dragMoved = false; // évite le click après drag
 
+// ─── ADMIN / PROFILS ─────────────────────────────────────────────────────────
+let USER_PROFILE = null;
+let ALL_PROFILES  = [];
+const ALL_TABS   = ['overview','monthly','items','stock','bilan','radar','urssaf'];
+const TAB_LABELS = { overview:'Vue d\'ensemble', monthly:'Par mois', items:'Articles', stock:'Stock', bilan:'Bilan', radar:'Radar', urssaf:'URSSAF' };
+
 // ─── AUTH ────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await sb.auth.getSession();
@@ -58,7 +64,7 @@ async function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('loading-screen').style.display = 'flex';
   await loadBoutiques();
-  await Promise.all([loadData(), loadGoal(), loadMarques()]);
+  await Promise.all([loadData(), loadGoal(), loadMarques(), loadUserProfile()]);
   hideLoading();
   buildOverview();
   setupRealtimeSync();
@@ -2279,6 +2285,139 @@ function checkRadarAlert(nom) {
   } else if (alert) {
     alert.style.display = 'none';
   }
+}
+
+// ─── PROFILS & PERMISSIONS ───────────────────────────────────────────────────
+async function loadUserProfile() {
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return;
+  const { data: profile } = await sb.from('profiles').select('*').eq('user_id', user.id).single();
+  if (!profile) {
+    const newProfile = { user_id: user.id, email: user.email, is_admin: false, permissions: ALL_TABS };
+    await sb.from('profiles').insert(newProfile);
+    USER_PROFILE = newProfile;
+  } else {
+    USER_PROFILE = profile;
+  }
+  applyPermissions();
+}
+
+function applyPermissions() {
+  if (!USER_PROFILE) return;
+  const perms = USER_PROFILE.permissions || ALL_TABS;
+  const isAdmin = USER_PROFILE.is_admin;
+
+  const adminBtn = document.getElementById('btn-admin');
+  if (adminBtn) adminBtn.style.display = isAdmin ? '' : 'none';
+
+  document.querySelectorAll('.tab[data-tab]').forEach(btn => {
+    btn.style.display = (isAdmin || perms.includes(btn.dataset.tab)) ? '' : 'none';
+  });
+
+  if (!isAdmin && !perms.includes(currentTab)) {
+    const first = ALL_TABS.find(t => perms.includes(t)) || 'overview';
+    showTab(first);
+  }
+}
+
+// ─── PANNEAU ADMIN ───────────────────────────────────────────────────────────
+window.openAdminPanel = function () {
+  document.getElementById('admin-panel').classList.add('open');
+  loadAllProfiles();
+};
+window.closeAdminPanel = function () {
+  document.getElementById('admin-panel').classList.remove('open');
+};
+
+async function loadAllProfiles() {
+  const { data } = await sb.from('profiles').select('*').order('created_at');
+  ALL_PROFILES = data || [];
+  renderAdminUserList();
+}
+
+function renderAdminUserList() {
+  const el = document.getElementById('admin-users-list');
+  if (!ALL_PROFILES.length) { el.innerHTML = '<div class="admin-empty">Aucun profil trouvé.</div>'; return; }
+  el.innerHTML = ALL_PROFILES.map(p => {
+    const isSelf = p.user_id === USER_PROFILE?.user_id;
+    const perms  = p.permissions || ALL_TABS;
+    return `<div class="admin-user-card">
+      <div class="admin-user-header">
+        <div>
+          <div class="admin-user-email">${p.email}</div>
+          ${p.is_admin ? '<span class="admin-badge">Admin</span>' : ''}
+        </div>
+        ${!isSelf ? `<label class="admin-toggle-wrap" title="Accorder/retirer le rôle Admin">
+          <input type="checkbox" onchange="toggleAdmin('${p.user_id}', this.checked)" ${p.is_admin ? 'checked' : ''}>
+          <span class="admin-toggle-label">Admin</span>
+        </label>` : '<span class="admin-self-label">Vous</span>'}
+      </div>
+      <div class="admin-perm-grid">
+        ${ALL_TABS.map(tab => `
+          <label class="admin-perm-item${p.is_admin ? ' admin-perm-disabled' : ''}">
+            <input type="checkbox"
+              data-uid="${p.user_id}" data-tab="${tab}"
+              ${perms.includes(tab) ? 'checked' : ''}
+              ${p.is_admin ? 'disabled' : ''}
+              onchange="updatePermissions('${p.user_id}')">
+            <span>${TAB_LABELS[tab]}</span>
+          </label>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.toggleAdmin = async function (userId, isAdmin) {
+  const { error } = await sb.from('profiles').update({ is_admin: isAdmin }).eq('user_id', userId);
+  if (error) { toast('Erreur', 'err'); return; }
+  const p = ALL_PROFILES.find(x => x.user_id === userId);
+  if (p) p.is_admin = isAdmin;
+  renderAdminUserList();
+  toast(isAdmin ? 'Rôle Admin accordé' : 'Rôle Admin retiré', 'ok');
+};
+
+window.updatePermissions = async function (userId) {
+  const checked = [...document.querySelectorAll(`input[data-uid="${userId}"][data-tab]`)]
+    .filter(cb => cb.checked).map(cb => cb.dataset.tab);
+  const { error } = await sb.from('profiles').update({ permissions: checked }).eq('user_id', userId);
+  if (error) { toast('Erreur', 'err'); return; }
+  const p = ALL_PROFILES.find(x => x.user_id === userId);
+  if (p) p.permissions = checked;
+  toast('Permissions sauvegardées', 'ok');
+};
+
+window.adminCreateUser = async function () {
+  const email = document.getElementById('admin-new-email').value.trim();
+  const pwd   = document.getElementById('admin-new-pwd').value.trim();
+  const btn   = document.getElementById('btn-admin-create');
+  if (!email || !pwd) { showAdminMsg('Remplis email et mot de passe', 'err'); return; }
+  if (pwd.length < 6) { showAdminMsg('Mot de passe minimum 6 caractères', 'err'); return; }
+  btn.disabled = true;
+  try {
+    const { data: { session: adminSession } } = await sb.auth.getSession();
+    const { error } = await sb.auth.signUp({ email, password: pwd });
+    if (error) throw error;
+    // Restore admin session if signUp changed it (email confirmation OFF)
+    if (adminSession) {
+      const { data: { session: cur } } = await sb.auth.getSession();
+      if (!cur || cur.user.id !== adminSession.user.id)
+        await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
+    }
+    document.getElementById('admin-new-email').value = '';
+    document.getElementById('admin-new-pwd').value   = '';
+    showAdminMsg(`Compte créé pour ${email}. L'utilisateur peut maintenant se connecter.`, 'ok');
+    setTimeout(loadAllProfiles, 800);
+  } catch (e) {
+    showAdminMsg(e.message || 'Erreur lors de la création', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+function showAdminMsg(msg, type) {
+  const el = document.getElementById('admin-create-msg');
+  el.innerHTML = `<div class="admin-msg admin-msg-${type}">${msg}</div>`;
+  setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
 }
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
