@@ -2363,6 +2363,16 @@ function renderAdminUserList() {
             <span>${TAB_LABELS[tab]}</span>
           </label>`).join('')}
       </div>
+      ${!isSelf ? `<div class="admin-user-actions">
+        <button class="btn-admin-action btn-admin-reset" onclick="resetUserPassword('${p.email}')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 2.5h4V6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 8v-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Réinitialiser MDP
+        </button>
+        <button class="btn-admin-action btn-admin-delete" onclick="deleteUserProfile('${p.user_id}', '${p.email}')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M6 4V2.5h4V4M5 4l.5 9h5l.5-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Supprimer le profil
+        </button>
+      </div>` : ''}
     </div>`;
   }).join('');
 }
@@ -2395,7 +2405,7 @@ window.adminCreateUser = async function () {
   btn.disabled = true;
   try {
     const { data: { session: adminSession } } = await sb.auth.getSession();
-    const { error } = await sb.auth.signUp({ email, password: pwd });
+    const { data: signUpData, error } = await sb.auth.signUp({ email, password: pwd });
     if (error) throw error;
     // Restore admin session if signUp changed it (email confirmation OFF)
     if (adminSession) {
@@ -2403,10 +2413,16 @@ window.adminCreateUser = async function () {
       if (!cur || cur.user.id !== adminSession.user.id)
         await sb.auth.setSession({ access_token: adminSession.access_token, refresh_token: adminSession.refresh_token });
     }
+    // Insert profile immediately so user appears in list without waiting for first login
+    if (signUpData?.user?.id) {
+      const newProf = { user_id: signUpData.user.id, email, is_admin: false, permissions: ALL_TABS };
+      await sb.from('profiles').insert(newProf);
+      ALL_PROFILES.push(newProf);
+      renderAdminUserList();
+    }
     document.getElementById('admin-new-email').value = '';
     document.getElementById('admin-new-pwd').value   = '';
     showAdminMsg(`Compte créé pour ${email}. L'utilisateur peut maintenant se connecter.`, 'ok');
-    setTimeout(loadAllProfiles, 800);
   } catch (e) {
     showAdminMsg(e.message || 'Erreur lors de la création', 'err');
   } finally {
@@ -2419,6 +2435,21 @@ function showAdminMsg(msg, type) {
   el.innerHTML = `<div class="admin-msg admin-msg-${type}">${msg}</div>`;
   setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
 }
+
+window.deleteUserProfile = async function (userId, email) {
+  if (!confirm(`Supprimer le profil de ${email} ?\n\nLe compte restera actif dans Supabase Auth — supprimez-le manuellement là-bas si vous voulez le retirer complètement.`)) return;
+  const { error } = await sb.from('profiles').delete().eq('user_id', userId);
+  if (error) { toast('Erreur lors de la suppression', 'err'); return; }
+  ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
+  renderAdminUserList();
+  toast(`Profil de ${email} supprimé`, 'ok');
+};
+
+window.resetUserPassword = async function (email) {
+  const { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) { toast('Erreur lors de l\'envoi', 'err'); return; }
+  toast(`Email de réinitialisation envoyé à ${email}`, 'ok');
+};
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
 const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, categorie, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, 'Vêtements', NULL, NULL, 'Temu', NULL);`;
