@@ -481,7 +481,7 @@ function renderItems(items) {
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
-    const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${d.ref}</span>` : '';
+    const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${d.ref}<button class="td-copy-btn" data-copy="${d.ref}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier ID">${copyIco}</button></span>` : '';
     const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${d.sku}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
     const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${d.cmd}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="navigator.clipboard.writeText(this.dataset.copy)" title="Copier">${copyIco}</button></span>` : '';
     const metaTags = (refHtml || skuHtml || cmdHtml) ? `<div class="td-meta-row">${refHtml}${skuHtml}${cmdHtml}</div>` : '';
