@@ -643,13 +643,39 @@ window.openAddModal = function () {
   document.getElementById('f-grossiste').value = '';
   document.getElementById('f-quantite').value = '1';
   document.getElementById('f-ref').value = '';
+  onSkuChange('f-sku', 'f-ref', 'btn-gen-f');
   document.getElementById('add-modal').classList.add('open');
   setTimeout(() => document.getElementById('f-nom').focus(), 100);
 };
 
+// Construit la map SKU → ID à partir des données existantes
+function buildSkuRefMap() {
+  const map = {};
+  D.forEach(d => { if (d.sku && d.ref) map[d.sku] = d.ref; });
+  return map;
+}
+
+// Appelé quand le champ SKU change : auto-remplit l'ID si le SKU en a déjà un
+window.onSkuChange = function(skuFieldId, refFieldId, genBtnId) {
+  const sku = document.getElementById(skuFieldId).value.trim();
+  const refField = document.getElementById(refFieldId);
+  const genBtn  = document.getElementById(genBtnId);
+  const linked  = buildSkuRefMap()[sku];
+  if (sku && linked) {
+    refField.value    = linked;
+    refField.readOnly = true;
+    refField.classList.add('field-auto');
+    if (genBtn) genBtn.style.display = 'none';
+  } else {
+    refField.readOnly = false;
+    refField.classList.remove('field-auto');
+    if (genBtn) genBtn.style.display = '';
+  }
+};
+
 window.generateRef = function(fieldId) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ0123456789';
-  const existing = new Set(D.map(d => d.ref).filter(Boolean));
+  const existing = new Set(Object.values(buildSkuRefMap()).concat(D.map(d => d.ref).filter(Boolean)));
   let id;
   do { id = Array.from({length: 6}, () => chars[Math.floor(Math.random() * chars.length)]).join(''); }
   while (existing.has(id));
@@ -671,10 +697,18 @@ window.addArticle = async function () {
   const cmd = document.getElementById('f-cmd').value.trim() || null;
   const grossiste = document.getElementById('f-grossiste').value.trim() || null;
   const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('f-quantite').value) || 1));
-  const ref = document.getElementById('f-ref').value.trim().toUpperCase() || null;
+  const rawRef = document.getElementById('f-ref').value.trim().toUpperCase() || null;
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
-  if (ref && qty > 1) { toast("L'ID ne peut être assigné qu'à un seul article", 'err'); return; }
-  if (ref && D.some(d => d.ref === ref)) { toast('Cet ID est déjà utilisé', 'err'); return; }
+  const skuRefMap = buildSkuRefMap();
+  // Si le SKU a déjà un ID lié, on force cet ID
+  const ref = (sku && skuRefMap[sku]) ? skuRefMap[sku] : rawRef;
+  // Vérif : l'ID saisi n'est pas déjà lié à un autre SKU
+  if (ref) {
+    const conflict = D.find(d => d.ref === ref && d.sku !== (sku || null));
+    if (conflict) { toast(`L'ID ${ref} est déjà lié au SKU ${conflict.sku}`, 'err'); return; }
+  }
+  // qty > 1 : interdit de créer un nouvel ID sur plusieurs articles à la fois
+  if (ref && qty > 1 && !skuRefMap[sku]) { toast("L'ID ne peut être assigné qu'à un seul article à la fois", 'err'); return; }
 
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
@@ -788,6 +822,7 @@ window.openEditModal = function (id) {
   document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('e-grossiste').value = it.grossiste || '';
   document.getElementById('e-ref').value = it.ref || '';
+  onSkuChange('e-sku', 'e-ref', 'btn-gen-e');
   document.getElementById('edit-modal').classList.add('open');
   setTimeout(() => document.getElementById('e-nom').focus(), 100);
 };
@@ -807,9 +842,14 @@ window.confirmEdit = async function () {
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
   const grossiste = document.getElementById('e-grossiste').value.trim() || null;
-  const ref = document.getElementById('e-ref').value.trim().toUpperCase() || null;
+  const rawRef = document.getElementById('e-ref').value.trim().toUpperCase() || null;
   if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
-  if (ref && D.some(d => d.ref === ref && d.id !== editId)) { toast('Cet ID est déjà utilisé', 'err'); return; }
+  const skuRefMap = buildSkuRefMap();
+  const ref = (sku && skuRefMap[sku]) ? skuRefMap[sku] : rawRef;
+  if (ref) {
+    const conflict = D.find(d => d.ref === ref && d.sku !== (sku || null) && d.id !== editId);
+    if (conflict) { toast(`L'ID ${ref} est déjà lié au SKU ${conflict.sku}`, 'err'); return; }
+  }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const btn = document.getElementById('btn-edit-confirm');
   btn.disabled = true;
@@ -2584,10 +2624,18 @@ window.importSQL = async function () {
     showImportResult(`${invalid.length} ligne(s) sans nom, prix_achat ou date_achat — importation annulée`, 'err'); return;
   }
 
-  const existingRefs = new Set(D.map(d => d.ref).filter(Boolean));
-  const conflict = parsed.find(r => r.identifiant && existingRefs.has(r.identifiant));
-  if (conflict) {
-    showImportResult(`ID "${conflict.identifiant}" déjà utilisé — importation annulée`, 'err'); return;
+  // Vérifie la cohérence SKU→ID : un même ID ne peut être lié qu'à un seul SKU
+  const skuRefMap = buildSkuRefMap();
+  for (const r of parsed) {
+    if (!r.identifiant) continue;
+    const sku = r.sku || null;
+    const existing = D.find(d => d.ref === r.identifiant && d.sku !== sku);
+    if (existing) {
+      showImportResult(`ID "${r.identifiant}" est déjà lié au SKU "${existing.sku}" — importation annulée`, 'err'); return;
+    }
+    if (sku && skuRefMap[sku] && skuRefMap[sku] !== r.identifiant) {
+      showImportResult(`SKU "${sku}" est déjà lié à l'ID "${skuRefMap[sku]}" — utilisez cet ID ou laissez le champ vide`, 'err'); return;
+    }
   }
 
   const btn = document.getElementById('btn-import-confirm');
