@@ -2446,27 +2446,17 @@ function showAdminMsg(msg, type) {
   setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
 }
 
-async function adminOp(action, payload) {
-  const { data, error } = await sb.functions.invoke('admin-ops', { body: { action, ...payload } });
-  if (error) throw new Error(error.message || 'Erreur');
-  if (data?.error) throw new Error(data.error);
-  return data;
-}
-
 window.deleteUserAccount = async function (userId, email) {
   const ok = await showConfirm(
     'Supprimer le compte',
     `Supprimer définitivement le compte de <strong>${email}</strong> ?<br><br>Cette action est irréversible — le compte sera supprimé de Supabase Auth.`
   );
   if (!ok) return;
-  try {
-    await adminOp('deleteUser', { userId });
-    ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
-    renderAdminUserList();
-    toast(`Compte de ${email} supprimé`, 'ok');
-  } catch(e) {
-    toast(e.message || 'Erreur lors de la suppression', 'err');
-  }
+  const { error } = await sb.rpc('admin_delete_user', { target_user_id: userId });
+  if (error) { toast(error.message || 'Erreur lors de la suppression', 'err'); return; }
+  ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
+  renderAdminUserList();
+  toast(`Compte de ${email} supprimé`, 'ok');
 };
 
 window.togglePwdForm = function (userId) {
@@ -2477,21 +2467,17 @@ window.togglePwdForm = function (userId) {
 };
 
 window.savePwdChange = async function (userId, email) {
-  const input  = document.getElementById(`pwd-input-${userId}`);
-  const btn    = document.getElementById(`pwd-btn-${userId}`);
-  const pwd    = input.value.trim();
+  const input = document.getElementById(`pwd-input-${userId}`);
+  const btn   = document.getElementById(`pwd-btn-${userId}`);
+  const pwd   = input.value.trim();
   if (pwd.length < 6) { toast('Mot de passe minimum 6 caractères', 'err'); return; }
   btn.disabled = true;
-  try {
-    await adminOp('updatePassword', { userId, password: pwd });
-    input.value = '';
-    document.getElementById(`pwd-form-${userId}`).style.display = 'none';
-    toast(`Mot de passe modifié pour ${email}`, 'ok');
-  } catch(e) {
-    toast(e.message || 'Erreur', 'err');
-  } finally {
-    btn.disabled = false;
-  }
+  const { error } = await sb.rpc('admin_update_password', { target_user_id: userId, new_password: pwd });
+  btn.disabled = false;
+  if (error) { toast(error.message || 'Erreur', 'err'); return; }
+  input.value = '';
+  document.getElementById(`pwd-form-${userId}`).style.display = 'none';
+  toast(`Mot de passe modifié pour ${email}`, 'ok');
 };
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
