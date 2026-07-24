@@ -2370,14 +2370,18 @@ function renderAdminUserList() {
           </label>`).join('')}
       </div>
       ${!isSelf ? `<div class="admin-user-actions">
-        <button class="btn-admin-action btn-admin-reset" onclick="resetUserPassword('${p.email}')">
-          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M8 2.5h4V6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 8v-2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          Réinitialiser MDP
+        <button class="btn-admin-action btn-admin-reset" onclick="togglePwdForm('${p.user_id}')">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><rect x="2" y="7" width="12" height="8" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11" r="1" fill="currentColor"/></svg>
+          Modifier MDP
         </button>
-        <button class="btn-admin-action btn-admin-delete" onclick="deleteUserProfile('${p.user_id}', '${p.email}')">
+        <button class="btn-admin-action btn-admin-delete" onclick="deleteUserAccount('${p.user_id}', '${p.email}')">
           <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M6 4V2.5h4V4M5 4l.5 9h5l.5-9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Supprimer le profil
+          Supprimer le compte
         </button>
+      </div>
+      <div class="admin-pwd-form" id="pwd-form-${p.user_id}" style="display:none">
+        <input type="password" id="pwd-input-${p.user_id}" class="admin-pwd-input" placeholder="Nouveau mot de passe (min. 6 car.)">
+        <button class="btn-confirm-blue btn-admin-save-pwd" id="pwd-btn-${p.user_id}" onclick="savePwdChange('${p.user_id}', '${p.email}')">Enregistrer</button>
       </div>` : ''}
     </div>`;
   }).join('');
@@ -2442,35 +2446,52 @@ function showAdminMsg(msg, type) {
   setTimeout(() => { if (el) el.innerHTML = ''; }, 5000);
 }
 
-window.deleteUserProfile = async function (userId, email) {
+async function adminOp(action, payload) {
+  const { data, error } = await sb.functions.invoke('admin-ops', { body: { action, ...payload } });
+  if (error) throw new Error(error.message || 'Erreur');
+  if (data?.error) throw new Error(data.error);
+  return data;
+}
+
+window.deleteUserAccount = async function (userId, email) {
   const ok = await showConfirm(
-    'Supprimer le profil',
-    `Supprimer le profil de <strong>${email}</strong> ?<br><br>Le compte Supabase Auth reste actif — supprimez-le depuis le dashboard si vous voulez le retirer complètement.`
+    'Supprimer le compte',
+    `Supprimer définitivement le compte de <strong>${email}</strong> ?<br><br>Cette action est irréversible — le compte sera supprimé de Supabase Auth.`
   );
   if (!ok) return;
-  const { error } = await sb.from('profiles').delete().eq('user_id', userId);
-  if (error) { toast('Erreur lors de la suppression', 'err'); return; }
-  ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
-  renderAdminUserList();
-  toast(`Profil de ${email} supprimé`, 'ok');
+  try {
+    await adminOp('deleteUser', { userId });
+    ALL_PROFILES = ALL_PROFILES.filter(p => p.user_id !== userId);
+    renderAdminUserList();
+    toast(`Compte de ${email} supprimé`, 'ok');
+  } catch(e) {
+    toast(e.message || 'Erreur lors de la suppression', 'err');
+  }
 };
 
-window.resetUserPassword = async function (email) {
-  const ok = await showConfirm(
-    'Réinitialiser le mot de passe',
-    `Envoyer un email de réinitialisation à <strong>${email}</strong> ?<br><br>L'utilisateur recevra un lien pour choisir un nouveau mot de passe.`,
-    {
-      okLabel: 'Envoyer',
-      btnClass: 'btn-confirm-blue',
-      icon: '<path d="M1 3h12v8H1z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M1 3l6 5 6-5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>'
-    }
-  );
-  if (!ok) return;
-  const { error } = await sb.auth.resetPasswordForEmail(email, {
-    redirectTo: window.location.origin + window.location.pathname
-  });
-  if (error) { toast('Erreur : ' + (error.message || 'vérifiez la config Supabase'), 'err'); return; }
-  toast(`Email de réinitialisation envoyé à ${email}`, 'ok');
+window.togglePwdForm = function (userId) {
+  const form = document.getElementById(`pwd-form-${userId}`);
+  const isHidden = form.style.display === 'none' || !form.style.display;
+  form.style.display = isHidden ? 'flex' : 'none';
+  if (isHidden) document.getElementById(`pwd-input-${userId}`).focus();
+};
+
+window.savePwdChange = async function (userId, email) {
+  const input  = document.getElementById(`pwd-input-${userId}`);
+  const btn    = document.getElementById(`pwd-btn-${userId}`);
+  const pwd    = input.value.trim();
+  if (pwd.length < 6) { toast('Mot de passe minimum 6 caractères', 'err'); return; }
+  btn.disabled = true;
+  try {
+    await adminOp('updatePassword', { userId, password: pwd });
+    input.value = '';
+    document.getElementById(`pwd-form-${userId}`).style.display = 'none';
+    toast(`Mot de passe modifié pour ${email}`, 'ok');
+  } catch(e) {
+    toast(e.message || 'Erreur', 'err');
+  } finally {
+    btn.disabled = false;
+  }
 };
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
