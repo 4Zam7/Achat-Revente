@@ -179,6 +179,39 @@ body {
 .overview-global-label::after { content: ''; display: block; height: 1px; flex: 1; background: var(--border); }
 .metrics-grid-global { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
+/* OVERVIEW LAYOUT (main + sidebar) */
+.overview-layout { display: flex; gap: 1.25rem; align-items: flex-start; }
+.overview-main { flex: 1; min-width: 0; }
+.overview-sidebar { width: 300px; flex-shrink: 0; position: sticky; top: calc(var(--header-height) + var(--nav-height) + 16px); }
+@media (max-width: 900px) {
+  .overview-layout { flex-direction: column; }
+  .overview-sidebar { width: 100%; position: static; }
+}
+.week-sales-card { margin-bottom: 0; }
+.week-sales-range {
+  font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace;
+  margin-top: -8px; margin-bottom: 12px;
+}
+.week-sales-empty { font-size: 12px; color: var(--text3); padding: 1rem 0; text-align: center; }
+.week-sales-item {
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+}
+.week-sales-item:last-child { border-bottom: none; }
+.week-sales-name {
+  font-size: 12px; color: var(--text); margin-bottom: 4px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.week-sales-prices { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.week-sales-buy, .week-sales-sell {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text2);
+}
+.week-sales-arrow { color: var(--text3); font-size: 11px; }
+.week-sales-total {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text2); font-family: 'DM Mono', monospace;
+}
+
 /* CARDS */
 .card {
   background: var(--bg2);
@@ -197,6 +230,18 @@ body {
 .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 11px; color: var(--text2); }
 .legend span { display: flex; align-items: center; gap: 5px; }
 .ldot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+/* ITEMS SEARCH ROW */
+.items-search-row { display: flex; align-items: center; gap: 8px; }
+.items-search-row .search-wrap { flex: 1; margin-bottom: 0.75rem; }
+.btn-scroll-bottom {
+  flex-shrink: 0; width: 38px; height: 38px; margin-bottom: 0.75rem;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text3);
+  cursor: pointer; transition: all 0.15s;
+}
+.btn-scroll-bottom:hover { border-color: var(--border2); color: var(--text); }
 
 /* SEARCH */
 .search-wrap {
@@ -859,6 +904,7 @@ tr:hover td { background: var(--bg3); }
 .bilan-selector {
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
 .bilan-select-label {
   font-size: 12px; font-weight: 500;
@@ -877,6 +923,10 @@ tr:hover td { background: var(--bg3); }
   min-width: 180px;
 }
 .bilan-select:focus { outline: none; border-color: var(--accent); }
+@media (max-width: 600px) {
+  .bilan-selector { gap: 8px 12px; }
+  .bilan-select { min-width: 0; flex: 1 1 130px; }
+}
 
 .bilan-top-item {
   display: flex; align-items: center;

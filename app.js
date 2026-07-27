@@ -267,10 +267,11 @@ function buildOverview() {
   const posGlobale = s.totalRevente - coutTotal;
   const posClass = posGlobale >= 0 ? 'mv-green' : 'mv-red';
   const posSign  = posGlobale >= 0 ? '+' : '';
+  const posPct = coutTotal > 0 ? (posGlobale / coutTotal) * 100 : 0;
   document.getElementById('m-overview-global').innerHTML = `
     <div class="metric"><div class="metric-label">Coût total investi</div><div class="metric-value mv-amber">${coutTotal.toFixed(0)}€</div><div class="metric-sub">${s.coutVendus.toFixed(0)}€ vendus + ${s.capitalStock.toFixed(0)}€ stock</div></div>
     <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
-    <div class="metric"><div class="metric-label">Position globale</div><div class="metric-value ${posClass}">${posSign}${posGlobale.toFixed(0)}€</div><div class="metric-sub">recettes − coût total</div></div>`;
+    <div class="metric"><div class="metric-label">Position globale</div><div class="metric-value ${posClass}">${posSign}${posGlobale.toFixed(0)}€</div><div class="metric-sub">recettes − coût total · ${posSign}${posPct.toFixed(0)}%</div></div>`;
 
   const mm = buildMonthMap();
   const keys = Object.keys(mm).sort().slice(-10);
@@ -368,7 +369,62 @@ function buildOverview() {
       }
     }
   });
+
+  buildWeekSales();
 }
+
+// ─── VENTES DE LA SEMAINE (sidebar, reset chaque lundi 0h) ──────────────────
+function getWeekBounds(ref = new Date()) {
+  const dt = new Date(ref);
+  dt.setHours(0, 0, 0, 0);
+  const day = dt.getDay(); // 0=dim ... 6=sam
+  const diffToMonday = day === 0 ? -6 : 1 - day;
+  const start = new Date(dt);
+  start.setDate(dt.getDate() + diffToMonday);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 7);
+  return { start, end };
+}
+function ymd(d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+function buildWeekSales() {
+  const wrap = document.getElementById('week-sales-list');
+  if (!wrap) return;
+  const { start, end } = getWeekBounds();
+  const startStr = ymd(start), endStr = ymd(end);
+  const items = D.filter(d => d.r !== null && d.dr && d.dr >= startStr && d.dr < endStr)
+                 .sort((a, b) => a.dr.localeCompare(b.dr));
+
+  const fmtDay = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const lastDay = new Date(end); lastDay.setDate(lastDay.getDate() - 1);
+  document.getElementById('week-sales-range').textContent = `${fmtDay(start)} – ${fmtDay(lastDay)}`;
+
+  const totalEl = document.getElementById('week-sales-total');
+  if (items.length === 0) {
+    wrap.innerHTML = `<div class="week-sales-empty">Aucune vente cette semaine</div>`;
+    totalEl.innerHTML = '';
+    return;
+  }
+
+  wrap.innerHTML = items.map(d => {
+    const pv = d.r - d.a;
+    return `<div class="week-sales-item">
+      <div class="week-sales-name">${d.n}</div>
+      <div class="week-sales-prices">
+        <span class="week-sales-buy">${d.a.toFixed(2)}€</span>
+        <span class="week-sales-arrow">→</span>
+        <span class="week-sales-sell">${d.r.toFixed(2)}€</span>
+        <span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>
+      </div>
+    </div>`;
+  }).join('');
+
+  const totalVente = items.reduce((s, d) => s + d.r, 0);
+  const totalPv = items.reduce((s, d) => s + (d.r - d.a), 0);
+  totalEl.innerHTML = `<span>${items.length} vente${items.length > 1 ? 's' : ''} · ${totalVente.toFixed(0)}€</span><span class="${totalPv >= 0 ? 'pv-pos' : 'pv-neg'}">${totalPv >= 0 ? '+' : ''}${totalPv.toFixed(2)}€</span>`;
+}
+setInterval(buildWeekSales, 60 * 1000);
 
 // ─── MONTHLY ─────────────────────────────────────────────────────────────────
 function buildMonthly() {
@@ -472,7 +528,7 @@ function buildMonthly() {
 // ─── ITEMS ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
-    document.getElementById('items-body').innerHTML = `<tr><td colspan="7" class="empty-state">Aucun article trouvé</td></tr>`;
+    document.getElementById('items-body').innerHTML = `<tr><td colspan="8" class="empty-state">Aucun article trouvé</td></tr>`;
     return;
   }
   const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
@@ -481,6 +537,11 @@ function renderItems(items) {
     const pv = d.r !== null ? d.r - d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
+    let pvPctHtml = '—';
+    if (pv !== null && d.a > 0) {
+      const pct = pv / d.a * 100;
+      pvPctHtml = `<span class="${pct >= 0 ? 'pv-pos' : 'pv-neg'}">${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%</span>`;
+    }
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
     const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${tr(d.ref)}<button class="td-copy-btn" data-copy="${d.ref}" onclick="copyToClip(this.dataset.copy)" title="Copier ID">${copyIco}</button></span>` : '';
     const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${tr(d.sku)}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIco}</button></span>` : '';
@@ -499,6 +560,7 @@ function renderItems(items) {
       <td class="td-num">${d.a.toFixed(2)}€</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
+      <td class="td-num">${pvPctHtml}</td>
       <td class="td-actions"><div class="td-actions-inner">${actionsCell}</div></td>
     </tr>`;
   }).join('');
@@ -540,6 +602,10 @@ window.filterTable = function () {
   countEl.textContent = hasFilter ? `${items.length} article${items.length > 1 ? 's' : ''}` : '';
 
   renderItems(items);
+};
+
+window.scrollItemsToBottom = function () {
+  window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 };
 
 window.resetFilters = function () {
