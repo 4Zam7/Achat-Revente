@@ -232,6 +232,7 @@ body {
   margin-bottom: 1rem;
 }
 .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0; }
+.chart-row > .card { min-width: 0; }
 .chart-wrap { position: relative; height: 200px; }
 .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; font-size: 11px; color: var(--text2); }
 .legend span { display: flex; align-items: center; gap: 5px; }
