@@ -985,6 +985,25 @@ tr:hover td { background: var(--bg3); }
 .bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: 8px; }
 .bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
 
+/* Listes "Articles achetés/vendus" du Bilan — contenues dans la
+   même dimension que la carte "Top plus-values" ; si une ligne
+   (nom + badges) est plus large que la carte, on défile
+   horizontalement au lieu de laisser déborder toute la page */
+.bilan-list-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.bilan-list-scroll .bilan-achat-item {
+  width: max-content;
+  min-width: 100%;
+}
+.bilan-list-scroll .bilan-achat-name {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+
 /* ── EXPORT BUTTON ───────────────────────────────────────────────────────── */
 .btn-admin-header {
   display: flex; align-items: center; justify-content: center;

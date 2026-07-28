@@ -525,7 +525,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 
 ### v2.4 — 28 Juillet 2026
 
-- 🐛 **Fix définitif du dézoom mobile dans Bilan** — les listes "Top plus-values" et "Articles achetés/vendus" pouvaient forcer un débordement horizontal (nom d'article long dans une colonne flexible sans largeur minimale), ce qui permettait de dézoomer la page sur mobile. Le correctif précédent (v2.3) ne traitait qu'une cause partielle
+- 🐛 **Fix du dézoom mobile dans Bilan** — un nom d'article long dans "Articles achetés/vendus" pouvait forcer un débordement horizontal de toute la page (le correctif v2.3 ne traitait qu'une cause partielle, les sélecteurs Année/Mois). Ces deux listes défilent désormais horizontalement à l'intérieur de leur carte — même largeur que "Top plus-values" — sans jamais déborder la page ni tronquer les noms
 - ⬆️ **Remonter en haut** — bouton en bas de la liste Articles pour revenir rapidement en haut
 - ✕ **Effacer une recherche** — croix à l'intérieur de toutes les barres de recherche (header, mobile, Articles, Radar) pour vider le champ en un clic
 
