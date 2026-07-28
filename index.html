@@ -345,10 +345,14 @@
           <!-- BILAN MENSUEL -->
           <div id="bilan-month">
             <div class="bilan-selector">
-              <label class="bilan-select-label">Année</label>
-              <select id="bilan-month-year" onchange="filterBilanMonths()" class="bilan-select" style="min-width:100px"></select>
-              <label class="bilan-select-label" style="margin-left:12px">Mois</label>
-              <select id="bilan-month-select" onchange="buildBilanMonth()" class="bilan-select"></select>
+              <div class="bilan-field">
+                <label class="bilan-select-label">Année</label>
+                <select id="bilan-month-year" onchange="filterBilanMonths()" class="bilan-select"></select>
+              </div>
+              <div class="bilan-field">
+                <label class="bilan-select-label">Mois</label>
+                <select id="bilan-month-select" onchange="buildBilanMonth()" class="bilan-select"></select>
+              </div>
             </div>
             <div class="metrics-grid" id="bilan-m-metrics"></div>
             <div class="chart-row">
@@ -377,8 +381,10 @@
           <!-- BILAN ANNUEL -->
           <div id="bilan-year" style="display:none">
             <div class="bilan-selector">
-              <label class="bilan-select-label">Choisir une année</label>
-              <select id="bilan-year-select" onchange="buildBilanYear()" class="bilan-select"></select>
+              <div class="bilan-field">
+                <label class="bilan-select-label">Choisir une année</label>
+                <select id="bilan-year-select" onchange="buildBilanYear()" class="bilan-select"></select>
+              </div>
             </div>
             <div class="metrics-grid" id="bilan-y-metrics"></div>
             <div class="chart-row">

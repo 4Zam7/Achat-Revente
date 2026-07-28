@@ -930,17 +930,19 @@ tr:hover td { background: var(--bg3); }
 .bilan-tab:hover:not(.active) { color: var(--text2); }
 
 .bilan-selector {
-  display: flex; align-items: center; gap: 12px;
+  display: flex; flex-direction: column; gap: 10px;
   margin-bottom: 1.25rem;
-  flex-wrap: wrap;
+  max-width: 220px;
 }
+.bilan-field { display: flex; flex-direction: column; gap: 5px; }
 .bilan-select-label {
-  font-size: 12px; font-weight: 500;
+  font-size: 10px; font-weight: 600;
   color: var(--text3); white-space: nowrap;
-  text-transform: uppercase; letter-spacing: 0.05em;
+  text-transform: uppercase; letter-spacing: 0.06em;
 }
 .bilan-select {
-  padding: 8px 36px 8px 12px; font-size: 13px;
+  width: 100%;
+  padding: 8px 32px 8px 12px; font-size: 13px;
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text);
   font-family: 'DM Sans', sans-serif; cursor: pointer;
@@ -948,13 +950,9 @@ tr:hover td { background: var(--bg3); }
   background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235c5a57' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 12px center;
-  min-width: 180px;
 }
 .bilan-select:focus { outline: none; border-color: var(--accent); }
-@media (max-width: 600px) {
-  .bilan-selector { gap: 8px 12px; }
-  .bilan-select { min-width: 0; flex: 1 1 130px; }
-}
+.bilan-select:hover { border-color: var(--border2); }
 
 .bilan-top-item {
   display: flex; align-items: center;
@@ -974,35 +972,36 @@ tr:hover td { background: var(--bg3); }
 .bilan-top-name { flex: 1; min-width: 0; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bilan-top-pv { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; color: var(--green-text); flex-shrink: 0; margin-left: 8px; }
 
+/* Listes "Articles achetés/vendus" du Bilan — grille à colonnes
+   fixes pour que nom, catégorie, prix et statut restent alignés
+   d'une ligne à l'autre quelle que soit la longueur du nom */
 .bilan-achats-list { font-size: 12px; }
 .bilan-achat-item {
-  display: flex; align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 72px 56px 52px;
+  align-items: center;
+  gap: 8px;
   padding: 7px 0;
   border-bottom: 0.5px solid var(--border);
 }
 .bilan-achat-item:last-child { border-bottom: none; }
-.bilan-achat-name { color: var(--text2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: 8px; }
-.bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
+.bilan-achat-name { color: var(--text2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilan-achat-cat {
+  justify-self: center; max-width: 100%;
+  font-size: 10px; color: var(--text3); background: var(--bg3);
+  border: 1px solid var(--border); padding: 2px 8px; border-radius: 999px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bilan-achat-cat:empty { visibility: hidden; }
+.bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); text-align: right; }
+.bilan-achat-status { justify-self: end; font-size: 10px; white-space: nowrap; }
 
-/* Listes "Articles achetés/vendus" du Bilan — contenues dans la
-   même dimension que la carte "Top plus-values" ; si une ligne
-   (nom + badges) est plus large que la carte, on défile
-   horizontalement au lieu de laisser déborder toute la page */
+/* Filet de sécurité : si une catégorie ou un nom est vraiment trop
+   long malgré tout, on défile horizontalement plutôt que de
+   déborder la page */
 .bilan-list-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-}
-.bilan-list-scroll .bilan-achat-item {
-  width: max-content;
-  min-width: 100%;
-}
-.bilan-list-scroll .bilan-achat-name {
-  flex: 0 0 auto;
-  white-space: nowrap;
-  overflow: visible;
-  text-overflow: clip;
 }
 
 /* ── EXPORT BUTTON ───────────────────────────────────────────────────────── */

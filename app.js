@@ -1572,9 +1572,9 @@ window.buildBilanMonth = function() {
     ? bought.map(d => `
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
-          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
-          ${d.r !== null ? `<span class="badge b-green" style="margin-left:6px;font-size:10px">Vendu</span>` : `<span class="badge b-amber" style="margin-left:6px;font-size:10px">Stock</span>`}
+          ${d.r !== null ? `<span class="badge b-green bilan-achat-status">Vendu</span>` : `<span class="badge b-amber bilan-achat-status">Stock</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article acheté ce mois</div>';
 
@@ -1583,9 +1583,9 @@ window.buildBilanMonth = function() {
     ? soldThisMonth.map(d => `
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
-          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
-          <span class="pv-pos" style="margin-left:6px;font-size:10px">+${(d.r - d.a).toFixed(0)}€</span>
+          <span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>
         </div>`).join('')
     : '<div class="empty-state">Aucun article vendu ce mois</div>';
 };
@@ -1663,9 +1663,9 @@ window.buildBilanYear = function() {
     ? boughtSorted.map(d => `
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
-          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
-          ${d.r !== null ? `<span class="badge b-green" style="margin-left:6px;font-size:10px">Vendu</span>` : `<span class="badge b-amber" style="margin-left:6px;font-size:10px">Stock</span>`}
+          ${d.r !== null ? `<span class="badge b-green bilan-achat-status">Vendu</span>` : `<span class="badge b-amber bilan-achat-status">Stock</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article acheté cette année</div>';
 
@@ -1674,9 +1674,9 @@ window.buildBilanYear = function() {
     ? soldSorted.map(d => `
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
-          ${d.cat ? `<div class="bilan-achat-cat">${d.cat}</div>` : ''}
+          <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
-          <span class="pv-pos" style="margin-left:6px;font-size:10px">+${(d.r - d.a).toFixed(0)}€</span>
+          <span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>
         </div>`).join('')
     : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
