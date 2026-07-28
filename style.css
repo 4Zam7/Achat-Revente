@@ -248,6 +248,16 @@ body {
   cursor: pointer; transition: all 0.15s;
 }
 .btn-scroll-bottom:hover { border-color: var(--border2); color: var(--text); }
+.scroll-to-top-row { display: flex; justify-content: center; margin-top: 12px; }
+.btn-scroll-top {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 8px 16px; font-size: 12px; font-weight: 500;
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 999px; color: var(--text3);
+  cursor: pointer; transition: all 0.15s;
+  font-family: 'DM Sans', sans-serif;
+}
+.btn-scroll-top:hover { border-color: var(--border2); color: var(--text); }
 
 /* SEARCH */
 .search-wrap {
@@ -258,13 +268,24 @@ body {
   color: var(--text3); pointer-events: none;
 }
 .search-input {
-  width: 100%; padding: 10px 12px 10px 36px;
+  width: 100%; padding: 10px 32px 10px 36px;
   font-size: 14px; font-family: 'DM Sans', sans-serif;
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text);
 }
 .search-input::placeholder { color: var(--text3); }
 .search-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(91,143,249,0.12); }
+
+/* INPUT CLEAR BUTTON (croix pour effacer une barre de recherche) */
+.input-clear-btn {
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 20px; height: 20px; padding: 0;
+  display: none; align-items: center; justify-content: center;
+  background: var(--bg4); border: none; border-radius: 50%;
+  color: var(--text3); font-size: 15px; line-height: 1;
+  cursor: pointer; transition: all 0.15s;
+}
+.input-clear-btn:hover { background: var(--border2); color: var(--text); }
 
 /* TABLE */
 .table-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -949,7 +970,7 @@ tr:hover td { background: var(--bg3); }
   font-size: 10px; font-weight: 600; color: var(--text3);
   flex-shrink: 0; margin-right: 10px;
 }
-.bilan-top-name { flex: 1; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilan-top-name { flex: 1; min-width: 0; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bilan-top-pv { font-family: 'DM Mono', monospace; font-size: 11px; font-weight: 600; color: var(--green-text); flex-shrink: 0; margin-left: 8px; }
 
 .bilan-achats-list { font-size: 12px; }
@@ -960,7 +981,7 @@ tr:hover td { background: var(--bg3); }
   border-bottom: 0.5px solid var(--border);
 }
 .bilan-achat-item:last-child { border-bottom: none; }
-.bilan-achat-name { color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bilan-achat-name { color: var(--text2); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bilan-achat-price { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); flex-shrink: 0; margin-left: 8px; }
 .bilan-achat-cat { font-size: 10px; color: var(--text3); background: var(--bg3); border: 1px solid var(--border); padding: 1px 6px; border-radius: 999px; flex-shrink: 0; margin-left: 6px; }
 
@@ -1197,7 +1218,7 @@ tr:hover td { background: var(--bg3); }
   color: var(--text3); pointer-events: none;
 }
 .header-search-input {
-  width: 100%; padding: 7px 12px 7px 32px;
+  width: 100%; padding: 7px 30px 7px 32px;
   font-size: 13px; font-family: 'DM Sans', sans-serif;
   background: var(--bg3); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text);
@@ -1281,7 +1302,7 @@ tr:hover td { background: var(--bg3); }
   color: var(--text3); pointer-events: none;
 }
 .mobile-search-inner input {
-  width: 100%; padding: 9px 12px 9px 32px;
+  width: 100%; padding: 9px 30px 9px 32px;
   font-size: 14px; font-family: 'DM Sans', sans-serif;
   background: var(--bg2); border: 1px solid var(--border);
   border-radius: var(--radius-sm); color: var(--text);

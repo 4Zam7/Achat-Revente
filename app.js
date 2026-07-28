@@ -608,6 +608,23 @@ window.scrollItemsToBottom = function () {
   window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
 };
 
+window.scrollItemsToTop = function () {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+// ─── BARRES DE RECHERCHE : croix pour effacer ───────────────────────────────
+window.toggleClearBtn = function (inputEl) {
+  const btn = inputEl.parentElement.querySelector('.input-clear-btn');
+  if (btn) btn.style.display = inputEl.value ? 'flex' : 'none';
+};
+
+window.clearSearchInput = function (inputId) {
+  const input = document.getElementById(inputId);
+  input.value = '';
+  input.dispatchEvent(new Event('input', { bubbles: true }));
+  input.focus();
+};
+
 window.resetFilters = function () {
   document.getElementById('srch').value = '';
   document.getElementById('f-statut').value = '';

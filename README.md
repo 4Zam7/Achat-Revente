@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.3-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.4-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -522,6 +522,12 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.4 — 28 Juillet 2026
+
+- 🐛 **Fix définitif du dézoom mobile dans Bilan** — les listes "Top plus-values" et "Articles achetés/vendus" pouvaient forcer un débordement horizontal (nom d'article long dans une colonne flexible sans largeur minimale), ce qui permettait de dézoomer la page sur mobile. Le correctif précédent (v2.3) ne traitait qu'une cause partielle
+- ⬆️ **Remonter en haut** — bouton en bas de la liste Articles pour revenir rapidement en haut
+- ✕ **Effacer une recherche** — croix à l'intérieur de toutes les barres de recherche (header, mobile, Articles, Radar) pour vider le champ en un clic
 
 ### v2.3 — 27 Juillet 2026
 

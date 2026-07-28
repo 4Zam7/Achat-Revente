@@ -63,7 +63,8 @@
           <div id="boutique-toggle" class="boutique-toggle"></div>
           <div class="header-search-wrap">
             <svg width="14" height="14" viewBox="0 0 16 16" fill="none" class="header-search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-            <input type="text" id="global-search" placeholder="Rechercher un article..." oninput="doGlobalSearch()" autocomplete="off" class="header-search-input">
+            <input type="text" id="global-search" placeholder="Rechercher un article..." oninput="doGlobalSearch(); toggleClearBtn(this)" autocomplete="off" class="header-search-input">
+            <button class="input-clear-btn" onclick="clearSearchInput('global-search')" style="display:none" title="Effacer">×</button>
             <div id="global-results" class="header-search-results"></div>
           </div>
           <div style="display:flex;gap:8px">
@@ -97,7 +98,8 @@
       <div class="mobile-search-wrap">
         <div class="mobile-search-inner">
           <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <input type="text" id="mobile-search" placeholder="Rechercher un article..." oninput="doMobileSearch()" autocomplete="off">
+          <input type="text" id="mobile-search" placeholder="Rechercher un article..." oninput="doMobileSearch(); toggleClearBtn(this)" autocomplete="off">
+          <button class="input-clear-btn" onclick="clearSearchInput('mobile-search')" style="display:none" title="Effacer">×</button>
           <div id="mobile-results" class="mobile-search-results"></div>
         </div>
       </div>
@@ -249,7 +251,8 @@
           <div class="items-search-row">
             <div class="search-wrap">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              <input type="text" id="srch" placeholder="Rechercher un article..." oninput="filterTable()" class="search-input">
+              <input type="text" id="srch" placeholder="Rechercher un article..." oninput="filterTable(); toggleClearBtn(this)" class="search-input">
+              <button class="input-clear-btn" onclick="clearSearchInput('srch')" style="display:none" title="Effacer">×</button>
             </div>
             <button class="btn-scroll-bottom" onclick="scrollItemsToBottom()" title="Aller tout en bas">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 2v10M4 8l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -307,6 +310,12 @@
               </tr></thead>
               <tbody id="items-body"></tbody>
             </table>
+          </div>
+          <div class="scroll-to-top-row">
+            <button class="btn-scroll-top" onclick="scrollItemsToTop()" title="Remonter en haut">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 14V4M4 8l4-4 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span>Remonter en haut</span>
+            </button>
           </div>
         </div>
 
@@ -427,7 +436,8 @@
           <div class="radar-topbar">
             <div class="search-wrap" style="flex:1;margin-bottom:0">
               <svg width="15" height="15" viewBox="0 0 16 16" fill="none" class="search-icon"><circle cx="6.5" cy="6.5" r="5" stroke="currentColor" stroke-width="1.5"/><path d="M10 10l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-              <input type="text" id="radar-search" placeholder="Rechercher une marque..." oninput="filterRadar()" class="search-input">
+              <input type="text" id="radar-search" placeholder="Rechercher une marque..." oninput="filterRadar(); toggleClearBtn(this)" class="search-input">
+              <button class="input-clear-btn" onclick="clearSearchInput('radar-search')" style="display:none" title="Effacer">×</button>
             </div>
             <select id="radar-filter-stars" onchange="filterRadar()" class="radar-stars-filter">
               <option value="">Toutes</option>
