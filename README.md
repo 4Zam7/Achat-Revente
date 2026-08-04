@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.4-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.5-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -23,9 +23,10 @@
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
 - 📈 **Graphiques avec valeurs affichées** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
 - 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase. En mode All, l'objectif est la somme des objectifs de chaque boutique
-- 📅 **Ventes de la semaine** — carte latérale dans Vue d'ensemble listant les articles vendus depuis lundi 0h (prix d'achat, prix de vente, +value), qui bascule automatiquement sur la nouvelle semaine
+- 📅 **Ventes & Encaissements de la semaine** — deux cartes latérales dans Vue d'ensemble : paiements reçus et ventes réalisées depuis lundi 0h, qui basculent automatiquement sur la nouvelle semaine
+- 💰 **Vente et encaissement séparés** — "Vendu" enregistre prix + date de vente (argent pas encore reçu) ; le bouton bleu "Encaisser" enregistre ensuite la date de réception du paiement
 - 📐 **Pourcentages de plus-value** — % affiché sous "Position globale" dans la vue globale, et colonne "% +Value" dans le tableau Articles
-- 📋 **Gestion des articles** — ajout, modification, vente, annulation de vente, suppression
+- 📋 **Gestion des articles** — ajout, modification, vente, encaissement, annulation de vente, suppression
 - 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande, grossiste et ID
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
@@ -199,7 +200,8 @@ Tout le SQL du projet est regroupé ici, en un seul endroit, pour ne plus avoir 
 -- ============================================================
 -- TABLE articles — chaque ligne = un exemplaire acheté,
 -- éventuellement revendu (prix_revente / date_revente NULL tant
--- qu'il est en stock)
+-- qu'il est en stock) puis encaissé (date_encaissement NULL tant
+-- que le paiement n'a pas été reçu)
 -- ============================================================
 CREATE TABLE articles (
   id bigserial PRIMARY KEY,
@@ -208,6 +210,7 @@ CREATE TABLE articles (
   date_achat date NOT NULL,
   prix_revente numeric,
   date_revente date,
+  date_encaissement date,
   categorie text,
   boutique_id bigint,
   sku text,
@@ -414,6 +417,13 @@ INSERT INTO articles (
 Si votre instance a été créée avant l'ajout d'une fonctionnalité, exécutez uniquement le bloc correspondant à votre version actuelle, dans l'ordre, dans Supabase → **SQL Editor**. Si vous créez une instance neuve, ignorez cette partie : le bloc **Schéma complet** ci-dessus contient déjà tout.
 
 ```sql
+-- Passer en v2.5 — étape "Encaisser" distincte de la vente : la
+-- vente enregistre prix_revente/date_revente, l'encaissement
+-- (réception du paiement) enregistre date_encaissement séparément
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS date_encaissement date;
+```
+
+```sql
 -- Passer en v2.2 — l'ID n'est plus unique par article mais par
 -- SKU : on retire l'ancienne contrainte d'unicité par article
 ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_identifiant_key;
@@ -522,6 +532,13 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.5 — 28 Juillet 2026
+
+- 💰 **Encaisser, séparé de la vente** — la vente reste "Vendu" (prix + date de vente, argent pas encore reçu). Un nouveau bouton bleu **Encaisser** enregistre la date à laquelle le paiement est réellement reçu, une information qui n'était pas suivie jusqu'ici
+- 🏷️ **Statuts affinés dans Articles** — un article vendu affiche désormais "Vendu" + bouton "Encaisser" tant que l'argent n'est pas reçu, puis "Vendu" + badge bleu "Encaissé" une fois le paiement encaissé
+- 📅 **Deux cartes dans Vue d'ensemble** — "Encaisser cette semaine" (paiements reçus depuis lundi 0h) au-dessus de "Ventes de la semaine" (ventes réalisées depuis lundi 0h)
+- ⚠️ Nécessite la migration SQL v2.5 (nouvelle colonne `date_encaissement`) — voir [🗄️ Référence SQL → Migrations](#reference-sql)
 
 ### v2.4 — 28 Juillet 2026
 

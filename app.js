@@ -101,6 +101,7 @@ function normalize(row) {
     r: row.prix_revente != null ? parseFloat(row.prix_revente) : null,
     da: row.date_achat,
     dr: row.date_revente || null,
+    de: row.date_encaissement || null,
     cat: row.categorie || '',
     boutique_id: row.boutique_id,
     sku: row.sku || '',
@@ -388,21 +389,21 @@ function getWeekBounds(ref = new Date()) {
 function ymd(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function buildWeekSales() {
-  const wrap = document.getElementById('week-sales-list');
+function buildWeekList(prefix, dateField, emptyLabel, unitLabel) {
+  const wrap = document.getElementById(prefix + '-list');
   if (!wrap) return;
   const { start, end } = getWeekBounds();
   const startStr = ymd(start), endStr = ymd(end);
-  const items = D.filter(d => d.r !== null && d.dr && d.dr >= startStr && d.dr < endStr)
-                 .sort((a, b) => a.dr.localeCompare(b.dr));
+  const items = D.filter(d => d.r !== null && d[dateField] && d[dateField] >= startStr && d[dateField] < endStr)
+                 .sort((a, b) => a[dateField].localeCompare(b[dateField]));
 
   const fmtDay = d => d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   const lastDay = new Date(end); lastDay.setDate(lastDay.getDate() - 1);
-  document.getElementById('week-sales-range').textContent = `${fmtDay(start)} – ${fmtDay(lastDay)}`;
+  document.getElementById(prefix + '-range').textContent = `${fmtDay(start)} – ${fmtDay(lastDay)}`;
 
-  const totalEl = document.getElementById('week-sales-total');
+  const totalEl = document.getElementById(prefix + '-total');
   if (items.length === 0) {
-    wrap.innerHTML = `<div class="week-sales-empty">Aucune vente cette semaine</div>`;
+    wrap.innerHTML = `<div class="week-sales-empty">${emptyLabel}</div>`;
     totalEl.innerHTML = '';
     return;
   }
@@ -422,7 +423,11 @@ function buildWeekSales() {
 
   const totalVente = items.reduce((s, d) => s + d.r, 0);
   const totalPv = items.reduce((s, d) => s + (d.r - d.a), 0);
-  totalEl.innerHTML = `<span>${items.length} vente${items.length > 1 ? 's' : ''} · ${totalVente.toFixed(0)}€</span><span class="${totalPv >= 0 ? 'pv-pos' : 'pv-neg'}">${totalPv >= 0 ? '+' : ''}${totalPv.toFixed(2)}€</span>`;
+  totalEl.innerHTML = `<span>${items.length} ${unitLabel}${items.length > 1 ? 's' : ''} · ${totalVente.toFixed(0)}€</span><span class="${totalPv >= 0 ? 'pv-pos' : 'pv-neg'}">${totalPv >= 0 ? '+' : ''}${totalPv.toFixed(2)}€</span>`;
+}
+function buildWeekSales() {
+  buildWeekList('encaisser-week', 'de', 'Aucun encaissement cette semaine', 'encaissement');
+  buildWeekList('sales-week', 'dr', 'Aucune vente cette semaine', 'vente');
 }
 setInterval(buildWeekSales, 60 * 1000);
 
@@ -548,10 +553,15 @@ function renderItems(items) {
     const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${tr(d.cmd)}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier Cmd">${copyIco}</button></span>` : '';
     const metaTags = (refHtml || skuHtml || cmdHtml) ? `<div class="td-meta-row">${refHtml}${skuHtml}${cmdHtml}</div>` : '';
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
-    const ghostBadge = `<span class="badge b-green" aria-hidden="true" style="visibility:hidden;pointer-events:none">Vendu</span>`;
-    const actionsCell = d.r === null
-      ? `${ghostBadge}<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>${delBtn}`
-      : `<span class="badge b-green">Vendu</span><button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>${delBtn}`;
+    const cancelBtn = `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>`;
+    let actionsCell;
+    if (d.r === null) {
+      actionsCell = `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>${delBtn}`;
+    } else if (d.de === null) {
+      actionsCell = `<span class="badge b-green">Vendu</span><button class="btn-action btn-action-encaisser" onclick="openEncaisserModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M1 4h10v5H1z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="M3.5 6.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg> Encaisser</button>${cancelBtn}${delBtn}`;
+    } else {
+      actionsCell = `<span class="badge b-green">Vendu</span><span class="badge b-blue">Encaissé</span>${cancelBtn}${delBtn}`;
+    }
     const grossisteHtml = d.grossiste ? `<span class="td-grossiste">${d.grossiste}</span>` : '<span class="td-empty">—</span>';
     return `<tr>
       <td class="td-name"><span class="name-link" onclick="openEditModal(${d.id})">${d.n}</span>${metaTags}</td>
@@ -857,6 +867,40 @@ window.confirmSell = async function () {
   }
 };
 
+// ─── ENCAISSER (réception du paiement) ─────────────────────────────────────────
+let encaisserId = null;
+
+window.openEncaisserModal = function (id) {
+  encaisserId = id;
+  const it = D.find(d => d.id === id);
+  document.getElementById('encaisser-modal-name').textContent = it.n + ' — vendu ' + it.r.toFixed(2) + '€ le ' + it.dr;
+  dpSetValue('m-date-encaissement', today());
+  document.getElementById('encaisser-modal').classList.add('open');
+};
+window.closeEncaisserModal = function () { document.getElementById('encaisser-modal').classList.remove('open'); encaisserId = null; };
+
+window.confirmEncaisser = async function () {
+  const date = document.getElementById('m-date-encaissement').value;
+  if (!date) { toast('Date invalide', 'err'); return; }
+
+  const btn = document.getElementById('btn-encaisser-confirm');
+  btn.disabled = true;
+
+  try {
+    const it = D.find(d => d.id === encaisserId);
+    const { error } = await sb.from('articles').update({ date_encaissement: date }).eq('id', encaisserId);
+    if (error) throw error;
+    if (it) { it.de = date; }
+    closeEncaisserModal();
+    refreshCurrentPanel();
+    toast(`"${it.n}" encaissé`, 'ok');
+  } catch (e) {
+    toast("Erreur lors de l'encaissement", 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
 // ─── DELETE ───────────────────────────────────────────────────────────────────
 window.delItem = async function (id) {
   const it = D.find(d => d.id === id);
@@ -881,10 +925,10 @@ window.cancelSell = async function (id) {
   const ok = await showConfirm('Annuler la vente', `Remettre <strong>${it.n}</strong> en stock ?<br><br>Les informations de vente seront effacées.`);
   if (!ok) return;
   try {
-    const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null }).eq("id", id);
+    const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null, date_encaissement: null }).eq("id", id);
     if (error) throw error;
     const item = D.find(d => d.id === id);
-    if (item) { item.r = null; item.dr = null; }
+    if (item) { item.r = null; item.dr = null; item.de = null; }
     refreshCurrentPanel();
     toast(`Vente de "${it.n}" annulée`, "ok");
   } catch (e) {
@@ -986,13 +1030,14 @@ function today() { return new Date().toISOString().slice(0, 10); }
 // Close modals on overlay click
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
+document.getElementById('encaisser-modal').addEventListener('click', function (e) { if (e.target === this) closeEncaisserModal(); });
 document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
 document.getElementById('goal-modal').addEventListener('click', function (e) { if (e.target === this) closeGoalModal(); });
 document.getElementById('edit-boutique-modal').addEventListener('click', function (e) { if (e.target === this) closeEditBoutiqueModal(); });
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEncaisserModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 
@@ -2082,25 +2127,26 @@ window.exportExcel = function () {
   // ── Feuille 1 : Tous les articles ──────────────────────────────────────────
   const articlesData = [
     ['ID', 'Nom', 'SKU', 'N° commande', 'Grossiste', 'Catégorie', 'Boutique',
-     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente',
+     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente', 'Date encaissement',
      'Plus-value (€)', 'Multiplicateur', 'Statut']
   ];
   D.forEach(d => {
     const pv  = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
     const mult = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
     const btq  = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
+    const statut = d.r === null ? 'En stock' : (d.de !== null ? 'Encaissé' : 'Vendu');
     articlesData.push([
       d.id, d.n, d.sku || '', d.cmd || '', d.grossiste || '', d.cat || '', btq,
       d.a, d.da,
-      d.r !== null ? d.r : '', d.dr || '',
+      d.r !== null ? d.r : '', d.dr || '', d.de || '',
       pv, mult,
-      d.r !== null ? 'Vendu' : 'En stock'
+      statut
     ]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(articlesData);
   ws1['!cols'] = [
     {wch:6},{wch:32},{wch:18},{wch:18},{wch:18},{wch:16},{wch:18},
-    {wch:14},{wch:12},{wch:14},{wch:12},{wch:14},{wch:13},{wch:10}
+    {wch:14},{wch:12},{wch:14},{wch:12},{wch:16},{wch:14},{wch:13},{wch:10}
   ];
   XLSX.utils.book_append_sheet(wb, ws1, 'Articles');
 

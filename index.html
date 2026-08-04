@@ -218,13 +218,19 @@
               </div>
             </div>
 
-            <!-- SIDEBAR : VENTES DE LA SEMAINE -->
+            <!-- SIDEBAR : ENCAISSEMENTS / VENTES DE LA SEMAINE -->
             <aside class="overview-sidebar">
               <div class="card week-sales-card">
+                <div class="card-title">Encaisser cette semaine</div>
+                <div class="week-sales-range" id="encaisser-week-range"></div>
+                <div id="encaisser-week-list"></div>
+                <div class="week-sales-total" id="encaisser-week-total"></div>
+              </div>
+              <div class="card week-sales-card">
                 <div class="card-title">Ventes de la semaine</div>
-                <div class="week-sales-range" id="week-sales-range"></div>
-                <div id="week-sales-list"></div>
-                <div class="week-sales-total" id="week-sales-total"></div>
+                <div class="week-sales-range" id="sales-week-range"></div>
+                <div id="sales-week-list"></div>
+                <div class="week-sales-total" id="sales-week-total"></div>
               </div>
             </aside>
           </div>
@@ -726,6 +732,33 @@
           Confirmer la vente
         </button>
         <button class="btn-secondary" onclick="closeSellModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL ENCAISSER -->
+  <div class="modal-overlay" id="encaisser-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">Encaisser le paiement</div>
+        <button class="btn-close" onclick="closeEncaisserModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-item-box" id="encaisser-modal-name"></div>
+      <div class="fg">
+        <label>Date d'encaissement</label>
+        <div class="date-wrap">
+          <input type="text" id="m-date-encaissement" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+          <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmEncaisser()" id="btn-encaisser-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Confirmer l'encaissement
+        </button>
+        <button class="btn-secondary" onclick="closeEncaisserModal()">Annuler</button>
       </div>
     </div>
   </div>

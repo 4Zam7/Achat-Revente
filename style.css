@@ -193,7 +193,7 @@ body {
   .overview-layout { flex-direction: column; }
   .overview-sidebar { width: 100%; position: static; }
 }
-.week-sales-card { margin-bottom: 0; }
+.week-sales-card:last-child { margin-bottom: 0; }
 .week-sales-range {
   font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace;
   margin-top: -8px; margin-bottom: 12px;
@@ -310,6 +310,7 @@ tr:hover td { background: var(--bg3); }
 .badge { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px; font-size: 10px; font-weight: 500; }
 .b-green { background: var(--green-bg); color: var(--green-text); }
 .b-amber { background: var(--amber-bg); color: var(--amber-text); }
+.b-blue { background: var(--blue-bg); color: var(--blue-text); }
 .pv-pos { display: inline-flex; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; background: var(--green-bg); color: var(--green-text); font-family: 'DM Mono', monospace; }
 .pv-neg { display: inline-flex; padding: 2px 7px; border-radius: 5px; font-size: 11px; font-weight: 600; background: var(--red-bg); color: var(--red-text); font-family: 'DM Mono', monospace; }
 
@@ -627,6 +628,14 @@ tr:hover td { background: var(--bg3); }
   border-color: rgba(90,216,166,0.25);
 }
 .btn-action-sell:hover { background: rgba(90,216,166,0.18); }
+
+/* Encaisser — bleu */
+.btn-action-encaisser {
+  background: var(--blue-bg);
+  color: var(--blue-text);
+  border-color: rgba(91,143,249,0.3);
+}
+.btn-action-encaisser:hover { background: rgba(91,143,249,0.18); }
 
 /* Annuler — orange */
 .btn-action-cancel {
