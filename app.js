@@ -1750,8 +1750,11 @@ function urssafMonthLabel(key) {
 }
 
 function urssafCaForMonth(key) {
+  // Recettes encaissées (et non simplement vendues) : c'est la date de
+  // réception du paiement qui fait foi pour la déclaration URSSAF, pas
+  // la date de la vente (régime BIC auto-entrepreneur)
   const sold = D.filter(d => {
-    if (d.r === null || !d.dr || !d.dr.startsWith(key)) return false;
+    if (d.r === null || !d.de || !d.de.startsWith(key)) return false;
     if (URSSAF_EXCLUDED.has(d.boutique_id)) return false;
     if (CURRENT_BOUTIQUE && d.boutique_id !== CURRENT_BOUTIQUE.id) return false;
     return true;
@@ -1874,7 +1877,7 @@ async function buildUrssaf() {
           <span>Chiffre d'affaires</span>
           <span class="urssaf-ca">${ca.total.toFixed(2)}€</span>
         </div>
-        <div class="urssaf-sub-label">Ventes de marchandises (BIC) — ${ca.count} article${ca.count > 1 ? 's' : ''} vendu${ca.count > 1 ? 's' : ''}</div>
+        <div class="urssaf-sub-label">Ventes de marchandises (BIC) — ${ca.count} article${ca.count > 1 ? 's' : ''} encaissé${ca.count > 1 ? 's' : ''}</div>
         ${boutiqueLines ? `<div class="urssaf-boutiques">${boutiqueLines}</div>` : ''}
       </div>
 

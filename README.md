@@ -49,7 +49,7 @@
 - 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (avec SKU, N° commande, grossiste, boutique), Résumé, Bilan mensuel, Stock par SKU
 - 📥 **Import SQL** — bouton dans le header (disponible par boutique), coller un INSERT SQL pour importer des articles en masse directement depuis l'app
 - 🗓️ **Calendrier personnalisé** — sélecteur de date sur mesure (navigation mois par mois, aujourd'hui mis en valeur, sélection en un clic)
-- 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois (mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
+- 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois sur les **recettes encaissées** (date d'encaissement, conforme au régime BIC — mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
 - 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
 
 ---
@@ -527,7 +527,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 | Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
-| L'onglet URSSAF affiche 0€ partout | Vérifiez que des articles ont une `date_revente` renseignée et que la boutique n'est pas désactivée |
+| L'onglet URSSAF affiche 0€ partout | Le CA se base sur la date d'encaissement (pas la date de vente) — vérifiez que des articles ont été marqués "Encaissé" ce mois-ci et que la boutique n'est pas désactivée |
 
 ---
 
@@ -538,6 +538,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 - 💰 **Encaisser, séparé de la vente** — la vente reste "Vendu" (prix + date de vente, argent pas encore reçu). Un nouveau bouton bleu **Encaisser** enregistre la date à laquelle le paiement est réellement reçu, une information qui n'était pas suivie jusqu'ici
 - 🏷️ **Statuts affinés dans Articles** — un article vendu affiche désormais "Vendu" + bouton "Encaisser" tant que l'argent n'est pas reçu, puis "Vendu" + badge bleu "Encaissé" une fois le paiement encaissé
 - 📅 **Deux cartes dans Vue d'ensemble** — "Encaisser cette semaine" (paiements reçus depuis lundi 0h) au-dessus de "Ventes de la semaine" (ventes réalisées depuis lundi 0h)
+- 🧾 **URSSAF basé sur l'encaissement** — le CA mensuel se calcule désormais sur la date d'encaissement (recettes réellement perçues), conforme à la règle du régime BIC auto-entrepreneur, au lieu de la date de vente
 - ⚠️ Nécessite la migration SQL v2.5 (nouvelle colonne `date_encaissement`) — voir [🗄️ Référence SQL → Migrations](#reference-sql)
 
 ### v2.4 — 28 Juillet 2026
