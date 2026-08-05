@@ -576,22 +576,28 @@ function renderItems(items) {
   }).join('');
 }
 
+// Cherche par mot-clé : chaque mot de la requête doit se retrouver quelque
+// part (nom, SKU, N° commande, grossiste ou ID), peu importe l'ordre —
+// "short levi's" retrouve "Short en jean Levi's"
+function itemHaystack(d) {
+  return [d.n, d.sku, d.cmd, d.grossiste, d.ref].filter(Boolean).join(' ').toLowerCase();
+}
+function matchesSearch(d, query) {
+  const keywords = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  if (keywords.length === 0) return true;
+  const hay = itemHaystack(d);
+  return keywords.every(k => hay.includes(k));
+}
+
 window.filterTable = function () {
-  const q = document.getElementById('srch').value.toLowerCase();
+  const q = document.getElementById('srch').value;
   const statut = document.getElementById('f-statut').value;
   const cat = document.getElementById('f-categorie').value;
   const tri = document.getElementById('f-tri').value;
   const grossisteFilter = document.getElementById('f-grossiste-filter').value;
 
   let items = D.filter(d => {
-    if (q) {
-      const inName = d.n.toLowerCase().includes(q);
-      const inSku  = d.sku  && d.sku.toLowerCase().includes(q);
-      const inCmd  = d.cmd  && d.cmd.toLowerCase().includes(q);
-      const inGros = d.grossiste && d.grossiste.toLowerCase().includes(q);
-      const inRef  = d.ref  && d.ref.toLowerCase().includes(q);
-      if (!inName && !inSku && !inCmd && !inGros && !inRef) return false;
-    }
+    if (q && !matchesSearch(d, q)) return false;
     if (statut === 'stock' && d.r !== null) return false;
     if (statut === 'vendu' && d.r === null) return false;
     if (cat && d.cat !== cat) return false;
@@ -2039,12 +2045,12 @@ window.dpSetValue = function(id, val) {
 
 // ─── RECHERCHE GLOBALE ────────────────────────────────────────────────────────
 window.doGlobalSearch = function () {
-  const q = document.getElementById('global-search').value.trim().toLowerCase();
+  const q = document.getElementById('global-search').value.trim();
   const container = document.getElementById('global-results');
 
   if (!q) { container.classList.remove('open'); container.innerHTML = ''; return; }
 
-  const results = D.filter(d => d.n.toLowerCase().includes(q));
+  const results = D.filter(d => matchesSearch(d, q));
   container.classList.add('open');
 
   if (!results.length) {
@@ -2078,11 +2084,11 @@ window.doGlobalSearch = function () {
 
 
 window.doMobileSearch = function () {
-  const q = document.getElementById('mobile-search').value.trim().toLowerCase();
+  const q = document.getElementById('mobile-search').value.trim();
   const container = document.getElementById('mobile-results');
   if (!q) { container.classList.remove('open'); container.innerHTML = ''; return; }
 
-  const results = D.filter(d => d.n.toLowerCase().includes(q));
+  const results = D.filter(d => matchesSearch(d, q));
   container.classList.add('open');
 
   if (!results.length) {

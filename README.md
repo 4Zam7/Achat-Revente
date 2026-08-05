@@ -537,6 +537,8 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 
 - 📅 **Date d'encaissement dans Modifier** — champ optionnel ajouté au formulaire de modification d'un article, pour corriger ou renseigner manuellement la date de réception du paiement
 - 🔀 **Choix à l'annulation** — pour un article vendu et encaissé, le bouton "Annuler" propose désormais "Annuler seulement l'encaissement" (retour à "vendu non encaissé") ou "Annuler toute la vente" (retour au stock), au lieu de tout effacer d'un coup
+- 🔍 **Recherche par mot-clé** — la recherche (header + Articles) trouve désormais un article même si les mots de la requête ne sont pas dans l'ordre exact du nom (ex : "short levi's" retrouve "Short en jean Levi's")
+- 🔍 **Recherche header élargie** — la barre de recherche du header cherche maintenant aussi dans le SKU, le N° commande, le grossiste et l'ID, comme la recherche de l'onglet Articles
 
 ### v2.5 — 28 Juillet 2026
 
