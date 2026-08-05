@@ -553,7 +553,7 @@ function renderItems(items) {
     const cmdHtml = d.cmd ? `<span class="td-meta-tag td-meta-orange">Cmd ${tr(d.cmd)}<button class="td-copy-btn" data-copy="${d.cmd.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier Cmd">${copyIco}</button></span>` : '';
     const metaTags = (refHtml || skuHtml || cmdHtml) ? `<div class="td-meta-row">${refHtml}${skuHtml}${cmdHtml}</div>` : '';
     const delBtn = `<button class="btn-action btn-action-del" onclick="delItem(${d.id})" title="Supprimer"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
-    const cancelBtn = `<button class="btn-action btn-action-cancel" onclick="cancelSell(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>`;
+    const cancelBtn = `<button class="btn-action btn-action-cancel" onclick="openCancelChoice(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Annuler</button>`;
     let actionsCell;
     if (d.r === null) {
       actionsCell = `<button class="btn-action btn-action-sell" onclick="openSellModal(${d.id})"><svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg> Vendu</button>${delBtn}`;
@@ -922,7 +922,7 @@ window.delItem = async function (id) {
 window.cancelSell = async function (id) {
   const it = D.find(d => d.id === id);
   if (!it) return;
-  const ok = await showConfirm('Annuler la vente', `Remettre <strong>${it.n}</strong> en stock ?<br><br>Les informations de vente seront effacées.`);
+  const ok = await showConfirm('Annuler la vente', `Remettre <strong>${it.n}</strong> en stock ?<br><br>Les informations de vente et d'encaissement seront effacées.`);
   if (!ok) return;
   try {
     const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null, date_encaissement: null }).eq("id", id);
@@ -934,6 +934,46 @@ window.cancelSell = async function (id) {
   } catch (e) {
     toast("Erreur lors de l'annulation", "err");
   }
+};
+
+// ─── CANCEL ENCAISSER ───────────────────────────────────────────────────────
+window.cancelEncaisser = async function (id) {
+  const it = D.find(d => d.id === id);
+  if (!it) return;
+  const ok = await showConfirm('Annuler l\'encaissement', `Remettre <strong>${it.n}</strong> en "vendu non encaissé" ?`, { btnClass: 'btn-confirm-blue', okLabel: 'Annuler l\'encaissement' });
+  if (!ok) return;
+  try {
+    const { error } = await sb.from("articles").update({ date_encaissement: null }).eq("id", id);
+    if (error) throw error;
+    const item = D.find(d => d.id === id);
+    if (item) { item.de = null; }
+    refreshCurrentPanel();
+    toast(`Encaissement de "${it.n}" annulé`, "ok");
+  } catch (e) {
+    toast("Erreur lors de l'annulation", "err");
+  }
+};
+
+// ─── CHOIX ANNULATION (vente encaissée : encaissement ou vente ?) ──────────
+let cancelChoiceId = null;
+window.openCancelChoice = function (id) {
+  const it = D.find(d => d.id === id);
+  if (!it) return;
+  if (it.de === null) { cancelSell(id); return; }
+  cancelChoiceId = id;
+  document.getElementById('cancel-choice-name').textContent = it.n;
+  document.getElementById('cancel-choice-modal').classList.add('open');
+};
+window.closeCancelChoiceModal = function () { document.getElementById('cancel-choice-modal').classList.remove('open'); cancelChoiceId = null; };
+window.cancelEncaisserFromChoice = function () {
+  const id = cancelChoiceId;
+  closeCancelChoiceModal();
+  cancelEncaisser(id);
+};
+window.cancelSellFromChoice = function () {
+  const id = cancelChoiceId;
+  closeCancelChoiceModal();
+  cancelSell(id);
 };
 
 
@@ -949,6 +989,7 @@ window.openEditModal = function (id) {
   dpSetValue('e-date-achat', it.da);
   document.getElementById('e-vente').value = it.r !== null ? it.r : '';
   dpSetValue('e-date-vente', it.dr || '');
+  dpSetValue('e-date-encaissement', it.de || '');
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
   document.getElementById('e-grossiste').value = it.grossiste || '';
@@ -970,6 +1011,7 @@ window.confirmEdit = async function () {
   const dateAchat = document.getElementById('e-date-achat').value;
   const venteVal = document.getElementById('e-vente').value;
   const dateVente = document.getElementById('e-date-vente').value;
+  const dateEncaissement = document.getElementById('e-date-encaissement').value;
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
   const grossiste = document.getElementById('e-grossiste').value.trim() || null;
@@ -982,6 +1024,8 @@ window.confirmEdit = async function () {
     if (conflict) { toast(`L'ID ${ref} est déjà lié au SKU ${conflict.sku}`, 'err'); return; }
   }
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
+  const dr = (vente !== null && dateVente) ? dateVente : null;
+  const de = (dr !== null && dateEncaissement) ? dateEncaissement : null;
   const btn = document.getElementById('btn-edit-confirm');
   btn.disabled = true;
   try {
@@ -991,7 +1035,8 @@ window.confirmEdit = async function () {
       prix_achat: achat,
       date_achat: dateAchat,
       prix_revente: vente,
-      date_revente: (vente !== null && dateVente) ? dateVente : null,
+      date_revente: dr,
+      date_encaissement: de,
       sku,
       num_commande: cmd,
       grossiste,
@@ -999,7 +1044,7 @@ window.confirmEdit = async function () {
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = (vente !== null && dateVente) ? dateVente : null; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = dr; item.de = de; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -1031,13 +1076,14 @@ function today() { return new Date().toISOString().slice(0, 10); }
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
 document.getElementById('encaisser-modal').addEventListener('click', function (e) { if (e.target === this) closeEncaisserModal(); });
+document.getElementById('cancel-choice-modal').addEventListener('click', function (e) { if (e.target === this) closeCancelChoiceModal(); });
 document.getElementById('edit-modal').addEventListener('click', function (e) { if (e.target === this) closeEditModal(); });
 document.getElementById('goal-modal').addEventListener('click', function (e) { if (e.target === this) closeGoalModal(); });
 document.getElementById('edit-boutique-modal').addEventListener('click', function (e) { if (e.target === this) closeEditBoutiqueModal(); });
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEncaisserModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEncaisserModal(); closeCancelChoiceModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 

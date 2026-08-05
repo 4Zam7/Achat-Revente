@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.5-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.6-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -532,6 +532,11 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.6 — 28 Juillet 2026
+
+- 📅 **Date d'encaissement dans Modifier** — champ optionnel ajouté au formulaire de modification d'un article, pour corriger ou renseigner manuellement la date de réception du paiement
+- 🔀 **Choix à l'annulation** — pour un article vendu et encaissé, le bouton "Annuler" propose désormais "Annuler seulement l'encaissement" (retour à "vendu non encaissé") ou "Annuler toute la vente" (retour au stock), au lieu de tout effacer d'un coup
 
 ### v2.5 — 28 Juillet 2026
 

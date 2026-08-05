@@ -672,6 +672,14 @@
           </div>
         </div>
       </div>
+      <div class="fg">
+        <label>Date d'encaissement <span class="fg-opt">optionnel — argent reçu</span></label>
+        <div class="date-wrap">
+          <input type="text" id="e-date-encaissement" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+          <button class="date-clear-btn" id="clr-e-date-encaissement" onclick="dpClear('e-date-encaissement')" style="display:none" title="Effacer">×</button>
+          <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+        </div>
+      </div>
       <div class="form-row">
         <div class="fg">
           <label>SKU <span class="fg-opt">optionnel</span></label>
@@ -759,6 +767,31 @@
           Confirmer l'encaissement
         </button>
         <button class="btn-secondary" onclick="closeEncaisserModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL CHOIX ANNULATION -->
+  <div class="modal-overlay" id="cancel-choice-modal">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-header">
+        <div class="modal-title">Annuler</div>
+        <button class="btn-close" onclick="closeCancelChoiceModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-item-box" id="cancel-choice-name"></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:1rem">Que voulez-vous annuler ?</div>
+      <div class="modal-actions" style="flex-direction:column">
+        <button class="btn-confirm-blue" style="width:100%;justify-content:center" onclick="cancelEncaisserFromChoice()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Annuler seulement l'encaissement
+        </button>
+        <button class="btn-confirm-delete" style="width:100%;justify-content:center" onclick="cancelSellFromChoice()">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M10 4A5 5 0 1 0 10 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M10 1v3H7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Annuler toute la vente
+        </button>
+        <button class="btn-secondary" style="width:100%;justify-content:center" onclick="closeCancelChoiceModal()">Fermer</button>
       </div>
     </div>
   </div>
