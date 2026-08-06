@@ -582,12 +582,17 @@ function renderItems(items) {
 
 // Cherche par mot-clé : chaque mot de la requête doit se retrouver quelque
 // part (nom, SKU, N° commande, grossiste ou ID), peu importe l'ordre —
-// "short levi's" retrouve "Short en jean Levi's"
+// "short levi's" retrouve "Short en jean Levi's". Les apostrophes typographiques
+// (’ ‘ ´ — ex : saisies sur iPhone avec la correction automatique) sont
+// normalisées en apostrophe droite pour ne pas casser la recherche
+function normApostrophes(s) {
+  return s.replace(/[‘’ʼ´]/g, "'");
+}
 function itemHaystack(d) {
-  return [d.n, d.sku, d.cmd, d.grossiste, d.ref].filter(Boolean).join(' ').toLowerCase();
+  return normApostrophes([d.n, d.sku, d.cmd, d.grossiste, d.ref].filter(Boolean).join(' ').toLowerCase());
 }
 function matchesSearch(d, query) {
-  const keywords = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const keywords = normApostrophes(query.toLowerCase()).trim().split(/\s+/).filter(Boolean);
   if (keywords.length === 0) return true;
   const hay = itemHaystack(d);
   return keywords.every(k => hay.includes(k));

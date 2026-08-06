@@ -536,6 +536,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ### v2.7 — 6 Août 2026
 
 - 🏪 **Boutique affichée dans les cartes semaine** — en mode "All", "Encaisser cette semaine" et "Ventes de la semaine" affichent désormais la boutique de chaque article à droite de son nom (masqué automatiquement quand une seule boutique est sélectionnée, puisque redondant)
+- 🐛 Fix : la recherche (header + Articles) ignorait les articles dont le nom contient une apostrophe typographique (’, souvent issue de la correction automatique sur iPhone) quand la requête tapée utilisait une apostrophe droite ('), ou inversement — les deux formes sont maintenant traitées comme équivalentes
 
 ### v2.6 — 28 Juillet 2026
 
