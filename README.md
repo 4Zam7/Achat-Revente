@@ -42,7 +42,7 @@
 - 📱 **PWA installable** — fonctionne comme une vraie app sur iPhone, Android, Mac et PC
 - 🌙 **Design sombre** — interface soignée optimisée mobile et desktop, mise en page qui s'élargit sur grand écran pour exploiter l'espace disponible
 - ⚡ **Mise à jour instantanée** — l'interface se rafraîchit automatiquement après chaque action sans rechargement
-- 🔍 **Recherche étendue** — barre de recherche dans le header (desktop) et sous la nav (mobile) ; cherche dans le **nom**, le **SKU**, le **N° commande**, le **grossiste** et l'**ID**
+- 🔍 **Recherche étendue par mot-clé** — barre de recherche dans le header (desktop) et sous la nav (mobile) ; cherche dans le **nom**, le **SKU**, le **N° commande**, le **grossiste** et l'**ID**, mot par mot et dans n'importe quel ordre (ex : "short levi's" retrouve "Short en jean Levi's")
 - 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils. Le bouton Ajouter est masqué en mode All
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie, par **grossiste** (liste dynamique) et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
@@ -536,8 +536,6 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ### v2.7 — 6 Août 2026
 
 - 🏪 **Boutique affichée dans les cartes semaine** — en mode "All", "Encaisser cette semaine" et "Ventes de la semaine" affichent désormais la boutique de chaque article à droite de son nom (masqué automatiquement quand une seule boutique est sélectionnée, puisque redondant)
-- 🐛 Fix : la recherche (header + Articles) ignorait les articles dont le nom contient une apostrophe typographique (’, souvent issue de la correction automatique sur iPhone) quand la requête tapée utilisait une apostrophe droite ('), ou inversement — les deux formes sont maintenant traitées comme équivalentes
-- 🔧 Ajustement : la sidebar "Encaisser/Ventes de la semaine" ne suit plus le défilement de la page — elle reste à sa position naturelle en haut et défile normalement avec le reste du contenu, sans `position: sticky`
 
 ### v2.6 — 28 Juillet 2026
 
@@ -556,7 +554,6 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 
 ### v2.4 — 28 Juillet 2026
 
-- 🐛 **Fix du dézoom mobile dans Bilan** — un nom d'article long dans "Articles achetés/vendus" pouvait forcer un débordement horizontal de toute la page (le correctif v2.3 ne traitait qu'une cause partielle, les sélecteurs Année/Mois). Ces deux listes défilent désormais horizontalement à l'intérieur de leur carte — même largeur que "Top plus-values" — sans jamais déborder la page ni tronquer les noms
 - ⬆️ **Remonter en haut** — bouton en bas de la liste Articles pour revenir rapidement en haut
 - ✕ **Effacer une recherche** — croix à l'intérieur de toutes les barres de recherche (header, mobile, Articles, Radar) pour vider le champ en un clic
 
@@ -567,7 +564,6 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 - ⬇️ **Scroll rapide** — flèche à côté de la recherche dans Articles pour aller tout en bas de la liste
 - 🖥️ **Mise en page élargie** — le conteneur principal exploite davantage l'espace disponible sur grand écran (jusqu'à 1840px), sidebar "Ventes de la semaine" agrandie en conséquence
 - 🗄️ **README réorganisé** — tout le SQL du projet est désormais regroupé dans une seule section de référence, commentée bloc par bloc
-- 🐛 Fix : sur mobile, l'onglet Bilan permettait de dézoomer à cause d'un débordement horizontal des sélecteurs Année/Mois
 
 ### v2.2 — 24 Juillet 2026
 
