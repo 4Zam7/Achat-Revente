@@ -410,8 +410,12 @@ function buildWeekList(prefix, dateField, emptyLabel, unitLabel) {
 
   wrap.innerHTML = items.map(d => {
     const pv = d.r - d.a;
+    const btq = CURRENT_BOUTIQUE ? '' : (BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '');
     return `<div class="week-sales-item">
-      <div class="week-sales-name">${d.n}</div>
+      <div class="week-sales-name-row">
+        <span class="week-sales-name">${d.n}</span>
+        ${btq ? `<span class="week-sales-btq">${btq}</span>` : ''}
+      </div>
       <div class="week-sales-prices">
         <span class="week-sales-buy">${d.a.toFixed(2)}€</span>
         <span class="week-sales-arrow">→</span>
