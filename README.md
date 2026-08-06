@@ -537,6 +537,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 
 - 🏪 **Boutique affichée dans les cartes semaine** — en mode "All", "Encaisser cette semaine" et "Ventes de la semaine" affichent désormais la boutique de chaque article à droite de son nom (masqué automatiquement quand une seule boutique est sélectionnée, puisque redondant)
 - 🐛 Fix : la recherche (header + Articles) ignorait les articles dont le nom contient une apostrophe typographique (’, souvent issue de la correction automatique sur iPhone) quand la requête tapée utilisait une apostrophe droite ('), ou inversement — les deux formes sont maintenant traitées comme équivalentes
+- 🐛 Fix : dans Vue d'ensemble, la sidebar "Encaisser/Ventes de la semaine" restait figée à l'écran pendant le défilement mais son contenu pouvait dépasser la hauteur visible sans moyen de le faire défiler — il fallait scroller toute la page jusqu'en bas pour voir la fin des listes. Elle défile maintenant elle-même une fois la hauteur de l'écran atteinte
 
 ### v2.6 — 28 Juillet 2026
 
