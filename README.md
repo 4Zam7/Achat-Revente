@@ -190,11 +190,13 @@ Une fois connecté dans l'app, le bouton 🛡️ Admin apparaît dans votre head
 <a name="reference-sql"></a>
 ## 🗄️ Référence SQL
 
-Tout le SQL du projet est regroupé ici, en un seul endroit, pour ne plus avoir à le chercher dans plusieurs sections : le schéma complet pour une nouvelle instance, la création du premier compte admin, l'import d'articles en masse, et les migrations pour mettre à jour une instance existante. Chaque bloc est commenté pour expliquer à quoi il sert.
+Tout le SQL du projet est regroupé ici, en un seul endroit : le schéma complet, la création du premier compte admin et l'import d'articles en masse. Chaque bloc est commenté pour expliquer à quoi il sert.
 
-### Schéma complet (nouvelle instance)
+### Schéma complet (nouvelle instance **ou** mise à jour)
 
-À utiliser une seule fois, dans Supabase → **SQL Editor** (voir Étape 3 plus haut). Crée les 5 tables de l'application, leurs policies RLS, les droits d'accès et les fonctions admin.
+À exécuter dans Supabase → **SQL Editor** (voir Étape 3 plus haut). Crée les 5 tables de l'application, leurs policies RLS, les droits d'accès et les fonctions admin.
+
+> **Ce bloc est ré-exécutable sans risque, c'est aussi la procédure de mise à jour.** Tables et colonnes sont en `IF NOT EXISTS`, les fonctions en `CREATE OR REPLACE`, et les policies sont remises à leur définition standard : rien n'est supprimé, **aucun article ni aucune donnée n'est touché**. Si votre instance date d'une version précédente, relancez simplement ce bloc : les colonnes et fonctions ajoutées depuis seront créées, le reste sera ignoré. (Seul point d'attention : si vous aviez personnalisé les policies RLS à la main, elles reviendront à leur version d'origine.)
 
 ```sql
 -- ============================================================
@@ -203,7 +205,7 @@ Tout le SQL du projet est regroupé ici, en un seul endroit, pour ne plus avoir 
 -- qu'il est en stock) puis encaissé (date_encaissement NULL tant
 -- que le paiement n'a pas été reçu)
 -- ============================================================
-CREATE TABLE articles (
+CREATE TABLE IF NOT EXISTS articles (
   id bigserial PRIMARY KEY,
   nom text NOT NULL,
   prix_achat numeric NOT NULL,
@@ -220,7 +222,23 @@ CREATE TABLE articles (
   created_at timestamptz DEFAULT now()
 );
 
+-- Colonnes ajoutées au fil des versions : rattrape une table
+-- articles créée avec une ancienne version de ce schéma
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS date_encaissement date;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS identifiant text;
+-- L'ID est unique par SKU, pas par article : on retire l'ancienne
+-- contrainte d'unicité si elle traîne encore
+ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_identifiant_key;
+
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Auth lecture"      ON articles;
+DROP POLICY IF EXISTS "Auth insertion"    ON articles;
+DROP POLICY IF EXISTS "Auth modification" ON articles;
+DROP POLICY IF EXISTS "Auth suppression"  ON articles;
 CREATE POLICY "Auth lecture"      ON articles FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Auth insertion"    ON articles FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON articles FOR UPDATE TO authenticated USING (true);
@@ -235,7 +253,7 @@ GRANT USAGE, SELECT ON SEQUENCE articles_id_seq TO authenticated;
 -- TABLE boutiques — une activité de revente séparée
 -- (Brocante, Vinted, Leboncoin…), chacune avec ses articles
 -- ============================================================
-CREATE TABLE boutiques (
+CREATE TABLE IF NOT EXISTS boutiques (
   id bigserial PRIMARY KEY,
   nom text NOT NULL,
   couleur text DEFAULT '#185FA5',
@@ -243,6 +261,10 @@ CREATE TABLE boutiques (
 );
 
 ALTER TABLE boutiques ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Auth lecture"      ON boutiques;
+DROP POLICY IF EXISTS "Auth insertion"    ON boutiques;
+DROP POLICY IF EXISTS "Auth modification" ON boutiques;
+DROP POLICY IF EXISTS "Auth suppression"  ON boutiques;
 CREATE POLICY "Auth lecture"      ON boutiques FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Auth insertion"    ON boutiques FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON boutiques FOR UPDATE TO authenticated USING (true);
@@ -257,12 +279,15 @@ GRANT USAGE, SELECT ON SEQUENCE boutiques_id_seq TO authenticated;
 -- TABLE settings — paires clé/valeur génériques
 -- (ex : objectif mensuel de recettes, par boutique)
 -- ============================================================
-CREATE TABLE settings (
+CREATE TABLE IF NOT EXISTS settings (
   key text PRIMARY KEY,
   value text NOT NULL
 );
 
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Auth lecture"      ON settings;
+DROP POLICY IF EXISTS "Auth insertion"    ON settings;
+DROP POLICY IF EXISTS "Auth modification" ON settings;
 CREATE POLICY "Auth lecture"      ON settings FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Auth insertion"    ON settings FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON settings FOR UPDATE TO authenticated USING (true);
@@ -275,7 +300,7 @@ GRANT ALL ON settings TO service_role;
 -- TABLE marques_niches — marques suivies dans l'onglet Radar,
 -- avec leur intérêt d'achat (1 à 7 étoiles) et prix Vinted
 -- ============================================================
-CREATE TABLE marques_niches (
+CREATE TABLE IF NOT EXISTS marques_niches (
   id bigserial PRIMARY KEY,
   nom text NOT NULL,
   categorie text,
@@ -287,6 +312,10 @@ CREATE TABLE marques_niches (
 );
 
 ALTER TABLE marques_niches ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Auth lecture"      ON marques_niches;
+DROP POLICY IF EXISTS "Auth insertion"    ON marques_niches;
+DROP POLICY IF EXISTS "Auth modification" ON marques_niches;
+DROP POLICY IF EXISTS "Auth suppression"  ON marques_niches;
 CREATE POLICY "Auth lecture"      ON marques_niches FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Auth insertion"    ON marques_niches FOR INSERT TO authenticated WITH CHECK (true);
 CREATE POLICY "Auth modification" ON marques_niches FOR UPDATE TO authenticated USING (true);
@@ -301,7 +330,7 @@ GRANT USAGE, SELECT ON SEQUENCE marques_niches_id_seq TO authenticated;
 -- TABLE profiles — un profil par utilisateur : admin ou non,
 -- et permissions par onglet de l'app
 -- ============================================================
-CREATE TABLE profiles (
+CREATE TABLE IF NOT EXISTS profiles (
   user_id uuid PRIMARY KEY,
   email text NOT NULL,
   is_admin boolean DEFAULT false,
@@ -310,6 +339,8 @@ CREATE TABLE profiles (
 );
 
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "read all"   ON profiles;
+DROP POLICY IF EXISTS "insert own" ON profiles;
 CREATE POLICY "read all"    ON profiles FOR SELECT TO authenticated USING (true);
 CREATE POLICY "insert own"  ON profiles FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 
@@ -326,6 +357,7 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path = public AS $$
   SELECT COALESCE((SELECT is_admin FROM profiles WHERE user_id = auth.uid()), false);
 $$;
 
+DROP POLICY IF EXISTS "admin write" ON profiles;
 CREATE POLICY "admin write" ON profiles FOR ALL TO authenticated
   USING     (public.check_is_admin())
   WITH CHECK(public.check_is_admin());
@@ -362,6 +394,13 @@ $$;
 GRANT EXECUTE ON FUNCTION public.admin_delete_user(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_update_password(uuid, text) TO authenticated;
 ```
+
+> **Un seul cas n'est pas couvert par le bloc ci-dessus** (parce qu'il touche à vos données et ne doit surtout pas être rejoué) : si vous mettez à jour une instance **antérieure au multi-boutiques**, vos articles n'ont pas de boutique. Créez-en une et rattachez-les, **une seule fois** :
+>
+> ```sql
+> INSERT INTO boutiques (nom, couleur) VALUES ('Brocante', '#185FA5');
+> UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
+> ```
 
 ### Devenir admin (premier compte)
 
@@ -413,47 +452,6 @@ INSERT INTO articles (
 | `identifiant` | text | — | ID lié au SKU (partagé entre tous les articles du même SKU) |
 
 > **Catégories disponibles :** `Vêtements`, `Chaussures`, `Jeux vidéo`, `Consoles`, `Électronique`, `Jouets`, `Décoration`, `Ustensiles`, `Outils`, `Livres`, `Sport`, `Accessoires`, `Autres`
-
-### Migrations (mise à jour d'une instance existante)
-
-Si votre instance a été créée avant l'ajout d'une fonctionnalité, exécutez uniquement le bloc correspondant à votre version actuelle, dans l'ordre, dans Supabase → **SQL Editor**. Si vous créez une instance neuve, ignorez cette partie : le bloc **Schéma complet** ci-dessus contient déjà tout.
-
-```sql
--- Passer en v2.5 — étape "Encaisser" distincte de la vente : la
--- vente enregistre prix_revente/date_revente, l'encaissement
--- (réception du paiement) enregistre date_encaissement séparément
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS date_encaissement date;
-```
-
-```sql
--- Passer en v2.2 — l'ID n'est plus unique par article mais par
--- SKU : on retire l'ancienne contrainte d'unicité par article
-ALTER TABLE articles DROP CONSTRAINT IF EXISTS articles_identifiant_key;
-```
-
-> Si vos fonctions admin (`admin_update_password`, `admin_delete_user`) n'existent pas encore, exécutez le bloc **« Fonctions admin »** du Schéma complet ci-dessus.
-
-> **Passer en v2.1** — si la table `profiles` n'existe pas encore sur votre instance, exécutez les blocs **« TABLE profiles »**, **« Fonction anti-récursion RLS »** et **« Fonctions admin »** du Schéma complet ci-dessus, puis exposez `profiles` dans Data API (Étape 4).
-
-```sql
--- Passer en v2.0 — nouveau champ ID unique sur les articles
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS identifiant TEXT;
-```
-
-```sql
--- Versions antérieures — champs Grossiste / SKU / N° commande
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint;
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
-ALTER TABLE articles ADD COLUMN IF NOT EXISTS grossiste text;
-
--- Versions antérieures — passage au multi-boutiques : si la
--- table boutiques n'existe pas encore, exécutez son bloc dans le
--- Schéma complet ci-dessus, puis migrez les articles existants
--- vers une boutique par défaut
-INSERT INTO boutiques (nom, couleur) VALUES ('Brocante', '#185FA5');
-UPDATE articles SET boutique_id = 1 WHERE boutique_id IS NULL;
-```
 
 ---
 
@@ -519,18 +517,18 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 |----------|----------|
 | L'app affiche "Hors ligne" | Vérifiez vos clés Supabase dans `app.js` et que les tables sont bien exposées dans Data API |
 | Le bouton 🛡️ Admin n'apparaît pas | Vérifiez que votre ligne `profiles` a bien `is_admin = true` dans Supabase |
-| Erreur 500 sur profiles | Exécutez la migration v2.1 dans [🗄️ Référence SQL → Migrations](#reference-sql) (table + policies + fonction `check_is_admin`) |
+| Erreur 500 sur profiles | Relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql) — il (re)crée la table `profiles`, ses policies et la fonction `check_is_admin` |
 | "Modifier MDP" ne fonctionne pas (404) | Créez la fonction `admin_update_password` (bloc Fonctions admin du Schéma complet) et accordez les GRANT |
 | Un compte supprimé a encore accès | La déconnexion est automatique au prochain chargement de page (JWT valide jusqu'à expiration) |
 | "L'ID est déjà lié à un SKU" | Un même ID ne peut être associé qu'à un seul SKU — utilisez ⚡ Générer pour un nouvel ID |
 | "SKU déjà lié à l'ID X" | Le SKU a déjà un ID attribué — l'app le remplira automatiquement |
-| Erreur UNIQUE sur identifiant | Exécutez la migration v2.2 dans [🗄️ Référence SQL → Migrations](#reference-sql) |
+| Erreur UNIQUE sur identifiant | Relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql) — il retire l'ancienne contrainte d'unicité sur `identifiant` |
 | Les données ne s'affichent pas | Vérifiez que les policies RLS ont bien été créées via le SQL Editor |
 | Erreur 401 / accès refusé | Reconnectez-vous — la session a peut-être expiré |
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
 | L'onglet URSSAF affiche 0€ partout | Le CA se base sur la date d'encaissement (pas la date de vente) — vérifiez que des articles ont été marqués "Encaissé" ce mois-ci et que la boutique n'est pas désactivée |
-| Le bouton "Encaisser" renvoie une erreur | La colonne `date_encaissement` manque en base — exécutez la migration v2.5 dans [🗄️ Référence SQL → Migrations](#reference-sql) |
+| Le bouton "Encaisser" renvoie une erreur | La colonne `date_encaissement` manque en base — relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql), il l'ajoute |
 
 ---
 
@@ -558,7 +556,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 - 🏷️ **Statuts affinés dans Articles** — un article vendu affiche désormais "Vendu" + bouton "Encaisser" tant que l'argent n'est pas reçu, puis "Vendu" + badge bleu "Encaissé" une fois le paiement encaissé
 - 📅 **Deux cartes dans Vue d'ensemble** — "Encaisser cette semaine" (paiements reçus depuis lundi 0h) au-dessus de "Ventes de la semaine" (ventes réalisées depuis lundi 0h)
 - 🧾 **URSSAF basé sur l'encaissement** — le CA mensuel se calcule désormais sur la date d'encaissement (recettes réellement perçues), conforme à la règle du régime BIC auto-entrepreneur, au lieu de la date de vente
-- ⚠️ Nécessite la migration SQL v2.5 (nouvelle colonne `date_encaissement`) — voir [🗄️ Référence SQL → Migrations](#reference-sql)
+- ⚠️ Nécessite d'ajouter la colonne `date_encaissement` en base — relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql)
 
 ### v2.4 — 28 Juillet 2026
 
