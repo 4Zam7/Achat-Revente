@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.7-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.8-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -46,8 +46,8 @@
 - 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils. Le bouton Ajouter est masqué en mode All
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie, par **grossiste** (liste dynamique) et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
-- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (avec SKU, N° commande, grossiste, boutique), Résumé, Bilan mensuel, Stock par SKU
-- 📥 **Import SQL** — bouton dans le header (disponible par boutique), coller un INSERT SQL pour importer des articles en masse directement depuis l'app
+- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (SKU, N° commande, grossiste, boutique, dates de vente **et d'encaissement**, statut En stock/Vendu/Encaissé), Résumé (dont recettes encaissées et montant en attente d'encaissement), Bilan mensuel (recettes vendues **et** encaissées par mois), Stock par SKU
+- 📥 **Import SQL** — bouton dans le header (disponible par boutique), coller un INSERT SQL pour importer des articles en masse directement depuis l'app, `date_encaissement` incluse
 - 🗓️ **Calendrier personnalisé** — sélecteur de date sur mesure (navigation mois par mois, aujourd'hui mis en valeur, sélection en un clic)
 - 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois sur les **recettes encaissées** (date d'encaissement, conforme au régime BIC — mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
 - 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
@@ -385,14 +385,15 @@ Le bouton **Importer** dans le header de l'app (recommandé, disponible par bout
 
 ```sql
 -- nom, prix_achat, date_achat sont obligatoires. Le reste peut
--- être NULL. Doubler les apostrophes ('') dans les noms d'article
+-- être NULL. Doubler les apostrophes ('') dans les noms d'article.
+-- 1re ligne : vendue ET encaissée · 2e : encore en stock
 INSERT INTO articles (
   nom, prix_achat, date_achat,
-  prix_revente, date_revente,
+  prix_revente, date_revente, date_encaissement,
   categorie, sku, num_commande, grossiste, identifiant
 ) VALUES
-('Veste Adidas',    5.00, '2025-06-01', 18.00, '2025-09-10', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),
-('Jean Levi''s 501', 3.50, '2025-06-15', NULL,  NULL,        'Vêtements', NULL,           NULL,           'Temu',     NULL);
+('Veste Adidas',    5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL,  NULL,        NULL,         'Vêtements', NULL,           NULL,           'Temu',     NULL);
 ```
 
 **Colonnes disponibles**
@@ -403,7 +404,8 @@ INSERT INTO articles (
 | `prix_achat` | numeric | ✅ | Prix d'achat (ex : `5.00`) |
 | `date_achat` | date | ✅ | Format `YYYY-MM-DD` |
 | `prix_revente` | numeric | — | Laisser `NULL` si non vendu |
-| `date_revente` | date | — | Format `YYYY-MM-DD`, ou `NULL` |
+| `date_revente` | date | — | Date de la vente, `NULL` si non vendu |
+| `date_encaissement` | date | — | Date où l'argent a été reçu, `NULL` si vendu mais pas encore encaissé. Ne se renseigne que si l'article a un `prix_revente` et une `date_revente` |
 | `categorie` | text | — | Voir liste ci-dessous |
 | `sku` | text | — | Référence modèle produit |
 | `num_commande` | text | — | N° de commande fournisseur |
@@ -532,6 +534,11 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.8 — 7 Août 2026
+
+- 📥 **Import avec encaissement** — `date_encaissement` est désormais prise en charge à l'import SQL (modèle et aide du formulaire mis à jour). Une ligne avec une date d'encaissement mais sans vente est refusée, et les imports à l'ancien format restent valides
+- 📤 **Export enrichi** — l'onglet Articles exporte la date d'encaissement et un statut En stock / Vendu / Encaissé ; le Résumé ajoute les recettes encaissées et le montant en attente d'encaissement ; le Bilan mensuel distingue recettes vendues et recettes encaissées par mois
 
 ### v2.7 — 6 Août 2026
 

@@ -2216,6 +2216,10 @@ window.exportExcel = function () {
 
   // ── Feuille 2 : Résumé global ──────────────────────────────────────────────
   const s = stats();
+  const encaisses = s.sold.filter(d => d.de !== null);
+  const enAttente = s.sold.filter(d => d.de === null);
+  const totalEncaisse = encaisses.reduce((sum, d) => sum + d.r, 0);
+  const totalEnAttente = enAttente.reduce((sum, d) => sum + d.r, 0);
   const resumeData = [
     ['📊 RÉSUMÉ', ''],
     ['Date export', new Date().toLocaleDateString('fr-FR')],
@@ -2232,6 +2236,11 @@ window.exportExcel = function () {
     ['Recettes de vente', `${s.totalRevente.toFixed(2)} €`],
     ['Bénéfice net', `${s.benefice.toFixed(2)} €`],
     ['ROI', `+${s.roi.toFixed(0)}%`],
+    ['', ''],
+    ['Articles encaissés', encaisses.length],
+    ['Recettes encaissées', `${totalEncaisse.toFixed(2)} €`],
+    ['Articles vendus non encaissés', enAttente.length],
+    ['En attente d\'encaissement', `${totalEnAttente.toFixed(2)} €`],
   ];
   const ws2 = XLSX.utils.aoa_to_sheet(resumeData);
   ws2['!cols'] = [{wch:28},{wch:20}];
@@ -2239,20 +2248,26 @@ window.exportExcel = function () {
 
   // ── Feuille 3 : Bilan par mois ─────────────────────────────────────────────
   const mm = {};
+  const blankMonth = () => ({ vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0, encaisses: 0, montantEncaisse: 0 });
   D.forEach(d => {
     if (d.dr) {
       const k = d.dr.slice(0,7);
-      if (!mm[k]) mm[k] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
+      if (!mm[k]) mm[k] = blankMonth();
       mm[k].vendus++; mm[k].recettes += d.r; mm[k].cout += d.a;
+    }
+    if (d.de) {
+      const ke = d.de.slice(0,7);
+      if (!mm[ke]) mm[ke] = blankMonth();
+      mm[ke].encaisses++; mm[ke].montantEncaisse += d.r;
     }
     if (d.da) {
       const ka = d.da.slice(0,7);
-      if (!mm[ka]) mm[ka] = { vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0 };
+      if (!mm[ka]) mm[ka] = blankMonth();
       mm[ka].achetes++; mm[ka].montantAchete += d.a;
     }
   });
   const mensuelData = [
-    ['Mois', 'Articles vendus', 'Recettes (€)', 'Coût vendus (€)', 'Bénéfice (€)', 'ROI', 'Articles achetés', 'Montant acheté (€)']
+    ['Mois', 'Articles vendus', 'Recettes (€)', 'Coût vendus (€)', 'Bénéfice (€)', 'ROI', 'Articles encaissés', 'Recettes encaissées (€)', 'Articles achetés', 'Montant acheté (€)']
   ];
   Object.keys(mm).sort().forEach(k => {
     const m = mm[k];
@@ -2262,11 +2277,13 @@ window.exportExcel = function () {
     mensuelData.push([
       `${ms[parseInt(mo)-1]} ${y}`,
       m.vendus, +m.recettes.toFixed(2), +m.cout.toFixed(2),
-      +benef.toFixed(2), roi, m.achetes, +m.montantAchete.toFixed(2)
+      +benef.toFixed(2), roi,
+      m.encaisses, +m.montantEncaisse.toFixed(2),
+      m.achetes, +m.montantAchete.toFixed(2)
     ]);
   });
   const ws3 = XLSX.utils.aoa_to_sheet(mensuelData);
-  ws3['!cols'] = [{wch:16},{wch:16},{wch:14},{wch:16},{wch:14},{wch:8},{wch:16},{wch:18}];
+  ws3['!cols'] = [{wch:16},{wch:16},{wch:14},{wch:16},{wch:14},{wch:8},{wch:18},{wch:22},{wch:16},{wch:18}];
   XLSX.utils.book_append_sheet(wb, ws3, 'Bilan mensuel');
 
   // ── Feuille 4 : Stock par SKU ──────────────────────────────────────────────
@@ -2730,7 +2747,7 @@ window.savePwdChange = async function (userId, email) {
 };
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
-const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, categorie, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, 'Vêtements', NULL, NULL, 'Temu', NULL);`;
+const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, date_encaissement, categorie, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL, 'Vêtements', NULL, NULL, 'Temu', NULL);`;
 
 window.openImportModal = function () {
   const info = document.getElementById('import-boutique-info');
@@ -2825,6 +2842,12 @@ window.importSQL = async function () {
     showImportResult(`${invalid.length} ligne(s) sans nom, prix_achat ou date_achat — importation annulée`, 'err'); return;
   }
 
+  // Un encaissement n'a de sens que sur un article vendu
+  const encaisseSansVente = parsed.filter(r => r.date_encaissement && (r.prix_revente == null || !r.date_revente));
+  if (encaisseSansVente.length) {
+    showImportResult(`${encaisseSansVente.length} ligne(s) avec date_encaissement mais sans prix_revente/date_revente — importation annulée`, 'err'); return;
+  }
+
   // Vérifie la cohérence SKU→ID : un même ID ne peut être lié qu'à un seul SKU
   const skuRefMap = buildSkuRefMap();
   for (const r of parsed) {
@@ -2848,6 +2871,7 @@ window.importSQL = async function () {
       date_achat: r.date_achat,
       prix_revente: r.prix_revente != null ? r.prix_revente : null,
       date_revente: r.date_revente || null,
+      date_encaissement: r.date_encaissement || null,
       categorie: r.categorie || null,
       sku: r.sku || null,
       num_commande: r.num_commande || null,

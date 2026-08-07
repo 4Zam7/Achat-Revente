@@ -1004,14 +1004,16 @@
           <button type="button" class="btn-copy-template" onclick="copyImportTemplate()">Copier le modèle</button>
         </div>
         <pre class="import-sql-block">INSERT INTO articles (nom, prix_achat, date_achat, prix_revente,
-  date_revente, categorie, sku, num_commande, grossiste, identifiant) VALUES
-('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10',
+  date_revente, date_encaissement, categorie, sku, num_commande,
+  grossiste, identifiant) VALUES
+('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17',
   'Vêtements', 'VEST-ADI-001', 'CMD-001', 'Brocante', 'A1B2C3'),
-('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL,
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL,
   'Vêtements', NULL, NULL, 'Temu', NULL);</pre>
         <div class="import-format-note">
           <strong>Obligatoires :</strong> nom, prix_achat, date_achat &nbsp;|&nbsp;
           <strong>Date :</strong> YYYY-MM-DD &nbsp;|&nbsp;
+          <strong>Encaissement :</strong> <code>date_encaissement</code> = argent reçu (NULL si en attente) &nbsp;|&nbsp;
           <strong>Apostrophe :</strong> doubler la quote <code>''</code>
         </div>
       </div>
