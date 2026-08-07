@@ -261,7 +261,7 @@ function buildOverview() {
     <div class="metric"><div class="metric-label">Vendus</div><div class="metric-value">${s.sold.length}</div><div class="metric-sub">${pct}% du stock</div></div>
     <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stock.length}</div><div class="metric-sub">${s.capitalStock.toFixed(0)}€ immo.</div></div>
     <div class="metric"><div class="metric-label">Coût vendus</div><div class="metric-value mv-amber">${s.coutVendus.toFixed(0)}€</div><div class="metric-sub">articles vendus</div></div>
-    <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
+    <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">ventes réalisées</div></div>
     <div class="metric"><div class="metric-label">Bénéfice</div><div class="metric-value mv-green">${s.benefice.toFixed(0)}€</div><div class="metric-sub">+${s.roi.toFixed(0)}% ROI</div></div>`;
 
   const coutTotal = s.coutVendus + s.capitalStock;
@@ -271,7 +271,7 @@ function buildOverview() {
   const posPct = coutTotal > 0 ? (posGlobale / coutTotal) * 100 : 0;
   document.getElementById('m-overview-global').innerHTML = `
     <div class="metric"><div class="metric-label">Coût total investi</div><div class="metric-value mv-amber">${coutTotal.toFixed(0)}€</div><div class="metric-sub">${s.coutVendus.toFixed(0)}€ vendus + ${s.capitalStock.toFixed(0)}€ stock</div></div>
-    <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">encaissé</div></div>
+    <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">ventes réalisées</div></div>
     <div class="metric"><div class="metric-label">Position globale</div><div class="metric-value ${posClass}">${posSign}${posGlobale.toFixed(0)}€</div><div class="metric-sub">recettes − coût total · ${posSign}${posPct.toFixed(0)}%</div></div>`;
 
   const mm = buildMonthMap();
@@ -1085,7 +1085,10 @@ function toast(msg, type = 'ok') {
 }
 
 // ─── UTILS ────────────────────────────────────────────────────────────────────
-function today() { return new Date().toISOString().slice(0, 10); }
+// Date du jour en heure LOCALE (toISOString donnerait la date UTC, donc la
+// veille entre minuit et 2h du matin en France — les dates pré-remplies
+// dans les formulaires seraient décalées d'un jour)
+function today() { return ymd(new Date()); }
 
 // Close modals on overlay click
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
@@ -2313,7 +2316,7 @@ window.exportExcel = function () {
   }
 
   // ── Génération du fichier ──────────────────────────────────────────────────
-  const date = new Date().toISOString().slice(0,10);
+  const date = today();
   const suffix = CURRENT_BOUTIQUE ? `_${CURRENT_BOUTIQUE.nom.replace(/\s+/g,'_')}` : '';
   XLSX.writeFile(wb, `Laney_${date}${suffix}.xlsx`);
   toast('Export Excel téléchargé ✓', 'ok');

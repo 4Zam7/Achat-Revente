@@ -27,7 +27,7 @@
 - 💰 **Vente et encaissement séparés** — "Vendu" enregistre prix + date de vente (argent pas encore reçu) ; le bouton bleu "Encaisser" enregistre ensuite la date de réception du paiement
 - 📐 **Pourcentages de plus-value** — % affiché sous "Position globale" dans la vue globale, et colonne "% +Value" dans le tableau Articles
 - 📋 **Gestion des articles** — ajout, modification, vente, encaissement, annulation de vente, suppression
-- 🏷️ **Catégories** — 12 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
+- 🏷️ **Catégories** — 13 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande, grossiste et ID
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
 - 🆔 **ID lié au SKU** — un ID identifie un modèle de produit (son SKU). Tous les articles partageant le même SKU reçoivent automatiquement le même ID. Un ID ne peut pas être attribué à deux SKU différents. Générateur intégré (⚡ Générer) — code 6 caractères garanti sans collision. Saisie manuelle possible
@@ -530,6 +530,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 | L'objectif mensuel se remet à zéro | Vérifiez que la table `settings` est bien créée et exposée dans Supabase Data API |
 | L'export Excel ne se télécharge pas | Vérifiez que le script SheetJS est bien chargé dans `index.html` |
 | L'onglet URSSAF affiche 0€ partout | Le CA se base sur la date d'encaissement (pas la date de vente) — vérifiez que des articles ont été marqués "Encaissé" ce mois-ci et que la boutique n'est pas désactivée |
+| Le bouton "Encaisser" renvoie une erreur | La colonne `date_encaissement` manque en base — exécutez la migration v2.5 dans [🗄️ Référence SQL → Migrations](#reference-sql) |
 
 ---
 
