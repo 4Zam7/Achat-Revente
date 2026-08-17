@@ -220,6 +220,15 @@
 
             <!-- SIDEBAR : ENCAISSEMENTS / VENTES DE LA SEMAINE -->
             <aside class="overview-sidebar">
+              <div class="week-nav">
+                <button class="week-nav-btn" onclick="changeWeek(-1)" title="Semaine précédente">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2.5L3.5 6l4 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <span class="week-nav-label" id="week-nav-label">Cette semaine</span>
+                <button class="week-nav-btn" id="week-nav-next" onclick="changeWeek(1)" title="Semaine suivante">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2.5l4 3.5-4 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+              </div>
               <div class="card week-sales-card">
                 <div class="card-title">Encaisser cette semaine</div>
                 <div class="week-sales-range" id="encaisser-week-range"></div>
@@ -312,6 +321,7 @@
                 <th>Vente</th>
                 <th>+Value</th>
                 <th>% +Value</th>
+                <th>Client</th>
                 <th>Statut / Actions</th>
               </tr></thead>
               <tbody id="items-body"></tbody>
@@ -335,6 +345,10 @@
           <div class="card">
             <div class="card-title">Stock par SKU</div>
             <div id="sku-stock-wrap"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Stock par taille</div>
+            <div id="taille-stock-wrap"></div>
           </div>
         </div>
 
@@ -514,24 +528,30 @@
         <label>Nom de l'article</label>
         <input type="text" id="f-nom" placeholder="Ex : Veste Adidas vintage" autocomplete="off" oninput="checkRadarAlert(this.value)">
       </div>
-      <div class="fg">
-        <label>Catégorie</label>
-        <select id="f-cat">
-          <option value="">— Choisir une catégorie —</option>
-          <option value="Vêtements">Vêtements</option>
-          <option value="Chaussures">Chaussures</option>
-          <option value="Jeux vidéo">Jeux vidéo</option>
-          <option value="Consoles">Consoles</option>
-          <option value="Électronique">Électronique</option>
-          <option value="Jouets">Jouets</option>
-          <option value="Décoration">Décoration</option>
-          <option value="Ustensiles">Ustensiles</option>
-          <option value="Outils">Outils</option>
-          <option value="Livres">Livres</option>
-          <option value="Sport">Sport</option>
-          <option value="Accessoires">Accessoires</option>
-          <option value="Autres">Autres</option>
-        </select>
+      <div class="form-row">
+        <div class="fg">
+          <label>Catégorie</label>
+          <select id="f-cat">
+            <option value="">— Choisir une catégorie —</option>
+            <option value="Vêtements">Vêtements</option>
+            <option value="Chaussures">Chaussures</option>
+            <option value="Jeux vidéo">Jeux vidéo</option>
+            <option value="Consoles">Consoles</option>
+            <option value="Électronique">Électronique</option>
+            <option value="Jouets">Jouets</option>
+            <option value="Décoration">Décoration</option>
+            <option value="Ustensiles">Ustensiles</option>
+            <option value="Outils">Outils</option>
+            <option value="Livres">Livres</option>
+            <option value="Sport">Sport</option>
+            <option value="Accessoires">Accessoires</option>
+            <option value="Autres">Autres</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Taille <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="f-taille" placeholder="Ex : M, 42, Unique…" autocomplete="off">
+        </div>
       </div>
       <div class="form-row">
         <div class="fg">
@@ -626,24 +646,30 @@
         <label>Nom de l'article</label>
         <input type="text" id="e-nom" placeholder="Nom de l'article" autocomplete="off">
       </div>
-      <div class="fg">
-        <label>Catégorie</label>
-        <select id="e-cat">
-          <option value="">— Choisir une catégorie —</option>
-          <option value="Vêtements">Vêtements</option>
-          <option value="Chaussures">Chaussures</option>
-          <option value="Jeux vidéo">Jeux vidéo</option>
-          <option value="Consoles">Consoles</option>
-          <option value="Électronique">Électronique</option>
-          <option value="Jouets">Jouets</option>
-          <option value="Décoration">Décoration</option>
-          <option value="Ustensiles">Ustensiles</option>
-          <option value="Outils">Outils</option>
-          <option value="Livres">Livres</option>
-          <option value="Sport">Sport</option>
-          <option value="Accessoires">Accessoires</option>
-          <option value="Autres">Autres</option>
-        </select>
+      <div class="form-row">
+        <div class="fg">
+          <label>Catégorie</label>
+          <select id="e-cat">
+            <option value="">— Choisir une catégorie —</option>
+            <option value="Vêtements">Vêtements</option>
+            <option value="Chaussures">Chaussures</option>
+            <option value="Jeux vidéo">Jeux vidéo</option>
+            <option value="Consoles">Consoles</option>
+            <option value="Électronique">Électronique</option>
+            <option value="Jouets">Jouets</option>
+            <option value="Décoration">Décoration</option>
+            <option value="Ustensiles">Ustensiles</option>
+            <option value="Outils">Outils</option>
+            <option value="Livres">Livres</option>
+            <option value="Sport">Sport</option>
+            <option value="Accessoires">Accessoires</option>
+            <option value="Autres">Autres</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label>Taille <span class="fg-opt">optionnel</span></label>
+          <input type="text" id="e-taille" placeholder="Ex : M, 42, Unique…" autocomplete="off">
+        </div>
       </div>
       <div class="form-row">
         <div class="fg">
@@ -671,6 +697,10 @@
             <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
+      </div>
+      <div class="fg">
+        <label>Client <span class="fg-opt">optionnel</span></label>
+        <input type="text" id="e-client" placeholder="Nom de l'acheteur" autocomplete="off">
       </div>
       <div class="fg">
         <label>Date d'encaissement <span class="fg-opt">optionnel — argent reçu</span></label>
@@ -733,6 +763,10 @@
             <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
+      </div>
+      <div class="fg">
+        <label>Client <span class="fg-opt">optionnel</span></label>
+        <input type="text" id="m-client" placeholder="Nom de l'acheteur" autocomplete="off">
       </div>
       <div class="modal-actions">
         <button class="btn-primary" onclick="confirmSell()" id="btn-sell-confirm">
@@ -1004,16 +1038,16 @@
           <button type="button" class="btn-copy-template" onclick="copyImportTemplate()">Copier le modèle</button>
         </div>
         <pre class="import-sql-block">INSERT INTO articles (nom, prix_achat, date_achat, prix_revente,
-  date_revente, date_encaissement, categorie, sku, num_commande,
-  grossiste, identifiant) VALUES
-('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17',
-  'Vêtements', 'VEST-ADI-001', 'CMD-001', 'Brocante', 'A1B2C3'),
-('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL,
-  'Vêtements', NULL, NULL, 'Temu', NULL);</pre>
+  date_revente, client, date_encaissement, categorie, taille,
+  sku, num_commande, grossiste, identifiant) VALUES
+('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', 'Marie D.',
+  '2025-09-17', 'Vêtements', 'M', 'VEST-ADI-001', 'CMD-001', 'Brocante', 'A1B2C3'),
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL, NULL,
+  'Vêtements', '38', NULL, NULL, 'Temu', NULL);</pre>
         <div class="import-format-note">
           <strong>Obligatoires :</strong> nom, prix_achat, date_achat &nbsp;|&nbsp;
           <strong>Date :</strong> YYYY-MM-DD &nbsp;|&nbsp;
-          <strong>Encaissement :</strong> <code>date_encaissement</code> = argent reçu (NULL si en attente) &nbsp;|&nbsp;
+          <strong>Client / Encaissement :</strong> uniquement si l'article a un <code>prix_revente</code> et une <code>date_revente</code> &nbsp;|&nbsp;
           <strong>Apostrophe :</strong> doubler la quote <code>''</code>
         </div>
       </div>

@@ -109,6 +109,8 @@ function normalize(row) {
     grossiste: row.grossiste || '',
     qty: row.quantite || 1,
     ref: row.identifiant || '',
+    taille: row.taille || '',
+    client: row.client || '',
   };
 }
 
@@ -374,7 +376,15 @@ function buildOverview() {
   buildWeekSales();
 }
 
-// ─── VENTES DE LA SEMAINE (sidebar, reset chaque lundi 0h) ──────────────────
+// ─── VENTES DE LA SEMAINE (sidebar, reset chaque lundi 0h, navigable) ───────
+let weekOffset = 0; // 0 = semaine en cours, -1 = semaine précédente, etc.
+
+function weekRefDate() {
+  const d = new Date();
+  d.setDate(d.getDate() + weekOffset * 7);
+  return d;
+}
+
 function getWeekBounds(ref = new Date()) {
   const dt = new Date(ref);
   dt.setHours(0, 0, 0, 0);
@@ -389,10 +399,23 @@ function getWeekBounds(ref = new Date()) {
 function ymd(d) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
-function buildWeekList(prefix, dateField, emptyLabel, unitLabel) {
+window.changeWeek = function (delta) {
+  weekOffset = Math.min(0, weekOffset + delta);
+  buildWeekSales();
+};
+function updateWeekNavUI() {
+  const label = document.getElementById('week-nav-label');
+  const nextBtn = document.getElementById('week-nav-next');
+  if (!label) return;
+  if (weekOffset === 0) label.textContent = 'Cette semaine';
+  else if (weekOffset === -1) label.textContent = 'Semaine dernière';
+  else label.textContent = `Il y a ${-weekOffset} semaines`;
+  if (nextBtn) nextBtn.disabled = weekOffset >= 0;
+}
+function buildWeekList(prefix, dateField, emptyLabel, unitLabel, bounds) {
   const wrap = document.getElementById(prefix + '-list');
   if (!wrap) return;
-  const { start, end } = getWeekBounds();
+  const { start, end } = bounds;
   const startStr = ymd(start), endStr = ymd(end);
   const items = D.filter(d => d.r !== null && d[dateField] && d[dateField] >= startStr && d[dateField] < endStr)
                  .sort((a, b) => a[dateField].localeCompare(b[dateField]));
@@ -430,8 +453,10 @@ function buildWeekList(prefix, dateField, emptyLabel, unitLabel) {
   totalEl.innerHTML = `<span>${items.length} ${unitLabel}${items.length > 1 ? 's' : ''} · ${totalVente.toFixed(0)}€</span><span class="${totalPv >= 0 ? 'pv-pos' : 'pv-neg'}">${totalPv >= 0 ? '+' : ''}${totalPv.toFixed(2)}€</span>`;
 }
 function buildWeekSales() {
-  buildWeekList('encaisser-week', 'de', 'Aucun encaissement cette semaine', 'encaissement');
-  buildWeekList('sales-week', 'dr', 'Aucune vente cette semaine', 'vente');
+  const bounds = getWeekBounds(weekRefDate());
+  buildWeekList('encaisser-week', 'de', 'Aucun encaissement cette semaine', 'encaissement', bounds);
+  buildWeekList('sales-week', 'dr', 'Aucune vente cette semaine', 'vente', bounds);
+  updateWeekNavUI();
 }
 setInterval(buildWeekSales, 60 * 1000);
 
@@ -537,7 +562,7 @@ function buildMonthly() {
 // ─── ITEMS ───────────────────────────────────────────────────────────────────
 function renderItems(items) {
   if (items.length === 0) {
-    document.getElementById('items-body').innerHTML = `<tr><td colspan="8" class="empty-state">Aucun article trouvé</td></tr>`;
+    document.getElementById('items-body').innerHTML = `<tr><td colspan="9" class="empty-state">Aucun article trouvé</td></tr>`;
     return;
   }
   const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
@@ -567,6 +592,7 @@ function renderItems(items) {
       actionsCell = `<span class="badge b-green">Vendu</span><span class="badge b-blue">Encaissé</span>${cancelBtn}${delBtn}`;
     }
     const grossisteHtml = d.grossiste ? `<span class="td-grossiste">${d.grossiste}</span>` : '<span class="td-empty">—</span>';
+    const clientHtml = d.client ? `<span class="td-grossiste">${d.client}</span>` : '<span class="td-empty">—</span>';
     return `<tr>
       <td class="td-name"><span class="name-link" onclick="openEditModal(${d.id})">${d.n}</span>${metaTags}</td>
       <td>${catBadge}</td>
@@ -575,6 +601,7 @@ function renderItems(items) {
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
       <td class="td-num">${pvPctHtml}</td>
+      <td class="td-grossiste-cell">${clientHtml}</td>
       <td class="td-actions"><div class="td-actions-inner">${actionsCell}</div></td>
     </tr>`;
   }).join('');
@@ -589,7 +616,7 @@ function normApostrophes(s) {
   return s.replace(/[‘’ʼ´]/g, "'");
 }
 function itemHaystack(d) {
-  return normApostrophes([d.n, d.sku, d.cmd, d.grossiste, d.ref].filter(Boolean).join(' ').toLowerCase());
+  return normApostrophes([d.n, d.sku, d.cmd, d.grossiste, d.ref, d.client].filter(Boolean).join(' ').toLowerCase());
 }
 function matchesSearch(d, query) {
   const keywords = normApostrophes(query.toLowerCase()).trim().split(/\s+/).filter(Boolean);
@@ -740,6 +767,39 @@ function buildStock() {
       </table></div>`;
     }
   }
+
+  // Stock par taille
+  const TAILLE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+  const tailleMap = {};
+  D.filter(d => d.r === null && d.taille).forEach(d => {
+    const t = d.taille.trim();
+    tailleMap[t] = (tailleMap[t] || 0) + 1;
+  });
+  const tailleKeys = Object.keys(tailleMap).sort((a, b) => {
+    const ia = TAILLE_ORDER.indexOf(a.toUpperCase());
+    const ib = TAILLE_ORDER.indexOf(b.toUpperCase());
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b, undefined, { numeric: true });
+  });
+  const tailleWrap = document.getElementById('taille-stock-wrap');
+  if (tailleWrap) {
+    if (!tailleKeys.length) {
+      tailleWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec une taille renseignée</div>';
+    } else {
+      const maxCount = Math.max(...tailleKeys.map(k => tailleMap[k]));
+      tailleWrap.innerHTML = tailleKeys.map(k => {
+        const count = tailleMap[k];
+        const pct = maxCount > 0 ? (count / maxCount * 100) : 0;
+        return `<div class="taille-row">
+          <span class="taille-label">${k}</span>
+          <div class="taille-bar-track"><div class="taille-bar-fill" style="width:${pct}%"></div></div>
+          <span class="taille-count">${count}</span>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────
@@ -750,6 +810,7 @@ window.openAddModal = function () {
   document.getElementById('f-achat').value = '';
   dpSetValue('f-date', today());
   document.getElementById('f-cat').value = '';
+  document.getElementById('f-taille').value = '';
   document.getElementById('f-sku').value = '';
   document.getElementById('f-cmd').value = '';
   document.getElementById('f-grossiste').value = '';
@@ -808,6 +869,7 @@ window.addArticle = async function () {
   const sku = document.getElementById('f-sku').value.trim() || null;
   const cmd = document.getElementById('f-cmd').value.trim() || null;
   const grossiste = document.getElementById('f-grossiste').value.trim() || null;
+  const taille = document.getElementById('f-taille').value.trim() || null;
   const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('f-quantite').value) || 1));
   const rawRef = document.getElementById('f-ref').value.trim().toUpperCase() || null;
   if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
@@ -830,7 +892,7 @@ window.addArticle = async function () {
       nom, prix_achat: achat, date_achat: date,
       categorie: cat || null,
       boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
-      sku, num_commande: cmd, grossiste, identifiant: ref || null,
+      sku, num_commande: cmd, grossiste, taille, identifiant: ref || null,
     }));
     const { data: insertedData, error } = await sb.from('articles').insert(rows).select('*');
     if (error) throw error;
@@ -851,6 +913,7 @@ window.openSellModal = function (id) {
   const it = D.find(d => d.id === id);
   document.getElementById('modal-name').textContent = it.n + ' — acheté ' + it.a.toFixed(2) + '€ le ' + it.da;
   document.getElementById('m-prix').value = '';
+  document.getElementById('m-client').value = '';
   dpSetValue('m-date', today());
   document.getElementById('sell-modal').classList.add('open');
   setTimeout(() => document.getElementById('m-prix').focus(), 100);
@@ -860,6 +923,7 @@ window.closeSellModal = function () { document.getElementById('sell-modal').clas
 window.confirmSell = async function () {
   const prix = parseFloat(document.getElementById('m-prix').value);
   const date = document.getElementById('m-date').value;
+  const client = document.getElementById('m-client').value.trim() || null;
   if (isNaN(prix) || prix <= 0 || !date) { toast('Prix ou date invalide', 'err'); return; }
 
   const btn = document.getElementById('btn-sell-confirm');
@@ -867,10 +931,10 @@ window.confirmSell = async function () {
 
   try {
     const it = D.find(d => d.id === sellId);
-    const { error } = await sb.from('articles').update({ prix_revente: prix, date_revente: date }).eq('id', sellId);
+    const { error } = await sb.from('articles').update({ prix_revente: prix, date_revente: date, client }).eq('id', sellId);
     if (error) throw error;
     const item = D.find(d => d.id === sellId);
-    if (item) { item.r = prix; item.dr = date; }
+    if (item) { item.r = prix; item.dr = date; item.client = client || ''; }
     closeSellModal();
     refreshCurrentPanel();
     const pv = (prix - it.a).toFixed(2);
@@ -940,10 +1004,10 @@ window.cancelSell = async function (id) {
   const ok = await showConfirm('Annuler la vente', `Remettre <strong>${it.n}</strong> en stock ?<br><br>Les informations de vente et d'encaissement seront effacées.`);
   if (!ok) return;
   try {
-    const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null, date_encaissement: null }).eq("id", id);
+    const { error } = await sb.from("articles").update({ prix_revente: null, date_revente: null, date_encaissement: null, client: null }).eq("id", id);
     if (error) throw error;
     const item = D.find(d => d.id === id);
-    if (item) { item.r = null; item.dr = null; item.de = null; }
+    if (item) { item.r = null; item.dr = null; item.de = null; item.client = ''; }
     refreshCurrentPanel();
     toast(`Vente de "${it.n}" annulée`, "ok");
   } catch (e) {
@@ -1000,10 +1064,12 @@ window.openEditModal = function (id) {
   const it = D.find(d => d.id === id);
   document.getElementById('e-nom').value = it.n;
   document.getElementById('e-cat').value = it.cat || '';
+  document.getElementById('e-taille').value = it.taille || '';
   document.getElementById('e-achat').value = it.a;
   dpSetValue('e-date-achat', it.da);
   document.getElementById('e-vente').value = it.r !== null ? it.r : '';
   dpSetValue('e-date-vente', it.dr || '');
+  document.getElementById('e-client').value = it.client || '';
   dpSetValue('e-date-encaissement', it.de || '');
   document.getElementById('e-sku').value = it.sku || '';
   document.getElementById('e-cmd').value = it.cmd || '';
@@ -1022,10 +1088,12 @@ window.closeEditModal = function () {
 window.confirmEdit = async function () {
   const nom = document.getElementById('e-nom').value.trim();
   const cat = document.getElementById('e-cat').value;
+  const taille = document.getElementById('e-taille').value.trim() || null;
   const achat = parseFloat(document.getElementById('e-achat').value);
   const dateAchat = document.getElementById('e-date-achat').value;
   const venteVal = document.getElementById('e-vente').value;
   const dateVente = document.getElementById('e-date-vente').value;
+  const rawClient = document.getElementById('e-client').value.trim() || null;
   const dateEncaissement = document.getElementById('e-date-encaissement').value;
   const sku = document.getElementById('e-sku').value.trim() || null;
   const cmd = document.getElementById('e-cmd').value.trim() || null;
@@ -1041,16 +1109,19 @@ window.confirmEdit = async function () {
   const vente = venteVal !== '' ? parseFloat(venteVal) : null;
   const dr = (vente !== null && dateVente) ? dateVente : null;
   const de = (dr !== null && dateEncaissement) ? dateEncaissement : null;
+  const client = (dr !== null) ? rawClient : null;
   const btn = document.getElementById('btn-edit-confirm');
   btn.disabled = true;
   try {
     const { error } = await sb.from('articles').update({
       nom,
       categorie: cat || null,
+      taille,
       prix_achat: achat,
       date_achat: dateAchat,
       prix_revente: vente,
       date_revente: dr,
+      client,
       date_encaissement: de,
       sku,
       num_commande: cmd,
@@ -1059,7 +1130,7 @@ window.confirmEdit = async function () {
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = dr; item.de = de; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.taille = taille || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = dr; item.client = client || ''; item.de = de; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -2193,8 +2264,8 @@ window.exportExcel = function () {
 
   // ── Feuille 1 : Tous les articles ──────────────────────────────────────────
   const articlesData = [
-    ['ID', 'Nom', 'SKU', 'N° commande', 'Grossiste', 'Catégorie', 'Boutique',
-     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente', 'Date encaissement',
+    ['ID', 'Nom', 'SKU', 'N° commande', 'Grossiste', 'Catégorie', 'Taille', 'Boutique',
+     'Prix achat (€)', 'Date achat', 'Prix vente (€)', 'Date vente', 'Client', 'Date encaissement',
      'Plus-value (€)', 'Multiplicateur', 'Statut']
   ];
   D.forEach(d => {
@@ -2203,17 +2274,17 @@ window.exportExcel = function () {
     const btq  = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
     const statut = d.r === null ? 'En stock' : (d.de !== null ? 'Encaissé' : 'Vendu');
     articlesData.push([
-      d.id, d.n, d.sku || '', d.cmd || '', d.grossiste || '', d.cat || '', btq,
+      d.id, d.n, d.sku || '', d.cmd || '', d.grossiste || '', d.cat || '', d.taille || '', btq,
       d.a, d.da,
-      d.r !== null ? d.r : '', d.dr || '', d.de || '',
+      d.r !== null ? d.r : '', d.dr || '', d.client || '', d.de || '',
       pv, mult,
       statut
     ]);
   });
   const ws1 = XLSX.utils.aoa_to_sheet(articlesData);
   ws1['!cols'] = [
-    {wch:6},{wch:32},{wch:18},{wch:18},{wch:18},{wch:16},{wch:18},
-    {wch:14},{wch:12},{wch:14},{wch:12},{wch:16},{wch:14},{wch:13},{wch:10}
+    {wch:6},{wch:32},{wch:18},{wch:18},{wch:18},{wch:16},{wch:10},{wch:18},
+    {wch:14},{wch:12},{wch:14},{wch:12},{wch:18},{wch:16},{wch:14},{wch:13},{wch:10}
   ];
   XLSX.utils.book_append_sheet(wb, ws1, 'Articles');
 
@@ -2750,7 +2821,7 @@ window.savePwdChange = async function (userId, email) {
 };
 
 // ─── IMPORT SQL ───────────────────────────────────────────────────────────────
-const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, date_encaissement, categorie, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL, 'Vêtements', NULL, NULL, 'Temu', NULL);`;
+const IMPORT_TEMPLATE = `INSERT INTO articles (nom, prix_achat, date_achat, prix_revente, date_revente, client, date_encaissement, categorie, taille, sku, num_commande, grossiste, identifiant) VALUES\n('Veste Adidas', 5.00, '2025-06-01', 18.00, '2025-09-10', 'Marie D.', '2025-09-17', 'Vêtements', 'M', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),\n('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL, NULL, 'Vêtements', '38', NULL, NULL, 'Temu', NULL);`;
 
 window.openImportModal = function () {
   const info = document.getElementById('import-boutique-info');
@@ -2845,10 +2916,14 @@ window.importSQL = async function () {
     showImportResult(`${invalid.length} ligne(s) sans nom, prix_achat ou date_achat — importation annulée`, 'err'); return;
   }
 
-  // Un encaissement n'a de sens que sur un article vendu
+  // Un encaissement ou un client n'a de sens que sur un article vendu
   const encaisseSansVente = parsed.filter(r => r.date_encaissement && (r.prix_revente == null || !r.date_revente));
   if (encaisseSansVente.length) {
     showImportResult(`${encaisseSansVente.length} ligne(s) avec date_encaissement mais sans prix_revente/date_revente — importation annulée`, 'err'); return;
+  }
+  const clientSansVente = parsed.filter(r => r.client && (r.prix_revente == null || !r.date_revente));
+  if (clientSansVente.length) {
+    showImportResult(`${clientSansVente.length} ligne(s) avec client mais sans prix_revente/date_revente — importation annulée`, 'err'); return;
   }
 
   // Vérifie la cohérence SKU→ID : un même ID ne peut être lié qu'à un seul SKU
@@ -2874,8 +2949,10 @@ window.importSQL = async function () {
       date_achat: r.date_achat,
       prix_revente: r.prix_revente != null ? r.prix_revente : null,
       date_revente: r.date_revente || null,
+      client: r.client || null,
       date_encaissement: r.date_encaissement || null,
       categorie: r.categorie || null,
+      taille: r.taille || null,
       sku: r.sku || null,
       num_commande: r.num_commande || null,
       grossiste: r.grossiste || null,

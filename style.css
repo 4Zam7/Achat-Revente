@@ -197,6 +197,23 @@ body {
   .overview-sidebar { width: 100%; }
 }
 .week-sales-card { margin-bottom: 0; }
+.week-nav {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+}
+.week-nav-btn {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text2);
+  width: 26px; height: 26px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s; flex-shrink: 0;
+}
+.week-nav-btn:hover { background: var(--bg4); color: var(--text); }
+.week-nav-btn:disabled { opacity: 0.35; cursor: default; pointer-events: none; }
+.week-nav-label {
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  font-family: 'DM Mono', monospace;
+  min-width: 0; text-align: center;
+}
 .week-sales-range {
   font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace;
   margin-top: -8px; margin-bottom: 12px;
@@ -1686,6 +1703,20 @@ tr:hover td { background: var(--bg3); }
   background: var(--blue-bg); color: var(--blue-text);
   font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace;
   padding: 0 6px;
+}
+
+/* ── STOCK PAR TAILLE ────────────────────────────────────────────────────── */
+.taille-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.taille-label {
+  width: 48px; flex-shrink: 0;
+  font-size: 12px; font-weight: 600; color: var(--text2);
+  font-family: 'DM Mono', monospace; text-transform: uppercase;
+}
+.taille-bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
+.taille-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
+.taille-count {
+  width: 28px; flex-shrink: 0; text-align: right;
+  font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3);
 }
 
 /* ── URSSAF PANEL ────────────────────────────────────────────────────────── */

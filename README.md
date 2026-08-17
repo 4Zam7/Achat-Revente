@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.8-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.9-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -23,18 +23,20 @@
 - 📊 **Tableau de bord** avec statistiques en temps réel (bénéfice, ROI, recettes)
 - 📈 **Graphiques avec valeurs affichées** — flux mensuel, bénéfice cumulé, catégories vendues, top plus-values
 - 🎯 **Objectif mensuel** — jauge de progression des recettes, synchronisée sur tous les appareils via Supabase. En mode All, l'objectif est la somme des objectifs de chaque boutique
-- 📅 **Ventes & Encaissements de la semaine** — deux cartes latérales dans Vue d'ensemble : paiements reçus et ventes réalisées depuis lundi 0h, qui basculent automatiquement sur la nouvelle semaine
+- 📅 **Ventes & Encaissements de la semaine, navigables** — deux cartes latérales dans Vue d'ensemble : paiements reçus et ventes réalisées, qui basculent automatiquement sur la nouvelle semaine chaque lundi 0h. Flèches ‹ › pour consulter les semaines précédentes
 - 💰 **Vente et encaissement séparés** — "Vendu" enregistre prix + date de vente (argent pas encore reçu) ; le bouton bleu "Encaisser" enregistre ensuite la date de réception du paiement
+- 🙋 **Client** — nom de l'acheteur, renseigné à la vente ou dans Modifier, affiché en colonne dans Articles
 - 📐 **Pourcentages de plus-value** — % affiché sous "Position globale" dans la vue globale, et colonne "% +Value" dans le tableau Articles
 - 📋 **Gestion des articles** — ajout, modification, vente, encaissement, annulation de vente, suppression
 - 🏷️ **Catégories** — 13 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, prix, dates, SKU, N° commande, grossiste et ID
+- 📏 **Taille** — champ libre optionnel (XS, M, 42, Unique…), avec répartition du stock par taille dans l'onglet Stock
+- ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, taille, prix, dates, client, SKU, N° commande, grossiste et ID
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
 - 🆔 **ID lié au SKU** — un ID identifie un modèle de produit (son SKU). Tous les articles partageant le même SKU reçoivent automatiquement le même ID. Un ID ne peut pas être attribué à deux SKU différents. Générateur intégré (⚡ Générer) — code 6 caractères garanti sans collision. Saisie manuelle possible
 - 🏭 **Grossiste** — champ optionnel pour noter la source d'achat (Aliexpress, Temu, Brocante…), visible en colonne dans Articles et dans Stock par SKU
 - 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en un clic (chaque exemplaire est une ligne indépendante, vendable séparément). Design pill avec chiffre contrasté
 - ⬇️ **Accès rapide en bas de liste** — flèche à côté de la recherche dans Articles pour aller directement tout en bas du tableau
-- 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
+- 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, répartition par taille, défilement complet
 - 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie. Défilement horizontal sur mobile, colonnes jamais tronquées
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
@@ -46,8 +48,8 @@
 - 🏪 **Multi-boutiques** — plusieurs activités séparées (Brocante, Vinted, Leboncoin…), chacune avec ses propres articles, stats et bilans. Basculez d'une boutique à l'autre en un clic. Ordre personnalisable par glisser-déposer, synchronisé sur tous les appareils. Le bouton Ajouter est masqué en mode All
 - 🔽 **Filtres Articles** — filtrer par statut (stock/vendu), par catégorie, par **grossiste** (liste dynamique) et trier par plus-value, prix, date ou nom
 - 📅 **Bilan mensuel et annuel** — articles achetés et vendus listés séparément, stats complètes, top plus-values, camembert catégories
-- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (SKU, N° commande, grossiste, boutique, dates de vente **et d'encaissement**, statut En stock/Vendu/Encaissé), Résumé (dont recettes encaissées et montant en attente d'encaissement), Bilan mensuel (recettes vendues **et** encaissées par mois), Stock par SKU
-- 📥 **Import SQL** — bouton dans le header (disponible par boutique), coller un INSERT SQL pour importer des articles en masse directement depuis l'app, `date_encaissement` incluse
+- 📤 **Export Excel** — bouton de téléchargement dans le header, génère un fichier avec 4 onglets : Articles (SKU, N° commande, grossiste, taille, boutique, client, dates de vente **et d'encaissement**, statut En stock/Vendu/Encaissé), Résumé (dont recettes encaissées et montant en attente d'encaissement), Bilan mensuel (recettes vendues **et** encaissées par mois), Stock par SKU
+- 📥 **Import SQL** — bouton dans le header (disponible par boutique), coller un INSERT SQL pour importer des articles en masse directement depuis l'app, `client`, `taille` et `date_encaissement` inclus
 - 🗓️ **Calendrier personnalisé** — sélecteur de date sur mesure (navigation mois par mois, aujourd'hui mis en valeur, sélection en un clic)
 - 🧾 **Onglet URSSAF** — aide à la déclaration auto-entrepreneur : CA calculé automatiquement par mois sur les **recettes encaissées** (date d'encaissement, conforme au régime BIC — mois en cours + 2 mois précédents), cotisations estimées (12,3 % + 0,1 % CFP), marquage "Déclaré" sauvegardé dans Supabase. Toggle par boutique pour inclure ou exclure ses ventes
 - 🎯 **Radar marques** — suivez vos marques niches, notez leur intérêt d'achat de 1 à 7 étoiles, visualisez vos trouvailles et bénéfices moyens par marque. Alerte automatique à l'ajout d'un article si la marque est dans le Radar
@@ -203,7 +205,8 @@ Tout le SQL du projet est regroupé ici, en un seul endroit : le schéma complet
 -- TABLE articles — chaque ligne = un exemplaire acheté,
 -- éventuellement revendu (prix_revente / date_revente NULL tant
 -- qu'il est en stock) puis encaissé (date_encaissement NULL tant
--- que le paiement n'a pas été reçu)
+-- que le paiement n'a pas été reçu). client et date_encaissement
+-- ne devraient être renseignés que si l'article est vendu
 -- ============================================================
 CREATE TABLE IF NOT EXISTS articles (
   id bigserial PRIMARY KEY,
@@ -212,8 +215,10 @@ CREATE TABLE IF NOT EXISTS articles (
   date_achat date NOT NULL,
   prix_revente numeric,
   date_revente date,
+  client text,
   date_encaissement date,
   categorie text,
+  taille text,
   boutique_id bigint,
   sku text,
   num_commande text,
@@ -225,6 +230,8 @@ CREATE TABLE IF NOT EXISTS articles (
 -- Colonnes ajoutées au fil des versions : rattrape une table
 -- articles créée avec une ancienne version de ce schéma
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS date_encaissement date;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS client text;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS taille text;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS boutique_id bigint;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS sku text;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS num_commande text;
@@ -428,11 +435,11 @@ Le bouton **Importer** dans le header de l'app (recommandé, disponible par bout
 -- 1re ligne : vendue ET encaissée · 2e : encore en stock
 INSERT INTO articles (
   nom, prix_achat, date_achat,
-  prix_revente, date_revente, date_encaissement,
-  categorie, sku, num_commande, grossiste, identifiant
+  prix_revente, date_revente, client, date_encaissement,
+  categorie, taille, sku, num_commande, grossiste, identifiant
 ) VALUES
-('Veste Adidas',    5.00, '2025-06-01', 18.00, '2025-09-10', '2025-09-17', 'Vêtements', 'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),
-('Jean Levi''s 501', 3.50, '2025-06-15', NULL,  NULL,        NULL,         'Vêtements', NULL,           NULL,           'Temu',     NULL);
+('Veste Adidas',    5.00, '2025-06-01', 18.00, '2025-09-10', 'Marie D.', '2025-09-17', 'Vêtements', 'M',  'VEST-ADI-001', 'CMD-2024-001', 'Brocante', 'ABC123'),
+('Jean Levi''s 501', 3.50, '2025-06-15', NULL,  NULL,        NULL,       NULL,         'Vêtements', '38', NULL,           NULL,           'Temu',     NULL);
 ```
 
 **Colonnes disponibles**
@@ -444,8 +451,10 @@ INSERT INTO articles (
 | `date_achat` | date | ✅ | Format `YYYY-MM-DD` |
 | `prix_revente` | numeric | — | Laisser `NULL` si non vendu |
 | `date_revente` | date | — | Date de la vente, `NULL` si non vendu |
+| `client` | text | — | Nom de l'acheteur. Ne se renseigne que si l'article a un `prix_revente` et une `date_revente` |
 | `date_encaissement` | date | — | Date où l'argent a été reçu, `NULL` si vendu mais pas encore encaissé. Ne se renseigne que si l'article a un `prix_revente` et une `date_revente` |
 | `categorie` | text | — | Voir liste ci-dessous |
+| `taille` | text | — | Ex : `XS`, `M`, `42`, `Unique` — libre |
 | `sku` | text | — | Référence modèle produit |
 | `num_commande` | text | — | N° de commande fournisseur |
 | `grossiste` | text | — | Source d'achat |
@@ -533,6 +542,14 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.9 — 7 Août 2026
+
+- 🙋 **Client** — nouveau champ optionnel (formulaires Vente et Modifier), affiché en colonne dans Articles. Ne peut être renseigné que sur un article vendu
+- 📏 **Taille** — nouveau champ optionnel (formulaires Ajouter et Modifier). Nouvelle carte "Stock par taille" dans l'onglet Stock, répartition du nombre d'articles en stock par taille
+- 📆 **Navigation entre semaines** — les cartes "Encaisser cette semaine" et "Ventes de la semaine" de Vue d'ensemble peuvent maintenant remonter dans le temps (flèches ‹ ›), les deux cartes naviguent ensemble
+- Import SQL, export Excel et recherche mis à jour pour couvrir `client` et `taille`
+- ⚠️ Nécessite d'ajouter les colonnes `client` et `taille` en base — relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql)
 
 ### v2.8 — 7 Août 2026
 
