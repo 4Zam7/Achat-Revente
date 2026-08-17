@@ -733,11 +733,15 @@ function buildStock() {
   const copyIcoSku = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   const skuMap = {};
   D.filter(d => d.sku && d.r === null).forEach(d => {
-    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0, grossistes: new Set(), prices: new Set() };
+    if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0, grossistes: new Set(), prices: new Set(), tailles: {} };
     skuMap[d.sku].items.push(d);
     skuMap[d.sku].total += d.a;
     if (d.grossiste) skuMap[d.sku].grossistes.add(d.grossiste);
     skuMap[d.sku].prices.add(d.a);
+    if (d.taille) {
+      const t = d.taille.trim();
+      skuMap[d.sku].tailles[t] = (skuMap[d.sku].tailles[t] || 0) + 1;
+    }
   });
   const skuList = Object.values(skuMap).sort((a, b) => b.items.length - a.items.length);
   const skuWrap = document.getElementById('sku-stock-wrap');
@@ -746,7 +750,7 @@ function buildStock() {
       skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
     } else {
       skuWrap.innerHTML = `<div class="sku-scroll-wrap"><table class="sku-table">
-        <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
+        <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Taille</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
         <tbody>${skuList.map(g => {
           const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIcoSku}</button></span>`;
           const ref = g.items.find(d => d.ref)?.ref || null;
@@ -754,11 +758,13 @@ function buildStock() {
           const grossisteCell = g.grossistes.size ? [...g.grossistes].join(', ') : '—';
           const prices = [...g.prices].sort((a,b) => a - b);
           const unitCell = prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
+          const tailleCell = formatTailleBreakdown(g.tailles);
           return `<tr>
             <td class="sku-cell-tag">${skuTag}</td>
             <td class="sku-cell-tag">${idCell}</td>
             <td class="sku-grossiste">${grossisteCell}</td>
             <td class="sku-names">${[...new Set(g.items.map(d => d.n))].join(', ')}</td>
+            <td class="sku-taille">${tailleCell}</td>
             <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
             <td class="td-num">${unitCell}</td>
             <td class="td-num">${g.total.toFixed(2)}€</td>
@@ -767,15 +773,13 @@ function buildStock() {
       </table></div>`;
     }
   }
+}
 
-  // Stock par taille
-  const TAILLE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
-  const tailleMap = {};
-  D.filter(d => d.r === null && d.taille).forEach(d => {
-    const t = d.taille.trim();
-    tailleMap[t] = (tailleMap[t] || 0) + 1;
-  });
-  const tailleKeys = Object.keys(tailleMap).sort((a, b) => {
+// Trie des tailles dans l'ordre usuel (XXS→XXXL), puis alphanumérique
+// pour les tailles non standard (ex : pointures)
+const TAILLE_ORDER = ['XXS', 'XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'];
+function sortTailleKeys(keys) {
+  return keys.sort((a, b) => {
     const ia = TAILLE_ORDER.indexOf(a.toUpperCase());
     const ib = TAILLE_ORDER.indexOf(b.toUpperCase());
     if (ia !== -1 && ib !== -1) return ia - ib;
@@ -783,23 +787,12 @@ function buildStock() {
     if (ib !== -1) return 1;
     return a.localeCompare(b, undefined, { numeric: true });
   });
-  const tailleWrap = document.getElementById('taille-stock-wrap');
-  if (tailleWrap) {
-    if (!tailleKeys.length) {
-      tailleWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec une taille renseignée</div>';
-    } else {
-      const maxCount = Math.max(...tailleKeys.map(k => tailleMap[k]));
-      tailleWrap.innerHTML = tailleKeys.map(k => {
-        const count = tailleMap[k];
-        const pct = maxCount > 0 ? (count / maxCount * 100) : 0;
-        return `<div class="taille-row">
-          <span class="taille-label">${k}</span>
-          <div class="taille-bar-track"><div class="taille-bar-fill" style="width:${pct}%"></div></div>
-          <span class="taille-count">${count}</span>
-        </div>`;
-      }).join('');
-    }
-  }
+}
+// "1 XS, 2 M, 1 XL" — répartition par taille d'un groupe d'articles
+function formatTailleBreakdown(tailleCounts) {
+  const keys = sortTailleKeys(Object.keys(tailleCounts));
+  if (!keys.length) return '<span class="sku-no-id">—</span>';
+  return keys.map(k => `${tailleCounts[k]} ${k}`).join(', ');
 }
 
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────

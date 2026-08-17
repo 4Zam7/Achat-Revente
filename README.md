@@ -29,15 +29,15 @@
 - 📐 **Pourcentages de plus-value** — % affiché sous "Position globale" dans la vue globale, et colonne "% +Value" dans le tableau Articles
 - 📋 **Gestion des articles** — ajout, modification, vente, encaissement, annulation de vente, suppression
 - 🏷️ **Catégories** — 13 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
-- 📏 **Taille** — champ libre optionnel (XS, M, 42, Unique…), avec répartition du stock par taille dans l'onglet Stock
+- 📏 **Taille** — champ libre optionnel (XS, M, 42, Unique…), avec colonne "Taille" dans Stock par SKU montrant la répartition par taille de chaque SKU (ex : "1 XS, 2 M, 1 XL")
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, taille, prix, dates, client, SKU, N° commande, grossiste et ID
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
 - 🆔 **ID lié au SKU** — un ID identifie un modèle de produit (son SKU). Tous les articles partageant le même SKU reçoivent automatiquement le même ID. Un ID ne peut pas être attribué à deux SKU différents. Générateur intégré (⚡ Générer) — code 6 caractères garanti sans collision. Saisie manuelle possible
 - 🏭 **Grossiste** — champ optionnel pour noter la source d'achat (Aliexpress, Temu, Brocante…), visible en colonne dans Articles et dans Stock par SKU
 - 🔢 **Ajout en quantité** — sélecteur `−/+` dans le formulaire d'ajout pour créer N exemplaires identiques en un clic (chaque exemplaire est une ligne indépendante, vendable séparément). Design pill avec chiffre contrasté
 - ⬇️ **Accès rapide en bas de liste** — flèche à côté de la recherche dans Articles pour aller directement tout en bas du tableau
-- 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, répartition par taille, défilement complet
-- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie. Défilement horizontal sur mobile, colonnes jamais tronquées
+- 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
+- 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, répartition par taille, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie. Défilement horizontal sur mobile, colonnes jamais tronquées
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 👑 **Système admin** — panneau d'administration accessible depuis le header (icône bouclier). Permet de créer des comptes, définir des permissions par onglet, modifier les mots de passe et supprimer des comptes. Les comptes sans profil sont automatiquement déconnectés
@@ -546,7 +546,7 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ### v2.9 — 7 Août 2026
 
 - 🙋 **Client** — nouveau champ optionnel (formulaires Vente et Modifier), affiché en colonne dans Articles. Ne peut être renseigné que sur un article vendu
-- 📏 **Taille** — nouveau champ optionnel (formulaires Ajouter et Modifier). Nouvelle carte "Stock par taille" dans l'onglet Stock, répartition du nombre d'articles en stock par taille
+- 📏 **Taille** — nouveau champ optionnel (formulaires Ajouter et Modifier). Colonne "Taille" ajoutée à Stock par SKU, avec la répartition par taille de chaque SKU (ex : "1 XS, 2 M, 1 XL")
 - 📆 **Navigation entre semaines** — les cartes "Encaisser cette semaine" et "Ventes de la semaine" de Vue d'ensemble peuvent maintenant remonter dans le temps (flèches ‹ ›), les deux cartes naviguent ensemble
 - Import SQL, export Excel et recherche mis à jour pour couvrir `client` et `taille`
 - ⚠️ Nécessite d'ajouter les colonnes `client` et `taille` en base — relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql)

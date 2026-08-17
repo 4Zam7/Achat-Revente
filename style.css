@@ -1695,6 +1695,7 @@ tr:hover td { background: var(--bg3); }
 .sku-no-id { color: var(--text3); font-size: 12px; }
 .sku-grossiste { font-size: 11px; color: var(--text2); white-space: nowrap; }
 .sku-names { font-size: 11px; color: var(--text2); white-space: nowrap; }
+.sku-taille { font-size: 11px; color: var(--text2); white-space: nowrap; font-family: 'DM Mono', monospace; }
 .sku-table td { white-space: nowrap; }
 .sku-qty { }
 .sku-badge {
@@ -1703,20 +1704,6 @@ tr:hover td { background: var(--bg3); }
   background: var(--blue-bg); color: var(--blue-text);
   font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace;
   padding: 0 6px;
-}
-
-/* ── STOCK PAR TAILLE ────────────────────────────────────────────────────── */
-.taille-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
-.taille-label {
-  width: 48px; flex-shrink: 0;
-  font-size: 12px; font-weight: 600; color: var(--text2);
-  font-family: 'DM Mono', monospace; text-transform: uppercase;
-}
-.taille-bar-track { flex: 1; height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; }
-.taille-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; }
-.taille-count {
-  width: 28px; flex-shrink: 0; text-align: right;
-  font-size: 12px; font-family: 'DM Mono', monospace; color: var(--text3);
 }
 
 /* ── URSSAF PANEL ────────────────────────────────────────────────────────── */
