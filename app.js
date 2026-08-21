@@ -750,7 +750,7 @@ function buildStock() {
       skuWrap.innerHTML = '<div class="empty-state">Aucun article en stock avec un SKU</div>';
     } else {
       skuWrap.innerHTML = `<div class="sku-scroll-wrap"><table class="sku-table">
-        <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Taille</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th></tr></thead>
+        <thead><tr><th>SKU</th><th>ID</th><th>Grossiste</th><th>Articles</th><th>Taille</th><th>Qté stock</th><th>Val. unité</th><th>Valeur totale</th><th></th></tr></thead>
         <tbody>${skuList.map(g => {
           const skuTag = `<span class="td-meta-tag td-meta-orange sku-tag">${g.sku}<button class="td-copy-btn" data-copy="${g.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIcoSku}</button></span>`;
           const ref = g.items.find(d => d.ref)?.ref || null;
@@ -768,6 +768,9 @@ function buildStock() {
             <td class="sku-qty"><span class="sku-badge">${g.items.length}</span></td>
             <td class="td-num">${unitCell}</td>
             <td class="td-num">${g.total.toFixed(2)}€</td>
+            <td class="sku-restock-cell"><button class="sku-restock-btn" data-sku="${g.sku.replace(/"/g,'&quot;')}" onclick="openRestockModal(this.dataset.sku)" title="Ajouter du stock pour ce SKU">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1.5v9M1.5 6h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button></td>
           </tr>`;
         }).join('')}</tbody>
       </table></div>`;
@@ -794,6 +797,94 @@ function formatTailleBreakdown(tailleCounts) {
   if (!keys.length) return '<span class="sku-no-id">—</span>';
   return keys.map(k => `${tailleCounts[k]} ${k}`).join(', ');
 }
+
+// ─── RÉAPPROVISIONNER (depuis Stock par SKU) ───────────────────────────────
+const RESTOCK_MAX = 30;
+let restockTemplate = null; // article existant du SKU servant de modèle (nom, catégorie, grossiste, ID)
+
+window.openRestockModal = function (sku) {
+  const template = D.find(d => d.sku === sku && d.r === null) || D.find(d => d.sku === sku);
+  if (!template) return;
+  restockTemplate = template;
+  document.getElementById('restock-item-name').textContent = template.n + ' — SKU ' + sku;
+  document.getElementById('re-qty').value = '1';
+  document.getElementById('re-achat').value = template.a;
+  dpSetValue('re-date', today());
+  document.getElementById('re-cmd').value = '';
+  renderRestockTailles();
+  document.getElementById('restock-modal').classList.add('open');
+  setTimeout(() => document.getElementById('re-achat').focus(), 100);
+};
+
+window.closeRestockModal = function () {
+  document.getElementById('restock-modal').classList.remove('open');
+  restockTemplate = null;
+};
+
+window.changeRestockQty = function (delta) {
+  const el = document.getElementById('re-qty');
+  el.value = Math.max(1, Math.min(RESTOCK_MAX, (parseInt(el.value) || 1) + delta));
+  renderRestockTailles();
+};
+
+// Régénère les champs Taille par exemplaire quand la quantité change,
+// en conservant les valeurs déjà saisies
+function renderRestockTailles() {
+  const qty = Math.max(1, Math.min(RESTOCK_MAX, parseInt(document.getElementById('re-qty').value) || 1));
+  const wrap = document.getElementById('re-tailles-wrap');
+  const prevValues = [...wrap.querySelectorAll('.re-taille-input')].map(i => i.value);
+  wrap.innerHTML = Array.from({ length: qty }, (_, i) => `
+    <div class="fg">
+      <label>Taille — exemplaire ${i + 1} <span class="fg-opt">optionnel</span></label>
+      <input type="text" class="re-taille-input" placeholder="Ex : M, 42, Unique…" value="${prevValues[i] ? prevValues[i].replace(/"/g,'&quot;') : ''}">
+    </div>
+  `).join('');
+}
+
+window.confirmRestock = async function () {
+  if (!restockTemplate) return;
+  const t = restockTemplate;
+  const qty = Math.max(1, Math.min(RESTOCK_MAX, parseInt(document.getElementById('re-qty').value) || 1));
+  const achat = parseFloat(document.getElementById('re-achat').value);
+  const date = document.getElementById('re-date').value;
+  const cmd = document.getElementById('re-cmd').value.trim() || null;
+  if (isNaN(achat) || achat < 0 || !date) { toast('Prix ou date invalide', 'err'); return; }
+  const tailles = [...document.querySelectorAll('.re-taille-input')].map(i => i.value.trim() || null);
+
+  const ok = await showConfirm(
+    'Confirmer le réapprovisionnement',
+    `Ajouter <strong>${qty}</strong> exemplaire${qty > 1 ? 's' : ''} de <strong>${t.n}</strong> (SKU ${t.sku}) à ${achat.toFixed(2)}€ chacun, achetés le ${date} ?`,
+    { btnClass: 'btn-confirm-blue', okLabel: 'Ajouter au stock', icon: '<path d="M2 7l3.5 3.5L12 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' }
+  );
+  if (!ok) return;
+
+  const btn = document.getElementById('btn-restock-confirm');
+  btn.disabled = true;
+  try {
+    const rows = Array.from({ length: qty }, (_, i) => ({
+      nom: t.n,
+      prix_achat: achat,
+      date_achat: date,
+      categorie: t.cat || null,
+      boutique_id: t.boutique_id,
+      sku: t.sku,
+      num_commande: cmd,
+      grossiste: t.grossiste || null,
+      taille: tailles[i],
+      identifiant: t.ref || null,
+    }));
+    const { data: inserted, error } = await sb.from('articles').insert(rows).select('*');
+    if (error) throw error;
+    if (inserted) inserted.forEach(row => D.push(normalize(row)));
+    closeRestockModal();
+    refreshCurrentPanel();
+    toast(`${qty} exemplaire${qty > 1 ? 's' : ''} de "${t.n}" ajouté${qty > 1 ? 's' : ''} au stock`, 'ok');
+  } catch (e) {
+    toast('Erreur lors du réapprovisionnement', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 // ─── ADD ARTICLE ─────────────────────────────────────────────────────────────
 window.openAddModal = function () {
@@ -874,9 +965,6 @@ window.addArticle = async function () {
     const conflict = D.find(d => d.ref === ref && d.sku !== (sku || null));
     if (conflict) { toast(`L'ID ${ref} est déjà lié au SKU ${conflict.sku}`, 'err'); return; }
   }
-  // qty > 1 : interdit de créer un nouvel ID sur plusieurs articles à la fois
-  if (ref && qty > 1 && !skuRefMap[sku]) { toast("L'ID ne peut être assigné qu'à un seul article à la fois", 'err'); return; }
-
   const btn = document.getElementById('btn-add-confirm');
   btn.disabled = true;
 
@@ -1156,6 +1244,7 @@ function today() { return ymd(new Date()); }
 
 // Close modals on overlay click
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
+document.getElementById('restock-modal').addEventListener('click', function (e) { if (e.target === this) closeRestockModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
 document.getElementById('encaisser-modal').addEventListener('click', function (e) { if (e.target === this) closeEncaisserModal(); });
 document.getElementById('cancel-choice-modal').addEventListener('click', function (e) { if (e.target === this) closeCancelChoiceModal(); });
@@ -1165,7 +1254,7 @@ document.getElementById('edit-boutique-modal').addEventListener('click', functio
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeSellModal(); closeEncaisserModal(); closeCancelChoiceModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeRestockModal(); closeSellModal(); closeEncaisserModal(); closeCancelChoiceModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 

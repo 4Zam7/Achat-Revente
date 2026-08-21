@@ -1705,6 +1705,15 @@ tr:hover td { background: var(--bg3); }
   font-size: 12px; font-weight: 600; font-family: 'DM Mono', monospace;
   padding: 0 6px;
 }
+.sku-restock-cell { text-align: right; }
+.sku-restock-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; flex-shrink: 0;
+  background: var(--green-bg); color: var(--green-text);
+  border: 1px solid rgba(90,216,166,0.25); border-radius: 6px;
+  cursor: pointer; transition: all 0.15s;
+}
+.sku-restock-btn:hover { background: rgba(90,216,166,0.18); }
 
 /* ── URSSAF PANEL ────────────────────────────────────────────────────────── */
 .urssaf-header {

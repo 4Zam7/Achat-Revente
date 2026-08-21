@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.9-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.10-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -38,6 +38,7 @@
 - ⬇️ **Accès rapide en bas de liste** — flèche à côté de la recherche dans Articles pour aller directement tout en bas du tableau
 - 📦 **Suivi du stock** — capital immobilisé, taux de rotation, prix par article affiché, défilement complet
 - 📊 **Stock par SKU** — regroupement automatique des articles en stock par SKU, avec grossiste, répartition par taille, quantité, valeur unitaire et valeur totale. SKU en badge orange avec bouton copie. Défilement horizontal sur mobile, colonnes jamais tronquées
+- ➕ **Réapprovisionner** — bouton "+" sur chaque ligne de Stock par SKU pour ajouter d'un coup plusieurs exemplaires d'un SKU existant (quantité, prix d'achat, date, N° commande et taille propres à chaque exemplaire), avec confirmation avant l'ajout
 - 🔄 **Synchronisation temps réel** — toutes vos modifications apparaissent instantanément sur tous vos appareils
 - 🔒 **Authentification sécurisée** — email + mot de passe via Supabase Auth, base de données verrouillée par RLS
 - 👑 **Système admin** — panneau d'administration accessible depuis le header (icône bouclier). Permet de créer des comptes, définir des permissions par onglet, modifier les mots de passe et supprimer des comptes. Les comptes sans profil sont automatiquement déconnectés
@@ -542,6 +543,11 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.10 — 22 Août 2026
+
+- ➕ **Réapprovisionner depuis Stock par SKU** — nouveau bouton "+" sur chaque ligne : ajoute N exemplaires d'un SKU existant en une fois, avec quantité, prix d'achat, date d'achat et N° commande propres à ce réassort, plus une taille par exemplaire si besoin. Confirmation avant l'ajout
+- 🐛 Fix : ajouter plusieurs exemplaires (quantité > 1) avec un SKU et un ID inédits refusait l'ajout ("L'ID ne peut être assigné qu'à un seul article à la fois") alors que tous les exemplaires du lot partagent le même SKU — aucune ambiguïté à bloquer
 
 ### v2.9 — 7 Août 2026
 
