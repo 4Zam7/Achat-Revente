@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.10-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.11-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -28,6 +28,7 @@
 - 🙋 **Client** — nom de l'acheteur, renseigné à la vente ou dans Modifier, affiché en colonne dans Articles
 - 📐 **Pourcentages de plus-value** — % affiché sous "Position globale" dans la vue globale, et colonne "% +Value" dans le tableau Articles
 - 📋 **Gestion des articles** — ajout, modification, vente, encaissement, annulation de vente, suppression
+- 💸 **Prix d'achat optionnel à l'ajout** — un article peut être ajouté sans prix d'achat ni date d'achat renseignés. Il s'affiche "Prix d'achat à saisir" (en orange, cliquable) dans Articles tant que le prix n'est pas complété ; la plus-value affiche "—" en attendant et n'entre pas dans le calcul du bénéfice global
 - 🏷️ **Catégories** — 13 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
 - 📏 **Taille** — champ libre optionnel (XS, M, 42, Unique…), avec colonne "Taille" dans Stock par SKU montrant la répartition par taille de chaque SKU (ex : "1 XS, 2 M, 1 XL")
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, taille, prix, dates, client, SKU, N° commande, grossiste et ID
@@ -207,13 +208,15 @@ Tout le SQL du projet est regroupé ici, en un seul endroit : le schéma complet
 -- éventuellement revendu (prix_revente / date_revente NULL tant
 -- qu'il est en stock) puis encaissé (date_encaissement NULL tant
 -- que le paiement n'a pas été reçu). client et date_encaissement
--- ne devraient être renseignés que si l'article est vendu
+-- ne devraient être renseignés que si l'article est vendu.
+-- prix_achat/date_achat sont optionnels (article ajouté vite fait,
+-- prix à compléter plus tard) — la plus-value reste "—" en attendant
 -- ============================================================
 CREATE TABLE IF NOT EXISTS articles (
   id bigserial PRIMARY KEY,
   nom text NOT NULL,
-  prix_achat numeric NOT NULL,
-  date_achat date NOT NULL,
+  prix_achat numeric,
+  date_achat date,
   prix_revente numeric,
   date_revente date,
   client text,
@@ -230,6 +233,8 @@ CREATE TABLE IF NOT EXISTS articles (
 
 -- Colonnes ajoutées au fil des versions : rattrape une table
 -- articles créée avec une ancienne version de ce schéma
+ALTER TABLE articles ALTER COLUMN prix_achat DROP NOT NULL;
+ALTER TABLE articles ALTER COLUMN date_achat DROP NOT NULL;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS date_encaissement date;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS client text;
 ALTER TABLE articles ADD COLUMN IF NOT EXISTS taille text;
@@ -431,9 +436,10 @@ VALUES (
 Le bouton **Importer** dans le header de l'app (recommandé, disponible par boutique) applique ce même format automatiquement. Pour importer directement depuis Supabase → **SQL Editor** :
 
 ```sql
--- nom, prix_achat, date_achat sont obligatoires. Le reste peut
--- être NULL. Doubler les apostrophes ('') dans les noms d'article.
--- 1re ligne : vendue ET encaissée · 2e : encore en stock
+-- Seul nom est obligatoire. Le reste peut être NULL — un article
+-- sans prix_achat/date_achat s'affiche "Prix d'achat à saisir" tant
+-- qu'il n'est pas complété. Doubler les apostrophes ('') dans les
+-- noms d'article. 1re ligne : vendue ET encaissée · 2e : en stock
 INSERT INTO articles (
   nom, prix_achat, date_achat,
   prix_revente, date_revente, client, date_encaissement,
@@ -448,8 +454,8 @@ INSERT INTO articles (
 | Colonne | Type | Obligatoire | Description |
 |---------|------|-------------|-------------|
 | `nom` | text | ✅ | Nom de l'article |
-| `prix_achat` | numeric | ✅ | Prix d'achat (ex : `5.00`) |
-| `date_achat` | date | ✅ | Format `YYYY-MM-DD` |
+| `prix_achat` | numeric | — | Prix d'achat (ex : `5.00`). Laisser `NULL` si pas encore connu — l'article s'affiche "Prix d'achat à saisir" en attendant |
+| `date_achat` | date | — | Format `YYYY-MM-DD`, ou `NULL` |
 | `prix_revente` | numeric | — | Laisser `NULL` si non vendu |
 | `date_revente` | date | — | Date de la vente, `NULL` si non vendu |
 | `client` | text | — | Nom de l'acheteur. Ne se renseigne que si l'article a un `prix_revente` et une `date_revente` |
@@ -543,6 +549,11 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.11 — 25 Août 2026
+
+- 💸 **Prix d'achat optionnel** — l'ajout d'un article ne demande plus obligatoirement le prix d'achat ni la date d'achat. Tant qu'ils ne sont pas renseignés, la colonne Achat affiche "Prix d'achat à saisir" en orange (cliquable, ouvre directement Modifier), et la plus-value affiche "—". Un article vendu sans prix d'achat connu reste vendable ; sa plus-value reste "—" et n'entre dans aucun total tant que le prix n'est pas complété — dès qu'il l'est, tout se recalcule automatiquement
+- ⚠️ Nécessite de retirer la contrainte NOT NULL sur `prix_achat`/`date_achat` — relancez le bloc **Schéma complet** de la [🗄️ Référence SQL](#reference-sql)
 
 ### v2.10 — 22 Août 2026
 

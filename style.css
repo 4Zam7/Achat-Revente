@@ -634,6 +634,11 @@ tr:hover td { background: var(--bg3); }
 .td-name { max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .td-num  { white-space: nowrap; font-family: 'DM Mono', monospace; font-size: 11px; }
 .td-empty { color: var(--text3); }
+.td-achat-missing {
+  color: var(--amber-text); font-weight: 500; cursor: pointer;
+  white-space: nowrap; border-bottom: 1px dashed rgba(246,189,22,0.4);
+}
+.td-achat-missing:hover { color: var(--amber); }
 .td-grossiste-cell { font-size: 11px; }
 .td-grossiste { color: var(--text2); }
 .td-actions { white-space: nowrap; }

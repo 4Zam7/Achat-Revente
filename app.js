@@ -97,9 +97,9 @@ function normalize(row) {
   return {
     id: row.id,
     n: row.nom,
-    a: parseFloat(row.prix_achat),
+    a: row.prix_achat != null ? parseFloat(row.prix_achat) : null,
     r: row.prix_revente != null ? parseFloat(row.prix_revente) : null,
-    da: row.date_achat,
+    da: row.date_achat || null,
     dr: row.date_revente || null,
     de: row.date_encaissement || null,
     cat: row.categorie || '',
@@ -175,16 +175,24 @@ function refreshCurrentPanel() {
 }
 
 // ─── STATS ───────────────────────────────────────────────────────────────────
+// Le prix d'achat est optionnel (article ajouté rapidement, à compléter plus
+// tard). La plus-value/bénéfice d'une vente n'est calculable que si son coût
+// est connu ; les recettes, elles, comptent toutes les ventes (l'argent reçu
+// est réel même si on ne connaît pas encore le coût de revient).
+function soldWithCost(sold) { return sold.filter(d => d.a !== null); }
+
 function stats() {
   const sold = D.filter(d => d.r !== null);
   const stock = D.filter(d => d.r === null);
+  const withCost = soldWithCost(sold);
   const totalRevente = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus   = sold.reduce((s, d) => s + d.a, 0);
-  const benefice     = totalRevente - coutVendus;
+  const coutVendus   = withCost.reduce((s, d) => s + d.a, 0);
+  const benefice     = withCost.reduce((s, d) => s + (d.r - d.a), 0);
   const roi          = coutVendus > 0 ? (benefice / coutVendus) * 100 : 0;
-  const capitalStock = stock.reduce((s, d) => s + d.a, 0);
-  const totalAchat   = D.reduce((s, d) => s + d.a, 0);
-  return { sold, stock, totalAchat, totalRevente, coutVendus, benefice, roi, count: D.length, capitalStock };
+  const capitalStock = stock.reduce((s, d) => s + (d.a || 0), 0);
+  const totalAchat   = D.reduce((s, d) => s + (d.a || 0), 0);
+  const sansPrix      = D.filter(d => d.a === null).length;
+  return { sold, stock, totalAchat, totalRevente, coutVendus, benefice, roi, count: D.length, capitalStock, sansPrix };
 }
 
 function mkKey(ds) { return ds ? ds.slice(0, 7) : null; }
@@ -245,11 +253,14 @@ function buildMonthMap() {
     if (d.r !== null) {
       const k = mkKey(d.dr);
       if (!m[k]) m[k] = { v: 0, b: 0, cnt: 0, a: 0 };
-      m[k].v += d.r; m[k].b += (d.r - d.a); m[k].cnt++;
+      m[k].v += d.r; m[k].cnt++;
+      if (d.a !== null) m[k].b += (d.r - d.a);
     }
-    const ka = mkKey(d.da);
-    if (!m[ka]) m[ka] = { v: 0, b: 0, cnt: 0, a: 0 };
-    m[ka].a += d.a;
+    if (d.da) {
+      const ka = mkKey(d.da);
+      if (!m[ka]) m[ka] = { v: 0, b: 0, cnt: 0, a: 0 };
+      m[ka].a += (d.a || 0);
+    }
   });
   return m;
 }
@@ -261,7 +272,7 @@ function buildOverview() {
   document.getElementById('m-overview').innerHTML = `
     <div class="metric"><div class="metric-label">Achetés</div><div class="metric-value">${s.count}</div><div class="metric-sub">articles</div></div>
     <div class="metric"><div class="metric-label">Vendus</div><div class="metric-value">${s.sold.length}</div><div class="metric-sub">${pct}% du stock</div></div>
-    <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stock.length}</div><div class="metric-sub">${s.capitalStock.toFixed(0)}€ immo.</div></div>
+    <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stock.length}</div><div class="metric-sub">${s.capitalStock.toFixed(0)}€ immo.${s.sansPrix > 0 ? ` · <span class="mv-amber">${s.sansPrix} sans prix</span>` : ''}</div></div>
     <div class="metric"><div class="metric-label">Coût vendus</div><div class="metric-value mv-amber">${s.coutVendus.toFixed(0)}€</div><div class="metric-sub">articles vendus</div></div>
     <div class="metric"><div class="metric-label">Recettes</div><div class="metric-value mv-blue">${s.totalRevente.toFixed(0)}€</div><div class="metric-sub">ventes réalisées</div></div>
     <div class="metric"><div class="metric-label">Bénéfice</div><div class="metric-value mv-green">${s.benefice.toFixed(0)}€</div><div class="metric-sub">+${s.roi.toFixed(0)}% ROI</div></div>`;
@@ -344,7 +355,7 @@ function buildOverview() {
   });
 
   buildGoal();
-  const top = s.sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a)).slice(0, 18);
+  const top = soldWithCost(s.sold).slice().sort((a, b) => (b.r - b.a) - (a.r - a.a)).slice(0, 18);
   const h = top.length * 32 + 40;
   document.getElementById('pv-wrap').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c5"></canvas></div>`;
   charts.c5 = new Chart(document.getElementById('c5'), { plugins: [ChartDataLabels],
@@ -432,7 +443,7 @@ function buildWeekList(prefix, dateField, emptyLabel, unitLabel, bounds) {
   }
 
   wrap.innerHTML = items.map(d => {
-    const pv = d.r - d.a;
+    const pv = d.a !== null ? d.r - d.a : null;
     const btq = CURRENT_BOUTIQUE ? '' : (BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '');
     return `<div class="week-sales-item">
       <div class="week-sales-name-row">
@@ -440,16 +451,16 @@ function buildWeekList(prefix, dateField, emptyLabel, unitLabel, bounds) {
         ${btq ? `<span class="week-sales-btq">${btq}</span>` : ''}
       </div>
       <div class="week-sales-prices">
-        <span class="week-sales-buy">${d.a.toFixed(2)}€</span>
+        <span class="week-sales-buy">${d.a !== null ? d.a.toFixed(2)+'€' : '<span class="td-achat-missing">Prix d\'achat à saisir</span>'}</span>
         <span class="week-sales-arrow">→</span>
         <span class="week-sales-sell">${d.r.toFixed(2)}€</span>
-        <span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>
+        ${pv !== null ? `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>` : ''}
       </div>
     </div>`;
   }).join('');
 
   const totalVente = items.reduce((s, d) => s + d.r, 0);
-  const totalPv = items.reduce((s, d) => s + (d.r - d.a), 0);
+  const totalPv = soldWithCost(items).reduce((s, d) => s + (d.r - d.a), 0);
   totalEl.innerHTML = `<span>${items.length} ${unitLabel}${items.length > 1 ? 's' : ''} · ${totalVente.toFixed(0)}€</span><span class="${totalPv >= 0 ? 'pv-pos' : 'pv-neg'}">${totalPv >= 0 ? '+' : ''}${totalPv.toFixed(2)}€</span>`;
 }
 function buildWeekSales() {
@@ -568,7 +579,7 @@ function renderItems(items) {
   const copyIco = `<svg width="10" height="10" viewBox="0 0 12 12" fill="none"><rect x="4" y="4" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.6"/><path d="M3 8H2a1 1 0 01-1-1V2a1 1 0 011-1h5a1 1 0 011 1v1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   const tr = s => s.length > 12 ? s.slice(0, 12) + '…' : s;
   document.getElementById('items-body').innerHTML = items.map(d => {
-    const pv = d.r !== null ? d.r - d.a : null;
+    const pv = (d.r !== null && d.a !== null) ? d.r - d.a : null;
     let pvHtml = '—';
     if (pv !== null) { pvHtml = `<span class="${pv >= 0 ? 'pv-pos' : 'pv-neg'}">${pv >= 0 ? '+' : ''}${pv.toFixed(2)}€</span>`; }
     let pvPctHtml = '—';
@@ -576,6 +587,9 @@ function renderItems(items) {
       const pct = pv / d.a * 100;
       pvPctHtml = `<span class="${pct >= 0 ? 'pv-pos' : 'pv-neg'}">${pct >= 0 ? '+' : ''}${pct.toFixed(0)}%</span>`;
     }
+    const achatHtml = d.a !== null
+      ? `${d.a.toFixed(2)}€`
+      : `<span class="td-achat-missing" onclick="openEditModal(${d.id})" title="Cliquer pour renseigner le prix d'achat">Prix d'achat à saisir</span>`;
     const catBadge = d.cat ? `<span class="badge-cat">${d.cat}</span>` : '—';
     const refHtml = d.ref ? `<span class="td-meta-tag td-meta-blue">ID ${tr(d.ref)}<button class="td-copy-btn" data-copy="${d.ref}" onclick="copyToClip(this.dataset.copy)" title="Copier ID">${copyIco}</button></span>` : '';
     const skuHtml = d.sku ? `<span class="td-meta-tag td-meta-orange">SKU ${tr(d.sku)}<button class="td-copy-btn" data-copy="${d.sku.replace(/"/g,'&quot;')}" onclick="copyToClip(this.dataset.copy)" title="Copier SKU">${copyIco}</button></span>` : '';
@@ -597,7 +611,7 @@ function renderItems(items) {
       <td class="td-name"><span class="name-link" onclick="openEditModal(${d.id})">${d.n}</span>${metaTags}</td>
       <td>${catBadge}</td>
       <td class="td-grossiste-cell">${grossisteHtml}</td>
-      <td class="td-num">${d.a.toFixed(2)}€</td>
+      <td class="td-num">${achatHtml}</td>
       <td class="td-num">${d.r !== null ? d.r.toFixed(2) + '€' : '<span class="td-empty">—</span>'}</td>
       <td class="td-num">${pvHtml}</td>
       <td class="td-num">${pvPctHtml}</td>
@@ -641,12 +655,12 @@ window.filterTable = function () {
     return true;
   });
 
-  if (tri === 'pv-desc') items = items.slice().sort((a, b) => (b.r !== null ? b.r - b.a : -999) - (a.r !== null ? a.r - a.a : -999));
-  else if (tri === 'pv-asc') items = items.slice().sort((a, b) => (a.r !== null ? a.r - a.a : 999) - (b.r !== null ? b.r - b.a : 999));
-  else if (tri === 'achat-desc') items = items.slice().sort((a, b) => b.a - a.a);
-  else if (tri === 'achat-asc') items = items.slice().sort((a, b) => a.a - b.a);
-  else if (tri === 'date-desc') items = items.slice().sort((a, b) => b.da.localeCompare(a.da));
-  else if (tri === 'date-asc') items = items.slice().sort((a, b) => a.da.localeCompare(b.da));
+  if (tri === 'pv-desc') items = items.slice().sort((a, b) => (b.r !== null && b.a !== null ? b.r - b.a : -999) - (a.r !== null && a.a !== null ? a.r - a.a : -999));
+  else if (tri === 'pv-asc') items = items.slice().sort((a, b) => (a.r !== null && a.a !== null ? a.r - a.a : 999) - (b.r !== null && b.a !== null ? b.r - b.a : 999));
+  else if (tri === 'achat-desc') items = items.slice().sort((a, b) => (b.a ?? -1) - (a.a ?? -1));
+  else if (tri === 'achat-asc') items = items.slice().sort((a, b) => (a.a ?? -1) - (b.a ?? -1));
+  else if (tri === 'date-desc') items = items.slice().sort((a, b) => (b.da || '').localeCompare(a.da || ''));
+  else if (tri === 'date-asc') items = items.slice().sort((a, b) => (a.da || '').localeCompare(b.da || ''));
   else if (tri === 'nom-asc') items = items.slice().sort((a, b) => a.n.localeCompare(b.n));
 
   const countEl = document.getElementById('filter-count');
@@ -693,10 +707,10 @@ function buildStock() {
   const tx = s.count > 0 ? Math.round(s.sold.length / s.count * 100) : 0;
   document.getElementById('m-stock').innerHTML = `
     <div class="metric"><div class="metric-label">En stock</div><div class="metric-value">${s.stock.length}</div><div class="metric-sub">articles</div></div>
-    <div class="metric"><div class="metric-label">Capital immo.</div><div class="metric-value mv-amber">${s.capitalStock.toFixed(0)}€</div><div class="metric-sub">non récupéré</div></div>
+    <div class="metric"><div class="metric-label">Capital immo.</div><div class="metric-value mv-amber">${s.capitalStock.toFixed(0)}€</div><div class="metric-sub">non récupéré${s.sansPrix > 0 ? ` · <span class="mv-amber">${s.sansPrix} sans prix</span>` : ''}</div></div>
     <div class="metric"><div class="metric-label">Rotation</div><div class="metric-value">${tx}%</div><div class="metric-sub">articles vendus</div></div>`;
 
-  const top = s.stock.slice().sort((a, b) => b.a - a.a);
+  const top = s.stock.filter(d => d.a !== null).slice().sort((a, b) => b.a - a.a);
   const h = top.length * 26 + 20;
   document.getElementById('pv-wrap2').innerHTML = `<div style="position:relative;height:${h}px"><canvas id="c6"></canvas></div>`;
   charts.c6 = new Chart(document.getElementById('c6'), {
@@ -735,9 +749,9 @@ function buildStock() {
   D.filter(d => d.sku && d.r === null).forEach(d => {
     if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, items: [], total: 0, grossistes: new Set(), prices: new Set(), tailles: {} };
     skuMap[d.sku].items.push(d);
-    skuMap[d.sku].total += d.a;
+    skuMap[d.sku].total += (d.a || 0);
     if (d.grossiste) skuMap[d.sku].grossistes.add(d.grossiste);
-    skuMap[d.sku].prices.add(d.a);
+    if (d.a !== null) skuMap[d.sku].prices.add(d.a);
     if (d.taille) {
       const t = d.taille.trim();
       skuMap[d.sku].tailles[t] = (skuMap[d.sku].tailles[t] || 0) + 1;
@@ -757,7 +771,8 @@ function buildStock() {
           const idCell = ref ? `<span class="td-meta-tag td-meta-blue sku-tag">${ref}<button class="td-copy-btn" data-copy="${ref}" onclick="copyToClip(this.dataset.copy)" title="Copier ID">${copyIcoSku}</button></span>` : '<span class="sku-no-id">—</span>';
           const grossisteCell = g.grossistes.size ? [...g.grossistes].join(', ') : '—';
           const prices = [...g.prices].sort((a,b) => a - b);
-          const unitCell = prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
+          const unitCell = prices.length === 0 ? '<span class="sku-no-id">—</span>'
+            : prices.length === 1 ? `${prices[0].toFixed(2)}€` : `${prices[0].toFixed(2)}–${prices[prices.length-1].toFixed(2)}€`;
           const tailleCell = formatTailleBreakdown(g.tailles);
           return `<tr>
             <td class="sku-cell-tag">${skuTag}</td>
@@ -808,7 +823,7 @@ window.openRestockModal = function (sku) {
   restockTemplate = template;
   document.getElementById('restock-item-name').textContent = template.n + ' — SKU ' + sku;
   document.getElementById('re-qty').value = '1';
-  document.getElementById('re-achat').value = template.a;
+  document.getElementById('re-achat').value = template.a !== null ? template.a : '';
   dpSetValue('re-date', today());
   document.getElementById('re-cmd').value = '';
   renderRestockTailles();
@@ -947,7 +962,7 @@ window.closeAddModal = function () { document.getElementById('add-modal').classL
 
 window.addArticle = async function () {
   const nom = document.getElementById('f-nom').value.trim();
-  const achat = parseFloat(document.getElementById('f-achat').value);
+  const achatVal = document.getElementById('f-achat').value;
   const date = document.getElementById('f-date').value;
   const cat = document.getElementById('f-cat').value;
   const sku = document.getElementById('f-sku').value.trim() || null;
@@ -956,7 +971,9 @@ window.addArticle = async function () {
   const taille = document.getElementById('f-taille').value.trim() || null;
   const qty = Math.max(1, Math.min(99, parseInt(document.getElementById('f-quantite').value) || 1));
   const rawRef = document.getElementById('f-ref').value.trim().toUpperCase() || null;
-  if (!nom || isNaN(achat) || achat < 0 || !date) { toast('Remplis tous les champs', 'err'); return; }
+  if (!nom) { toast('Le nom est requis', 'err'); return; }
+  const achat = achatVal !== '' ? parseFloat(achatVal) : null;
+  if (achatVal !== '' && (isNaN(achat) || achat < 0)) { toast('Prix d\'achat invalide', 'err'); return; }
   const skuRefMap = buildSkuRefMap();
   // Si le SKU a déjà un ID lié, on force cet ID
   const ref = (sku && skuRefMap[sku]) ? skuRefMap[sku] : rawRef;
@@ -970,7 +987,7 @@ window.addArticle = async function () {
 
   try {
     const rows = Array.from({ length: qty }, () => ({
-      nom, prix_achat: achat, date_achat: date,
+      nom, prix_achat: achat, date_achat: date || null,
       categorie: cat || null,
       boutique_id: CURRENT_BOUTIQUE ? CURRENT_BOUTIQUE.id : null,
       sku, num_commande: cmd, grossiste, taille, identifiant: ref || null,
@@ -992,7 +1009,10 @@ window.addArticle = async function () {
 window.openSellModal = function (id) {
   sellId = id;
   const it = D.find(d => d.id === id);
-  document.getElementById('modal-name').textContent = it.n + ' — acheté ' + it.a.toFixed(2) + '€ le ' + it.da;
+  const achatInfo = it.a !== null
+    ? ' — acheté ' + it.a.toFixed(2) + '€' + (it.da ? ' le ' + it.da : '')
+    : ' — prix d\'achat non renseigné';
+  document.getElementById('modal-name').textContent = it.n + achatInfo;
   document.getElementById('m-prix').value = '';
   document.getElementById('m-client').value = '';
   dpSetValue('m-date', today());
@@ -1018,8 +1038,8 @@ window.confirmSell = async function () {
     if (item) { item.r = prix; item.dr = date; item.client = client || ''; }
     closeSellModal();
     refreshCurrentPanel();
-    const pv = (prix - it.a).toFixed(2);
-    toast(`"${it.n}" vendu ${prix.toFixed(2)}€ — bénéf. +${pv}€`, 'ok');
+    const pvMsg = it.a !== null ? ` — bénéf. ${(prix - it.a) >= 0 ? '+' : ''}${(prix - it.a).toFixed(2)}€` : ' (prix d\'achat non renseigné)';
+    toast(`"${it.n}" vendu ${prix.toFixed(2)}€${pvMsg}`, 'ok');
   } catch (e) {
     toast('Erreur lors de la vente', 'err');
   } finally {
@@ -1146,8 +1166,8 @@ window.openEditModal = function (id) {
   document.getElementById('e-nom').value = it.n;
   document.getElementById('e-cat').value = it.cat || '';
   document.getElementById('e-taille').value = it.taille || '';
-  document.getElementById('e-achat').value = it.a;
-  dpSetValue('e-date-achat', it.da);
+  document.getElementById('e-achat').value = it.a !== null ? it.a : '';
+  dpSetValue('e-date-achat', it.da || '');
   document.getElementById('e-vente').value = it.r !== null ? it.r : '';
   dpSetValue('e-date-vente', it.dr || '');
   document.getElementById('e-client').value = it.client || '';
@@ -1170,7 +1190,7 @@ window.confirmEdit = async function () {
   const nom = document.getElementById('e-nom').value.trim();
   const cat = document.getElementById('e-cat').value;
   const taille = document.getElementById('e-taille').value.trim() || null;
-  const achat = parseFloat(document.getElementById('e-achat').value);
+  const achatVal = document.getElementById('e-achat').value;
   const dateAchat = document.getElementById('e-date-achat').value;
   const venteVal = document.getElementById('e-vente').value;
   const dateVente = document.getElementById('e-date-vente').value;
@@ -1180,7 +1200,9 @@ window.confirmEdit = async function () {
   const cmd = document.getElementById('e-cmd').value.trim() || null;
   const grossiste = document.getElementById('e-grossiste').value.trim() || null;
   const rawRef = document.getElementById('e-ref').value.trim().toUpperCase() || null;
-  if (!nom || isNaN(achat) || !dateAchat) { toast('Nom, prix et date achat requis', 'err'); return; }
+  if (!nom) { toast('Le nom est requis', 'err'); return; }
+  const achat = achatVal !== '' ? parseFloat(achatVal) : null;
+  if (achatVal !== '' && (isNaN(achat) || achat < 0)) { toast('Prix d\'achat invalide', 'err'); return; }
   const skuRefMap = buildSkuRefMap();
   const ref = (sku && skuRefMap[sku]) ? skuRefMap[sku] : rawRef;
   if (ref) {
@@ -1199,7 +1221,7 @@ window.confirmEdit = async function () {
       categorie: cat || null,
       taille,
       prix_achat: achat,
-      date_achat: dateAchat,
+      date_achat: dateAchat || null,
       prix_revente: vente,
       date_revente: dr,
       client,
@@ -1211,7 +1233,7 @@ window.confirmEdit = async function () {
     }).eq('id', editId);
     if (error) throw error;
     const item = D.find(d => d.id === editId);
-    if (item) { item.n = nom; item.cat = cat || ''; item.taille = taille || ''; item.a = achat; item.da = dateAchat; item.r = vente; item.dr = dr; item.client = client || ''; item.de = de; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
+    if (item) { item.n = nom; item.cat = cat || ''; item.taille = taille || ''; item.a = achat; item.da = dateAchat || null; item.r = vente; item.dr = dr; item.client = client || ''; item.de = de; item.sku = sku || ''; item.cmd = cmd || ''; item.grossiste = grossiste || ''; item.ref = ref || ''; }
     closeEditModal();
     refreshCurrentPanel();
     toast(`"${nom}" modifié`, 'ok');
@@ -1808,10 +1830,11 @@ window.buildBilanMonth = function() {
 
   const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
   const bought = D.filter(d => d.da && d.da.startsWith(key));
+  const withCost = soldWithCost(sold);
   const recettes      = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus    = sold.reduce((s, d) => s + d.a, 0);
-  const benefice      = recettes - coutVendus;
-  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const coutVendus    = withCost.reduce((s, d) => s + d.a, 0);
+  const benefice      = withCost.reduce((s, d) => s + (d.r - d.a), 0);
+  const montantAchete = bought.reduce((s, d) => s + (d.a || 0), 0);
   const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
 
   document.getElementById('bilan-m-metrics').innerHTML = bilanMetricsHTML([
@@ -1820,12 +1843,12 @@ window.buildBilanMonth = function() {
     { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
     { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
     { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
-    { label: 'Marge moy./article', value: sold.length > 0 ? (benefice/sold.length).toFixed(0)+'€' : '—' },
+    { label: 'Marge moy./article', value: withCost.length > 0 ? (benefice/withCost.length).toFixed(0)+'€' : '—' },
   ]);
 
   bilanCatChart('bilan-c-cat-m', sold, 'bilan-m-leg');
 
-  const top5 = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  const top5 = withCost.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
   document.getElementById('bilan-m-top').innerHTML = top5.length
     ? bilanTopHTML(top5, 5)
     : '<div class="empty-state">Aucun article vendu ce mois</div>';
@@ -1835,19 +1858,19 @@ window.buildBilanMonth = function() {
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
           <div class="bilan-achat-cat">${d.cat || ''}</div>
-          <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
+          <div class="bilan-achat-price">${d.a !== null ? d.a.toFixed(2)+'€' : '<span class="td-achat-missing" onclick="openEditModal('+d.id+')">à saisir</span>'}</div>
           ${d.r !== null ? `<span class="badge b-green bilan-achat-status">Vendu</span>` : `<span class="badge b-amber bilan-achat-status">Stock</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article acheté ce mois</div>';
 
-  const soldThisMonth = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  const soldThisMonth = sold.slice().sort((a, b) => (b.r - (b.a ?? b.r)) - (a.r - (a.a ?? a.r)));
   document.getElementById('bilan-m-vendus').innerHTML = soldThisMonth.length
     ? soldThisMonth.map(d => `
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
           <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
-          <span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>
+          ${d.a !== null ? `<span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>` : `<span class="td-achat-missing bilan-achat-status" onclick="openEditModal(${d.id})">Prix d'achat à saisir</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article vendu ce mois</div>';
 };
@@ -1858,14 +1881,15 @@ window.buildBilanYear = function() {
 
   const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(year));
   const bought = D.filter(d => d.da && d.da.startsWith(year));
+  const withCost = soldWithCost(sold);
   const recettes      = sold.reduce((s, d) => s + d.r, 0);
-  const coutVendus    = sold.reduce((s, d) => s + d.a, 0);
-  const benefice      = recettes - coutVendus;
-  const montantAchete = bought.reduce((s, d) => s + d.a, 0);
+  const coutVendus    = withCost.reduce((s, d) => s + d.a, 0);
+  const benefice      = withCost.reduce((s, d) => s + (d.r - d.a), 0);
+  const montantAchete = bought.reduce((s, d) => s + (d.a || 0), 0);
   const roi = coutVendus > 0 ? (benefice / coutVendus * 100) : 0;
   const meilleurMois = () => {
     const mm = {};
-    sold.forEach(d => { const k = d.dr.slice(0,7); mm[k] = (mm[k]||0) + (d.r - d.a); });
+    withCost.forEach(d => { const k = d.dr.slice(0,7); mm[k] = (mm[k]||0) + (d.r - d.a); });
     const best = Object.entries(mm).sort((a,b) => b[1]-a[1])[0];
     if (!best) return '—';
     const ms = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
@@ -1887,7 +1911,7 @@ window.buildBilanYear = function() {
   // Monthly bar chart for the year
   const ms = ["Jan","Fév","Mar","Avr","Mai","Juin","Juil","Août","Sep","Oct","Nov","Déc"];
   const monthlyB = Array(12).fill(0);
-  sold.forEach(d => { const mo = parseInt(d.dr.slice(5,7))-1; monthlyB[mo] += (d.r - d.a); });
+  withCost.forEach(d => { const mo = parseInt(d.dr.slice(5,7))-1; monthlyB[mo] += (d.r - d.a); });
   killBilanChart('bilan-c-monthly-y');
   bilanCharts['bilan-c-monthly-y'] = new Chart(document.getElementById('bilan-c-monthly-y'), {
     plugins: [ChartDataLabels],
@@ -1915,7 +1939,7 @@ window.buildBilanYear = function() {
     }
   });
 
-  const top10 = sold.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
+  const top10 = withCost.slice().sort((a, b) => (b.r - b.a) - (a.r - a.a));
   document.getElementById('bilan-y-top').innerHTML = top10.length
     ? bilanTopHTML(top10, 10)
     : '<div class="empty-state">Aucun article vendu cette année</div>';
@@ -1926,7 +1950,7 @@ window.buildBilanYear = function() {
         <div class="bilan-achat-item">
           <div class="bilan-achat-name">${d.n}</div>
           <div class="bilan-achat-cat">${d.cat || ''}</div>
-          <div class="bilan-achat-price">${d.a.toFixed(2)}€</div>
+          <div class="bilan-achat-price">${d.a !== null ? d.a.toFixed(2)+'€' : '<span class="td-achat-missing" onclick="openEditModal('+d.id+')">à saisir</span>'}</div>
           ${d.r !== null ? `<span class="badge b-green bilan-achat-status">Vendu</span>` : `<span class="badge b-amber bilan-achat-status">Stock</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article acheté cette année</div>';
@@ -1938,7 +1962,7 @@ window.buildBilanYear = function() {
           <div class="bilan-achat-name">${d.n}</div>
           <div class="bilan-achat-cat">${d.cat || ''}</div>
           <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
-          <span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>
+          ${d.a !== null ? `<span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>` : `<span class="td-achat-missing bilan-achat-status" onclick="openEditModal(${d.id})">Prix d'achat à saisir</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article vendu cette année</div>';
 };
@@ -2226,7 +2250,7 @@ window.doGlobalSearch = function () {
   container.innerHTML = `
     <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
     ${results.slice(0, 10).map(d => {
-      const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
+      const pv = (d.r !== null && d.a !== null) ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItem(${d.id})">
         <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '○'}</div>
         <div class="sri-body">
@@ -2236,7 +2260,7 @@ window.doGlobalSearch = function () {
           </div>
           <div class="sri-bottom">
             ${d.cat ? `<span class="sri-cat">${d.cat}</span><span class="sri-sep">·</span>` : ''}
-            <span class="sri-price">Achat ${d.a.toFixed(2)}€</span>
+            <span class="sri-price">${d.a !== null ? 'Achat ' + d.a.toFixed(2) + '€' : '<span class="td-achat-missing">Prix d\'achat à saisir</span>'}</span>
             ${d.r !== null ? `<span class="sri-arrow">→</span><span class="sri-price">${d.r.toFixed(2)}€</span>` : ''}
             ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
           </div>
@@ -2264,7 +2288,7 @@ window.doMobileSearch = function () {
   container.innerHTML = `
     <div class="search-result-label">${results.length} résultat${results.length > 1 ? 's' : ''}</div>
     ${results.slice(0, 10).map(d => {
-      const pv = d.r !== null ? +(d.r - d.a).toFixed(2) : null;
+      const pv = (d.r !== null && d.a !== null) ? +(d.r - d.a).toFixed(2) : null;
       return `<div class="search-result-item" onclick="goToItemMobile(${d.id})">
         <div class="sri-icon ${d.r !== null ? 'sri-sold' : 'sri-stock'}">${d.r !== null ? '✓' : '○'}</div>
         <div class="sri-body">
@@ -2274,7 +2298,7 @@ window.doMobileSearch = function () {
           </div>
           <div class="sri-bottom">
             ${d.cat ? `<span class="sri-cat">${d.cat}</span><span class="sri-sep">·</span>` : ''}
-            <span class="sri-price">Achat ${d.a.toFixed(2)}€</span>
+            <span class="sri-price">${d.a !== null ? 'Achat ' + d.a.toFixed(2) + '€' : '<span class="td-achat-missing">Prix d\'achat à saisir</span>'}</span>
             ${d.r !== null ? `<span class="sri-arrow">→</span><span class="sri-price">${d.r.toFixed(2)}€</span>` : ''}
             ${pv !== null ? `<span class="sri-pv">+${pv.toFixed(2)}€</span>` : ''}
           </div>
@@ -2351,8 +2375,8 @@ window.exportExcel = function () {
      'Plus-value (€)', 'Multiplicateur', 'Statut']
   ];
   D.forEach(d => {
-    const pv  = d.r !== null ? +(d.r - d.a).toFixed(2) : '';
-    const mult = d.r !== null && d.a > 0 ? +(d.r / d.a).toFixed(2) : '';
+    const pv  = (d.r !== null && d.a !== null) ? +(d.r - d.a).toFixed(2) : '';
+    const mult = (d.r !== null && d.a !== null && d.a > 0) ? +(d.r / d.a).toFixed(2) : '';
     const btq  = BOUTIQUES.find(b => b.id === d.boutique_id)?.nom || '';
     const statut = d.r === null ? 'En stock' : (d.de !== null ? 'Encaissé' : 'Vendu');
     articlesData.push([
@@ -2397,6 +2421,8 @@ window.exportExcel = function () {
     ['Recettes encaissées', `${totalEncaisse.toFixed(2)} €`],
     ['Articles vendus non encaissés', enAttente.length],
     ['En attente d\'encaissement', `${totalEnAttente.toFixed(2)} €`],
+    ['', ''],
+    ['Articles sans prix d\'achat renseigné', s.sansPrix],
   ];
   const ws2 = XLSX.utils.aoa_to_sheet(resumeData);
   ws2['!cols'] = [{wch:28},{wch:20}];
@@ -2404,12 +2430,13 @@ window.exportExcel = function () {
 
   // ── Feuille 3 : Bilan par mois ─────────────────────────────────────────────
   const mm = {};
-  const blankMonth = () => ({ vendus: 0, recettes: 0, cout: 0, benefice: 0, achetes: 0, montantAchete: 0, encaisses: 0, montantEncaisse: 0 });
+  const blankMonth = () => ({ vendus: 0, recettes: 0, recettesConnues: 0, cout: 0, achetes: 0, montantAchete: 0, encaisses: 0, montantEncaisse: 0 });
   D.forEach(d => {
     if (d.dr) {
       const k = d.dr.slice(0,7);
       if (!mm[k]) mm[k] = blankMonth();
-      mm[k].vendus++; mm[k].recettes += d.r; mm[k].cout += d.a;
+      mm[k].vendus++; mm[k].recettes += d.r;
+      if (d.a !== null) { mm[k].cout += d.a; mm[k].recettesConnues += d.r; }
     }
     if (d.de) {
       const ke = d.de.slice(0,7);
@@ -2419,7 +2446,7 @@ window.exportExcel = function () {
     if (d.da) {
       const ka = d.da.slice(0,7);
       if (!mm[ka]) mm[ka] = blankMonth();
-      mm[ka].achetes++; mm[ka].montantAchete += d.a;
+      mm[ka].achetes++; mm[ka].montantAchete += (d.a || 0);
     }
   });
   const mensuelData = [
@@ -2427,7 +2454,7 @@ window.exportExcel = function () {
   ];
   Object.keys(mm).sort().forEach(k => {
     const m = mm[k];
-    const benef = m.recettes - m.cout;
+    const benef = m.recettesConnues - m.cout;
     const roi = m.cout > 0 ? `+${(benef/m.cout*100).toFixed(0)}%` : '—';
     const [y, mo] = k.split('-');
     mensuelData.push([
@@ -2447,7 +2474,7 @@ window.exportExcel = function () {
   D.filter(d => d.sku && d.r === null).forEach(d => {
     if (!skuMap[d.sku]) skuMap[d.sku] = { sku: d.sku, articles: [], totalAchat: 0 };
     skuMap[d.sku].articles.push(d.n);
-    skuMap[d.sku].totalAchat += d.a;
+    skuMap[d.sku].totalAchat += (d.a || 0);
   });
   const skuData = [
     ['SKU', 'Quantité en stock', 'Valeur totale (€)', 'Articles']
@@ -2528,7 +2555,7 @@ function renderRadarGrid(items) {
   grid.innerHTML = items.map(m => {
     const stars = '⭐'.repeat(m.rarete || 4) + '<span style="opacity:.3">' + '⭐'.repeat(7 - (m.rarete || 4)) + '</span>';
     const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
-    const sold = found.filter(d => d.r !== null);
+    const sold = soldWithCost(found.filter(d => d.r !== null));
     const avgPv = sold.length > 0 ? sold.reduce((s, d) => s + (d.r - d.a), 0) / sold.length : null;
     return `<div class="radar-card" onclick="openRadarDetail(${m.id})">
       <div class="rc-header">
@@ -2576,7 +2603,7 @@ window.openRadarDetail = function(id) {
   document.getElementById('rd-note').style.display = m.note ? 'block' : 'none';
 
   const found = D.filter(d => normStr(d.n).includes(normStr(m.nom)));
-  const sold = found.filter(d => d.r !== null);
+  const sold = soldWithCost(found.filter(d => d.r !== null));
   const avgPv = sold.length > 0 ? (sold.reduce((s,d) => s+(d.r-d.a),0)/sold.length).toFixed(0) : '—';
   const cats = m.categories;
   const prixLabel = cats && cats.length
@@ -2603,8 +2630,8 @@ window.openRadarDetail = function(id) {
     ? found.map(d => `<div class="bilan-top-item">
         <div class="bilan-top-rank" style="flex-shrink:0">${d.r !== null ? '✓' : '·'}</div>
         <div class="bilan-top-name">${d.n}</div>
-        <span style="font-size:11px;color:var(--text3)">${d.da}</span>
-        <div class="bilan-top-pv">${d.r !== null ? '+' + (d.r-d.a).toFixed(2)+'€' : 'En stock'}</div>
+        <span style="font-size:11px;color:var(--text3)">${d.da || '—'}</span>
+        <div class="bilan-top-pv">${(d.r !== null && d.a !== null) ? '+' + (d.r-d.a).toFixed(2)+'€' : (d.r !== null ? 'Vendu' : 'En stock')}</div>
       </div>`).join('')
     : '<div class="empty-state" style="padding:1rem">Aucun article de cette marque trouvé</div>';
 
@@ -2993,9 +3020,9 @@ window.importSQL = async function () {
   try { parsed = parseSQLInsert(sql); }
   catch (e) { showImportResult(e.message, 'err'); return; }
 
-  const invalid = parsed.filter(r => !r.nom || r.prix_achat == null || !r.date_achat);
+  const invalid = parsed.filter(r => !r.nom);
   if (invalid.length) {
-    showImportResult(`${invalid.length} ligne(s) sans nom, prix_achat ou date_achat — importation annulée`, 'err'); return;
+    showImportResult(`${invalid.length} ligne(s) sans nom — importation annulée`, 'err'); return;
   }
 
   // Un encaissement ou un client n'a de sens que sur un article vendu

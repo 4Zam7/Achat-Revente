@@ -551,13 +551,14 @@
       </div>
       <div class="form-row">
         <div class="fg">
-          <label>Prix d'achat (€)</label>
+          <label>Prix d'achat (€) <span class="fg-opt">optionnel</span></label>
           <input type="number" id="f-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
         </div>
         <div class="fg">
-          <label>Date d'achat</label>
+          <label>Date d'achat <span class="fg-opt">optionnel</span></label>
           <div class="date-wrap">
             <input type="text" id="f-date" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <button class="date-clear-btn" id="clr-f-date" onclick="dpClear('f-date')" style="display:none" title="Effacer">×</button>
             <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
@@ -715,13 +716,14 @@
       </div>
       <div class="form-row">
         <div class="fg">
-          <label>Prix d'achat (€)</label>
+          <label>Prix d'achat (€) <span class="fg-opt">optionnel</span></label>
           <input type="number" id="e-achat" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
         </div>
         <div class="fg">
-          <label>Date d'achat</label>
+          <label>Date d'achat <span class="fg-opt">optionnel</span></label>
           <div class="date-wrap">
             <input type="text" id="e-date-achat" class="date-input" readonly placeholder="Sélectionner" onclick="dpOpen(this)">
+            <button class="date-clear-btn" id="clr-e-date-achat" onclick="dpClear('e-date-achat')" style="display:none" title="Effacer">×</button>
             <svg class="date-cal-icon" width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="1.5" y="3" width="13" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M5 1v3M11 1v3M1.5 7h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
         </div>
@@ -1087,7 +1089,7 @@
 ('Jean Levi''s 501', 3.50, '2025-06-15', NULL, NULL, NULL, NULL,
   'Vêtements', '38', NULL, NULL, 'Temu', NULL);</pre>
         <div class="import-format-note">
-          <strong>Obligatoires :</strong> nom, prix_achat, date_achat &nbsp;|&nbsp;
+          <strong>Obligatoire :</strong> nom (le reste, y compris prix_achat/date_achat, peut être NULL) &nbsp;|&nbsp;
           <strong>Date :</strong> YYYY-MM-DD &nbsp;|&nbsp;
           <strong>Client / Encaissement :</strong> uniquement si l'article a un <code>prix_revente</code> et une <code>date_revente</code> &nbsp;|&nbsp;
           <strong>Apostrophe :</strong> doubler la quote <code>''</code>
