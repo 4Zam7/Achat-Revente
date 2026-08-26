@@ -1244,6 +1244,62 @@ window.confirmEdit = async function () {
   }
 };
 
+// ─── DUPLIQUER (depuis Modifier) ────────────────────────────────────────────
+// Reprend uniquement nom/catégorie/grossiste/SKU/ID de l'article source — le
+// reste (prix, dates, taille, N° commande) est laissé vide, à compléter par
+// exemplaire généré
+let duplicateSourceId = null;
+
+window.openDuplicateModal = function () {
+  if (!editId) return;
+  const it = D.find(d => d.id === editId);
+  if (!it) return;
+  duplicateSourceId = editId;
+  document.getElementById('duplicate-item-name').textContent = it.n;
+  document.getElementById('dup-qty').value = '1';
+  document.getElementById('duplicate-modal').classList.add('open');
+};
+
+window.closeDuplicateModal = function () {
+  document.getElementById('duplicate-modal').classList.remove('open');
+  duplicateSourceId = null;
+};
+
+window.changeDuplicateQty = function (delta) {
+  const el = document.getElementById('dup-qty');
+  el.value = Math.max(1, Math.min(50, (parseInt(el.value) || 1) + delta));
+};
+
+window.confirmDuplicate = async function () {
+  if (!duplicateSourceId) return;
+  const it = D.find(d => d.id === duplicateSourceId);
+  if (!it) return;
+  const qty = Math.max(1, Math.min(50, parseInt(document.getElementById('dup-qty').value) || 1));
+  const btn = document.getElementById('btn-duplicate-confirm');
+  btn.disabled = true;
+  try {
+    const rows = Array.from({ length: qty }, () => ({
+      nom: it.n,
+      categorie: it.cat || null,
+      grossiste: it.grossiste || null,
+      sku: it.sku || null,
+      identifiant: it.ref || null,
+      boutique_id: it.boutique_id,
+    }));
+    const { data: inserted, error } = await sb.from('articles').insert(rows).select('*');
+    if (error) throw error;
+    if (inserted) inserted.forEach(row => D.push(normalize(row)));
+    closeDuplicateModal();
+    closeEditModal();
+    refreshCurrentPanel();
+    toast(`${qty} doublon${qty > 1 ? 's' : ''} de "${it.n}" généré${qty > 1 ? 's' : ''}`, 'ok');
+  } catch (e) {
+    toast('Erreur lors de la duplication', 'err');
+  } finally {
+    btn.disabled = false;
+  }
+};
+
 window.copyToClip = function(text) {
   navigator.clipboard.writeText(text).then(() => toast('Copié !', 'ok'));
 };
@@ -1267,6 +1323,7 @@ function today() { return ymd(new Date()); }
 // Close modals on overlay click
 document.getElementById('add-modal').addEventListener('click', function (e) { if (e.target === this) closeAddModal(); });
 document.getElementById('restock-modal').addEventListener('click', function (e) { if (e.target === this) closeRestockModal(); });
+document.getElementById('duplicate-modal').addEventListener('click', function (e) { if (e.target === this) closeDuplicateModal(); });
 document.getElementById('sell-modal').addEventListener('click', function (e) { if (e.target === this) closeSellModal(); });
 document.getElementById('encaisser-modal').addEventListener('click', function (e) { if (e.target === this) closeEncaisserModal(); });
 document.getElementById('cancel-choice-modal').addEventListener('click', function (e) { if (e.target === this) closeCancelChoiceModal(); });
@@ -1276,7 +1333,7 @@ document.getElementById('edit-boutique-modal').addEventListener('click', functio
 
 // Close modals on Escape
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { closeAddModal(); closeRestockModal(); closeSellModal(); closeEncaisserModal(); closeCancelChoiceModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
+  if (e.key === 'Escape') { closeAddModal(); closeRestockModal(); closeDuplicateModal(); closeSellModal(); closeEncaisserModal(); closeCancelChoiceModal(); closeEditModal(); closeGoalModal(); closeNewBoutiqueModal(); closeEditBoutiqueModal(); closeRadarAddModal(); closeConfirm(false); document.getElementById('global-results').classList.remove('open'); }
 });
 
 

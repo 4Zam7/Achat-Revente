@@ -2,7 +2,7 @@
 
 > **Laney** — Application web progressive (PWA) de suivi d'achat-revente — vêtements, électronique, jeux vidéo, jouets, décoration et plus encore. Synchronisée en temps réel sur tous vos appareils.
 
-![Preview](https://img.shields.io/badge/version-2.11-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
+![Preview](https://img.shields.io/badge/version-2.12-blue) ![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ecf8e) ![Vercel](https://img.shields.io/badge/Deployed-Vercel-black) ![License](https://img.shields.io/badge/license-MIT-green)
 
 ---
 
@@ -32,6 +32,7 @@
 - 🏷️ **Catégories** — 13 types d'articles au choix (vêtements, électronique, jeux vidéo, consoles, jouets, décoration, outils…)
 - 📏 **Taille** — champ libre optionnel (XS, M, 42, Unique…), avec colonne "Taille" dans Stock par SKU montrant la répartition par taille de chaque SKU (ex : "1 XS, 2 M, 1 XL")
 - ✏️ **Modification complète** — cliquez sur le nom d'un article pour modifier son nom, catégorie, taille, prix, dates, client, SKU, N° commande, grossiste et ID
+- ➕ **Dupliquer un article** — bouton "+" dans Modifier pour générer plusieurs doublons d'un coup (même titre, catégorie, grossiste, SKU et ID) ; taille, N° commande et prix d'achat restent à saisir individuellement sur chaque exemplaire généré
 - 🔖 **SKU & N° commande** — champs optionnels sur chaque article, affichés en orange sous le nom avec bouton copie en un clic
 - 🆔 **ID lié au SKU** — un ID identifie un modèle de produit (son SKU). Tous les articles partageant le même SKU reçoivent automatiquement le même ID. Un ID ne peut pas être attribué à deux SKU différents. Générateur intégré (⚡ Générer) — code 6 caractères garanti sans collision. Saisie manuelle possible
 - 🏭 **Grossiste** — champ optionnel pour noter la source d'achat (Aliexpress, Temu, Brocante…), visible en colonne dans Articles et dans Stock par SKU
@@ -549,6 +550,10 @@ Voir le bloc **« Importer des articles en masse »** dans la section [🗄️ R
 ---
 
 ## 📝 Changelog
+
+### v2.12 — 26 Août 2026
+
+- ➕ **Dupliquer un article** — nouveau bouton "+" dans le modal Modifier : demande combien de doublons générer, puis crée les articles avec le même titre, catégorie, grossiste, SKU et ID que l'article source. Taille, N° commande et prix d'achat/date d'achat ne sont volontairement pas copiés — à saisir individuellement sur chaque exemplaire
 
 ### v2.11 — 25 Août 2026
 

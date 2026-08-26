@@ -681,9 +681,14 @@
     <div class="modal">
       <div class="modal-header">
         <div class="modal-title">Modifier l'article</div>
-        <button class="btn-close" onclick="closeEditModal()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-        </button>
+        <div style="display:flex;gap:8px">
+          <button class="btn-duplicate-header" onclick="openDuplicateModal()" title="Générer des doublons de cet article">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button class="btn-close" onclick="closeEditModal()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
       </div>
       <div class="fg">
         <label>Nom de l'article</label>
@@ -781,6 +786,35 @@
           Enregistrer
         </button>
         <button class="btn-secondary" onclick="closeEditModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DUPLIQUER -->
+  <div class="modal-overlay" id="duplicate-modal">
+    <div class="modal" style="max-width:380px">
+      <div class="modal-header">
+        <div class="modal-title">Dupliquer l'article</div>
+        <button class="btn-close" onclick="closeDuplicateModal()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="modal-item-box" id="duplicate-item-name"></div>
+      <div class="fg">
+        <label>Nombre de doublons à générer</label>
+        <div class="qty-selector">
+          <button type="button" class="qty-btn" onclick="changeDuplicateQty(-1)">−</button>
+          <input type="number" id="dup-qty" value="1" min="1" max="50" inputmode="numeric">
+          <button type="button" class="qty-btn" onclick="changeDuplicateQty(1)">+</button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">Même titre, catégorie, grossiste, SKU et ID. Taille, N° commande et prix d'achat restent à saisir pour chaque exemplaire généré.</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" onclick="confirmDuplicate()" id="btn-duplicate-confirm">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Générer
+        </button>
+        <button class="btn-secondary" onclick="closeDuplicateModal()">Annuler</button>
       </div>
     </div>
   </div>
