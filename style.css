@@ -502,6 +502,7 @@ tr:hover td { background: var(--bg3); }
 @media (min-width: 768px) {
   .main-content { padding: 1.5rem 1.5rem 4rem; }
   .metrics-grid { grid-template-columns: repeat(6, 1fr); }
+  .metrics-grid-7 { grid-template-columns: repeat(7, 1fr); }
 }
 
 @media (max-width: 600px) {

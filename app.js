@@ -1812,6 +1812,7 @@ function buildBilanSelectors() {
   D.forEach(d => {
     if (d.dr) { monthSet.add(d.dr.slice(0, 7)); yearSet.add(d.dr.slice(0, 4)); }
     if (d.da) { monthSet.add(d.da.slice(0, 7)); yearSet.add(d.da.slice(0, 4)); }
+    if (d.de) { monthSet.add(d.de.slice(0, 7)); yearSet.add(d.de.slice(0, 4)); }
   });
 
   const years = [...yearSet].sort().reverse();
@@ -1837,6 +1838,7 @@ window.filterBilanMonths = function() {
   D.forEach(d => {
     if (d.dr && d.dr.startsWith(year)) monthSet.add(d.dr.slice(0, 7));
     if (d.da && d.da.startsWith(year)) monthSet.add(d.da.slice(0, 7));
+    if (d.de && d.de.startsWith(year)) monthSet.add(d.de.slice(0, 7));
   });
   const months = [...monthSet].sort().reverse();
   const mSel = document.getElementById('bilan-month-select');
@@ -1887,6 +1889,8 @@ window.buildBilanMonth = function() {
 
   const sold = D.filter(d => d.r !== null && d.dr && d.dr.startsWith(key));
   const bought = D.filter(d => d.da && d.da.startsWith(key));
+  const cashed = D.filter(d => d.r !== null && d.de && d.de.startsWith(key));
+  const montantEncaisse = cashed.reduce((s, d) => s + d.r, 0);
   const withCost = soldWithCost(sold);
   const recettes      = sold.reduce((s, d) => s + d.r, 0);
   const coutVendus    = withCost.reduce((s, d) => s + d.a, 0);
@@ -1897,6 +1901,7 @@ window.buildBilanMonth = function() {
   document.getElementById('bilan-m-metrics').innerHTML = bilanMetricsHTML([
     { label: 'Articles vendus', value: sold.length, sub: `ce mois` },
     { label: 'Articles achetés', value: bought.length, sub: `${montantAchete.toFixed(0)}€ investis` },
+    { label: 'Articles encaissés', value: cashed.length, color: 'mv-blue', sub: `${montantEncaisse.toFixed(0)}€ reçus` },
     { label: 'Coût vendus', value: coutVendus.toFixed(0)+'€', color: 'mv-amber' },
     { label: 'Recettes', value: recettes.toFixed(0)+'€', color: 'mv-blue' },
     { label: 'Bénéfice', value: benefice.toFixed(0)+'€', color: 'mv-green', sub: `+${roi.toFixed(0)}% ROI` },
@@ -1930,6 +1935,18 @@ window.buildBilanMonth = function() {
           ${d.a !== null ? `<span class="pv-pos bilan-achat-status">+${(d.r - d.a).toFixed(0)}€</span>` : `<span class="td-achat-missing bilan-achat-status" onclick="openEditModal(${d.id})">Prix d'achat à saisir</span>`}
         </div>`).join('')
     : '<div class="empty-state">Aucun article vendu ce mois</div>';
+
+  // Encaissés ce mois (selon la date d'encaissement, même si vendus un mois précédent)
+  const cashedSorted = cashed.slice().sort((a, b) => b.de.localeCompare(a.de));
+  document.getElementById('bilan-m-encaisses').innerHTML = cashedSorted.length
+    ? cashedSorted.map(d => `
+        <div class="bilan-achat-item">
+          <div class="bilan-achat-name" title="${d.n}">${d.n}</div>
+          <div class="bilan-achat-cat">${d.cat || ''}</div>
+          <div class="bilan-achat-price">${d.r.toFixed(2)}€</div>
+          <span class="badge b-blue bilan-achat-status">${d.de.slice(8, 10)}/${d.de.slice(5, 7)}</span>
+        </div>`).join('')
+    : '<div class="empty-state">Aucun article encaissé ce mois</div>';
 };
 
 window.buildBilanYear = function() {
