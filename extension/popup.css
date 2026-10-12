@@ -1,0 +1,62 @@
+:root {
+  --bg: #0f0f0f; --bg2: #171717; --bg3: #1e1e1e; --bg4: #252525;
+  --border: rgba(255,255,255,0.08); --border2: rgba(255,255,255,0.12);
+  --text: #f0ede8; --text2: #9b9890; --text3: #5c5a57;
+  --accent: #5B8FF9; --green: #3ecf8e; --amber: #d4a017; --red: #f4664a;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; width: 380px; max-height: 580px;
+  background: var(--bg); color: var(--text);
+  font: 13px/1.4 -apple-system, BlinkMacSystemFont, 'DM Sans', sans-serif;
+}
+header { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+header img { border-radius: 6px; }
+.brand { font-weight: 600; flex: 1; }
+.sub { color: var(--text3); font-weight: 400; margin-left: 4px; }
+section { padding: 12px 14px; }
+h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--text2); margin: 16px 0 8px; font-weight: 600; }
+.count { color: var(--amber); }
+.muted, .empty { color: var(--text3); }
+.empty { font-size: 12px; padding: 6px 0; }
+input, select {
+  width: 100%; background: var(--bg3); color: var(--text); border: 1px solid var(--border2);
+  border-radius: 8px; padding: 7px 9px; font: inherit; margin-top: 4px;
+}
+input[type=checkbox] { width: auto; margin: 0 6px 0 0; }
+#login input { margin-bottom: 8px; }
+label { display: block; color: var(--text2); font-size: 11px; margin-bottom: 8px; }
+label.check { display: flex; align-items: center; font-size: 12px; }
+button { font: inherit; cursor: pointer; }
+.primary { width: 100%; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 8px; font-weight: 600; }
+.small { background: var(--bg4); color: var(--text); border: 1px solid var(--border2); border-radius: 6px; padding: 4px 10px; font-size: 12px; }
+.small.ok { background: var(--accent); border-color: var(--accent); color: #fff; }
+.link { background: none; border: 0; color: var(--text2); padding: 0; font-size: 11px; text-decoration: underline; }
+.link.danger { color: var(--red); }
+.error { color: var(--red); font-size: 12px; min-height: 16px; }
+.label { color: var(--text2); font-size: 11px; margin-bottom: 4px; }
+.acc { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.acc-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.acc select { width: 55%; margin-top: 0; }
+.acc-tag { color: var(--text3); font-size: 11px; }
+.settings { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 10px 2px; }
+.hint { font-size: 11px; color: var(--text3); margin-top: 10px; }
+.hint a { color: var(--accent); }
+.ev { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px; margin-bottom: 8px; }
+.ev-head { display: flex; gap: 6px; align-items: baseline; }
+.ev-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ev-price { font-family: 'DM Mono', ui-monospace, monospace; }
+.ev-meta { color: var(--text3); font-size: 11px; margin: 2px 0 6px; }
+.ev-note { color: var(--red); font-size: 11px; margin-bottom: 6px; }
+.ev-actions { display: flex; gap: 6px; margin-top: 6px; justify-content: flex-end; }
+.tag { font-size: 10px; border-radius: 999px; padding: 1px 7px; white-space: nowrap; }
+.tag.sale { background: rgba(62,207,142,.12); color: var(--green); }
+.tag.cash { background: rgba(91,143,249,.12); color: var(--accent); }
+.tag.linked { background: var(--bg4); color: var(--text2); }
+.row { display: flex; gap: 6px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+.row:last-child { border-bottom: 0; }
+.row .ev-title { color: var(--text2); }
+footer { display: flex; gap: 14px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+#toast { position: fixed; left: 14px; right: 14px; bottom: 10px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+#toast.show { opacity: 1; }
+#toast.err { border-color: var(--red); color: var(--red); }

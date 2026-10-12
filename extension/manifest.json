@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "Laney Sync — Vinted",
+  "version": "0.1.5",
+  "description": "Met à jour Laney (ventes et encaissements) quand tu consultes tes commandes et ton porte-monnaie Vinted.",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://www.vinted.fr/*",
+    "https://dqsrqdmbqlyvwhfrdjvk.supabase.co/*"
+  ],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": { "64": "icons/icon-64.png", "192": "icons/icon-192.png" }
+  },
+  "icons": { "64": "icons/icon-64.png", "192": "icons/icon-192.png" },
+  "content_scripts": [
+    {
+      "matches": ["https://www.vinted.fr/*"],
+      "js": ["inject.js"],
+      "world": "MAIN",
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://www.vinted.fr/*"],
+      "js": ["bridge.js"],
+      "run_at": "document_start"
+    }
+  ]
+}

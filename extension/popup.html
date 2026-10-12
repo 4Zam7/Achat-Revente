@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Laney Sync</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon-64.png" alt="" width="22" height="22">
+    <div class="brand">Laney Sync <span class="sub">Vinted</span></div>
+    <button id="btn-logout" class="link" hidden>Déconnexion</button>
+  </header>
+
+  <!-- CONNEXION -->
+  <section id="login" hidden>
+    <p class="muted">Connecte-toi avec ton compte Laney.</p>
+    <input id="email" type="email" placeholder="Email" autocomplete="username">
+    <input id="pwd" type="password" placeholder="Mot de passe" autocomplete="current-password">
+    <button id="btn-login" class="primary">Se connecter</button>
+    <div id="login-error" class="error"></div>
+  </section>
+
+  <!-- APP -->
+  <section id="main" hidden>
+    <div class="settings">
+      <div class="label">Comptes Vinted → boutique Laney</div>
+      <div id="accounts"></div>
+      <label>Prendre en compte à partir du
+        <input id="start-date" type="date">
+      </label>
+      <label class="check"><input id="auto" type="checkbox"> Appliquer automatiquement les correspondances sûres</label>
+    </div>
+
+    <div class="hint">Ouvre <a href="https://www.vinted.fr/my_orders" target="_blank">Mes commandes</a> (onglet Ventes) ou <a href="https://www.vinted.fr/wallet/balance" target="_blank">Porte-monnaie</a> : Laney se met à jour.</div>
+
+    <h2>À valider <span id="pending-count" class="count"></span></h2>
+    <div id="pending"></div>
+
+    <h2>Dernières mises à jour</h2>
+    <div id="recent"></div>
+
+    <footer>
+      <button id="btn-sync" class="link">Relancer la synchro</button>
+      <button id="btn-diag" class="link">Copier le diagnostic</button>
+      <button id="btn-reset" class="link danger">Vider l'historique</button>
+    </footer>
+  </section>
+
+  <div id="toast"></div>
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
