@@ -8,7 +8,7 @@
 
 import { rest, isLoggedIn } from './supabase.js';
 import { parseCapture } from './vinted.js';
-import { rank, sureMatch, score, SURE, daysBetween } from './match.js';
+import { rank, sureMatch, score, SURE, daysBetween, norm } from './match.js';
 
 const store = {
   get: async (k, def) => ((await chrome.storage.local.get(k))[k] ?? def),
@@ -19,6 +19,72 @@ const todayISO = () => new Date().toLocaleDateString('sv-SE');
 
 export async function getSettings() {
   return { accounts: {}, startDate: todayISO(), auto: true, ...(await store.get('settings', {})) };
+}
+
+// Nettoyage après mise à jour de l'extension :
+// - comptes fantômes (sans boutique, sans pseudo, sans événement)
+// - ventes en attente lues avant la règle « payée uniquement » (relues ensuite)
+export function cleanup() {
+  return serial(async () => {
+    const settings = await getSettings();
+    const events = await store.get('events', {});
+    const usedAccounts = new Set(Object.values(events).map(e => e.accountId));
+    let changed = false;
+    Object.entries(settings.accounts).forEach(([id, a]) => {
+      if (!a.boutiqueId && !a.login && !usedAccounts.has(id)) { delete settings.accounts[id]; changed = true; }
+    });
+    // Une seule fois : retirer les fausses ventes lues avant la règle « payée uniquement »
+    if (!settings.unpaidCleanup) {
+      Object.values(events).forEach(e => {
+        if (e.type === 'sale' && !e.paid && (e.status === 'pending' || e.status === 'old')) delete events[e.key];
+      });
+      settings.unpaidCleanup = 1;
+      changed = true;
+    }
+    if (changed) await store.set('settings', settings);
+    await store.set('events', events);
+    await refreshBadge();
+  });
+}
+
+export async function removeAccount(id) {
+  const settings = await getSettings();
+  delete settings.accounts[id];
+  await store.set('settings', settings);
+}
+
+// Défait ce que l'extension a écrit pour cet événement. Chaque champ n'est
+// remis à vide que s'il a toujours la valeur écrite par l'extension.
+export function undoEvent(key) {
+  return serial(async () => {
+    const events = await store.get('events', {});
+    const ev = events[key];
+    if (!ev || ev.status !== 'done' || !ev.articleId) throw new Error('Rien à annuler');
+    const written = {
+      prix_revente: ev.amount, date_revente: ev.date, client: ev.buyer, date_encaissement: ev.date,
+    };
+    const fields = (ev.filled || []).filter(f => f in written);
+    const restored = [];
+    // Prix et date de vente vont ensemble ; le client vendu par l'extension aussi
+    const groups = fields.includes('prix_revente')
+      ? [fields.filter(f => ['prix_revente', 'date_revente', 'client'].includes(f)), fields.filter(f => f === 'date_encaissement')]
+      : fields.map(f => [f]);
+    for (const group of groups.filter(g => g.length)) {
+      const filters = group.map(f => `${f}=eq.${encodeURIComponent(written[f])}`).join('&');
+      const body = Object.fromEntries(group.map(f => [f, null]));
+      const rows = await rest(`articles?id=eq.${ev.articleId}&${filters}`, { method: 'PATCH', body });
+      if (rows && rows.length) restored.push(...group);
+    }
+    // L'encaissement déduit de cette vente n'a plus lieu d'être
+    if (ev.type === 'sale') {
+      const cash = events[`cash:tx-${ev.vid}`];
+      if (cash && cash.status === 'pending') cash.status = 'ignored';
+    }
+    Object.assign(ev, { status: 'ignored', undone: restored, filled: [] });
+    await store.set('events', events);
+    await refreshBadge();
+    return restored;
+  });
 }
 export async function saveSettings(patch) {
   const s = { ...(await getSettings()), ...patch };
@@ -66,6 +132,12 @@ export async function handleCapture({ url, page, data, seenOnly, account, hello,
   await rememberUrl(url);
   if (seenOnly) return;
 
+  // Fiche transaction côté vendeur : on retient le pseudo du compte, même sans vente
+  const t = data && data.transaction;
+  if (t && t.user_side === 'seller' && t.seller_id && t.seller && t.seller.login) {
+    await serial(() => registerAccount({ id: String(t.seller_id), login: t.seller.login }));
+  }
+
   const raws = await store.get('raws', []);
   raws.unshift({ at: new Date().toISOString(), url, page, account, data });
   await store.set('raws', raws.slice(0, 10));
@@ -82,8 +154,16 @@ export async function handleCapture({ url, page, data, seenOnly, account, hello,
     found.forEach(e => {
       const key = `${e.type}:${e.vid}`;
       if (events[key]) {
-        if (e.buyer && !events[key].buyer) events[key].buyer = e.buyer;
+        const ex = events[key];
+        if (e.buyer && !ex.buyer) ex.buyer = e.buyer;
+        if (e.source === 'list' && ex.status !== 'done' && e.amount !== ex.amount) ex.amount = e.amount;
+        // L'encaissement déduit de cette vente reprend le même montant
+        const cash = events[`cash:tx-${e.vid}`];
+        if (e.source === 'list' && cash && cash.status !== 'done') cash.amount = e.amount;
         return;
+      }
+      if (e.type === 'cash' && e.txId && events[`sale:${e.txId}`] && events[`sale:${e.txId}`].source === 'list') {
+        e.amount = events[`sale:${e.txId}`].amount;
       }
       events[key] = { ...e, key, status: e.date < startDate ? 'old' : 'pending', seenAt: new Date().toISOString() };
     });
@@ -136,6 +216,16 @@ export function candidatesFor(ev, articles) {
     .sort((x, y) => y.score - x.score || missing(ev, y.article).length - missing(ev, x.article).length);
 }
 
+// Cet article déjà vendu dans Laney correspond-il à CETTE vente Vinted ?
+// Le client doit concorder s'il est connu des deux côtés, et le prix doit être
+// identique OU la date de vente à 7 jours près (une offre peut changer le prix).
+function isSameSale(ev, a) {
+  if (a.client && ev.buyer && norm(a.client) !== norm(ev.buyer)) return false;
+  if (a.client && ev.buyer) return daysBetween(a.date_revente, ev.date) <= MANUAL_WINDOW;
+  return samePrice(a.prix_revente, ev.amount) ? daysBetween(a.date_revente, ev.date) <= MANUAL_WINDOW
+    : daysBetween(a.date_revente, ev.date) <= 7;
+}
+
 // Champs que l'extension peut remplir sur cet article : uniquement ceux qui sont vides
 export function missing(ev, a) {
   const out = [];
@@ -150,7 +240,8 @@ export function missing(ev, a) {
 
 // Décide quoi faire d'un événement : { article } à compléter, ou null (à valider)
 function resolve(ev, articles, events) {
-  const title = cleanTitle(ev.title);
+  const linkedSale = ev.type === 'cash' && ev.txId ? events[`sale:${ev.txId}`] : null;
+  const title = cleanTitle(ev.title) || cleanTitle(linkedSale && linkedSale.title);
   const used = usedIds(events, ev.type);
   const free = articles.filter(a => !used.has(a.id));
 
@@ -159,7 +250,7 @@ function resolve(ev, articles, events) {
     //    (le prix peut différer). On la reconnaît et on ne fait que compléter.
     const manual = free
       .filter(a => a.prix_revente != null && a.date_revente && score(title, a) >= SURE
-        && daysBetween(a.date_revente, ev.date) <= MANUAL_WINDOW)
+        && isSameSale(ev, a))
       .sort((a, b) => (samePrice(b.prix_revente, ev.amount) - samePrice(a.prix_revente, ev.amount))
         || daysBetween(a.date_revente, ev.date) - daysBetween(b.date_revente, ev.date));
     if (manual.length) return { article: manual[0] };
@@ -168,17 +259,38 @@ function resolve(ev, articles, events) {
     return sure ? { article: sure } : null;
   }
 
+  // Articles rattachés à une AUTRE vente Vinted : jamais candidats pour cet encaissement
+  const otherSales = new Set(Object.values(events)
+    .filter(e => e.type === 'sale' && e.articleId && e.vid !== ev.txId).map(e => e.articleId));
+  const cashPool = free.filter(a => !otherSales.has(a.id));
+
   // Encaissement : via la vente Vinted associée si on la connaît
   const sale = ev.txId && events[`sale:${ev.txId}`];
   if (sale && sale.articleId) {
     const a = articles.find(x => x.id === sale.articleId);
     if (a) return { article: a };
   }
+  // Vente connue mais pas rattachée (ex. antérieure à la date de départ) :
+  // on cherche l'article vendu correspondant à cette vente
+  if (sale && !sale.articleId) {
+    const sold = cashPool.filter(a => a.prix_revente != null && score(cleanTitle(sale.title), a) >= SURE);
+    // 1. Même acheteur que dans Laney : sans ambiguïté
+    const byBuyer = sale.buyer ? sold.filter(a => norm(a.client) === norm(sale.buyer)) : [];
+    if (byBuyer.length === 1) return { article: byBuyer[0] };
+    // 2. Même montant et vendu à quelques jours de la vente Vinted
+    const byPrice = sold
+      .filter(a => (samePrice(a.prix_revente, sale.amount) || samePrice(a.prix_revente, ev.amount))
+        && (!a.date_revente || daysBetween(a.date_revente, sale.date) <= MANUAL_WINDOW)
+        && (!a.client || !sale.buyer || norm(a.client) === norm(sale.buyer)))
+      .sort((a, b) => daysBetween(a.date_revente || sale.date, sale.date) - daysBetween(b.date_revente || sale.date, sale.date));
+    if (byPrice.length) return { article: byPrice[0] };
+    return null;
+  }
   // Encaissement déjà saisi à la main ?
-  const manual = free.find(a => a.date_encaissement && score(title, a) >= SURE
+  const manual = cashPool.find(a => a.date_encaissement && score(title, a) >= SURE
     && samePrice(a.prix_revente, ev.amount) && daysBetween(a.date_encaissement, ev.date) <= 7);
   if (manual) return { article: manual };
-  const ranked = rank(title, free.filter(a => a.prix_revente != null && !a.date_encaissement))
+  const ranked = rank(title, cashPool.filter(a => a.prix_revente != null && !a.date_encaissement))
     .filter(r => samePrice(r.article.prix_revente, ev.amount));
   const sure = sureMatch(ranked);
   return sure ? { article: sure } : null;
@@ -199,7 +311,7 @@ async function write(ev, article) {
       Object.assign(article, patch);
       filled.push(...Object.keys(patch));
     } else if (todo.includes('client')) {
-      const rows = await rest(`articles?id=eq.${article.id}&or=(client.is.null,client.eq.)`, { method: 'PATCH', body: { client: ev.buyer } });
+      const rows = await setClientIfEmpty(article.id, ev.buyer);
       if (rows && rows.length) { article.client = ev.buyer; filled.push('client'); }
     }
   } else if (todo.includes('date_encaissement')) {
@@ -210,10 +322,19 @@ async function write(ev, article) {
   return filled;
 }
 
+// Écrit le client seulement s'il est vide (null ou chaîne vide), sans écraser une saisie
+async function setClientIfEmpty(id, client) {
+  const rows = await rest(`articles?id=eq.${id}&client=is.null`, { method: 'PATCH', body: { client } });
+  if (rows && rows.length) return rows;
+  return rest(`articles?id=eq.${id}&client=eq.`, { method: 'PATCH', body: { client } });
+}
+
 function markResolved(ev, article, filled) {
   Object.assign(ev, {
     status: filled.length ? 'done' : 'linked',
     articleId: article.id, articleName: article.nom, filled,
+    // Nouvel article : la vérification du client est à refaire
+    clientChecked: ev.articleId === article.id ? ev.clientChecked : false,
     doneAt: new Date().toISOString(), note: null,
   });
 }
@@ -228,13 +349,33 @@ export function processPending() {
       .filter(e => e.status === 'pending' && boutiqueOf(settings, e.accountId))
       // Ventes avant encaissements, dans l'ordre chronologique
       .sort((a, b) => (a.type === b.type ? a.date.localeCompare(b.date) : a.type === 'sale' ? -1 : 1));
+    // Une fois (0.1.12) : revérifier le client des ventes déjà traitées
+    if (!settings.clientRecheck) {
+      Object.values(events).forEach(e => { if (e.type === 'sale' && e.status === 'done') e.clientChecked = false; });
+      await saveSettings({ clientRecheck: 1 });
+    }
     // Ventes déjà traitées dont l'acheteur n'était pas connu à l'époque
     const backfill = Object.values(events).filter(e => e.type === 'sale' && e.buyer && e.articleId
       && (e.status === 'done' || e.status === 'linked') && !(e.filled || []).includes('client')
       && !e.clientChecked && boutiqueOf(settings, e.accountId));
-    if (!pending.length && !backfill.length) return refreshBadge();
+    const hasLinked = Object.values(events).some(e => e.type === 'sale' && e.status === 'linked');
+    if (!pending.length && !backfill.length && !hasLinked) return refreshBadge();
 
     const byBoutique = {};
+
+    // Revérifie les ventes « déjà saisies » (rien n'a été écrit pour elles) :
+    // si l'article lié ne correspond plus à la vente, elle repasse en attente
+    const linkedSales = Object.values(events).filter(e => e.type === 'sale' && e.status === 'linked'
+      && e.articleId && boutiqueOf(settings, e.accountId));
+    for (const ev of linkedSales) {
+      const bId = boutiqueOf(settings, ev.accountId);
+      const articles = byBoutique[bId] || (byBoutique[bId] = await fetchArticles(bId));
+      const a = articles.find(x => x.id === ev.articleId);
+      if (a && a.prix_revente != null && isSameSale(ev, a)) continue;
+      Object.assign(ev, { status: ev.date < settings.startDate ? 'old' : 'pending', articleId: null, articleName: null, note: 'Rapprochement revu : à confirmer', recheck: true, clientChecked: false, paid: true });
+      if (ev.status === 'pending') pending.push(ev);
+    }
+    pending.sort((a, b) => (a.type === b.type ? a.date.localeCompare(b.date) : a.type === 'sale' ? -1 : 1));
     for (const ev of backfill) {
       const bId = boutiqueOf(settings, ev.accountId);
       const articles = byBoutique[bId] || (byBoutique[bId] = await fetchArticles(bId));
@@ -244,7 +385,7 @@ export function processPending() {
       ev.clientChecked = true;
       if (a.client) continue;
       try {
-        const rows = await rest(`articles?id=eq.${a.id}&or=(client.is.null,client.eq.)`, { method: 'PATCH', body: { client: ev.buyer } });
+        const rows = await setClientIfEmpty(a.id, ev.buyer);
         if (rows && rows.length) {
           a.client = ev.buyer;
           ev.filled = [...(ev.filled || []), 'client'];
@@ -258,8 +399,9 @@ export function processPending() {
       const articles = byBoutique[bId] || (byBoutique[bId] = await fetchArticles(bId));
       const r = resolve(ev, articles, events);
       if (!r) continue;
-      // Mode manuel : on n'écrit rien, sauf si tout est déjà saisi (simple rapprochement)
-      if (!settings.auto && missing(ev, r.article).length) continue;
+      // Mode manuel, ou vente revérifiée : on n'écrit rien sans confirmation
+      // (sauf si tout est déjà saisi : simple rapprochement)
+      if ((!settings.auto || ev.recheck) && missing(ev, r.article).length) continue;
       try {
         markResolved(ev, r.article, await write(ev, r.article));
       } catch (e) {
@@ -316,10 +458,12 @@ export async function getState() {
     const boutiqueId = boutiqueOf(settings, ev.accountId);
     pending.push({ ev, boutiqueId, candidates: candidatesFor(ev, await articlesOf(boutiqueId)).slice(0, 30) });
   }
-  const recent = events
-    .filter(e => e.status === 'done' || e.status === 'linked')
-    .sort((a, b) => (b.doneAt || b.seenAt).localeCompare(a.doneAt || a.seenAt))
-    .slice(0, 15);
+  // Les mises à jour écrites par l'extension (annulables) passent avant les « déjà saisi »
+  const byDate = (a, b) => (b.doneAt || b.seenAt).localeCompare(a.doneAt || a.seenAt);
+  const recent = [
+    ...events.filter(e => e.status === 'done').sort(byDate).slice(0, 30),
+    ...events.filter(e => e.status === 'linked').sort(byDate).slice(0, 10),
+  ];
   return { settings, pending, recent, counts: countBy(events) };
 }
 

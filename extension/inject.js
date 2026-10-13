@@ -15,7 +15,7 @@
   // Compte Vinted connecté sur cette page (pour choisir la bonne boutique Laney)
   let account = null;
   // Source principale : la session de la page (…"initialSessionData":{"userId":123…),
-  // sinon le cookie last_user_id. Le pseudo est appris plus tard via les transactions.
+  // seule source fiable. Le pseudo est appris plus tard via les transactions.
   let sessionId = null;
   function detectAccount() {
     if (!sessionId) {
@@ -23,8 +23,7 @@
       const u = txt.match(/initialSessionData\\?"\s*:\s*\{\\?"userId\\?"\s*:\s*(\d+)/);
       if (u) sessionId = u[1];
     }
-    const c = document.cookie.match(/(?:^|;\s*)last_user_id=(\d+)/);
-    const id = sessionId || (c ? c[1] : null);
+    const id = sessionId;
     if (id && (!account || account.id !== id)) account = { id, login: null };
     return account;
   }
@@ -54,7 +53,10 @@
     if (/\/users\/current|current_user/i.test(url)) {
       readJson().then(learnAccount).catch(() => {});
     } else if (WATCH.test(url)) {
-      readJson().then(data => post({ url, data })).catch(() => {});
+      readJson().then(data => {
+        post({ url, data });
+        if (/escrow-orders\?|my_orders\?/.test(url) && /type=sold/.test(url) && data && Array.isArray(data.my_orders)) enrichOrders(data.my_orders);
+      }).catch(() => {});
     } else if (PAGES.test(location.pathname)) {
       post({ url, seenOnly: true });
     }
@@ -120,7 +122,7 @@
   // Chaque ligne mène à la conversation (/inbox/:id). Pour une ligne nouvelle,
   // ou dont le statut a changé, on récupère la conversation → l'id de la
   // transaction → la fiche transaction (captée par le fetch ci-dessus).
-  const SEEN_KEY = 'laneySync:orders:v2';
+  const SEEN_KEY = 'laneySync:orders:v4';
   const loadSeen = () => { try { return JSON.parse(localStorage.getItem(SEEN_KEY)) || {}; } catch (e) { return {}; } };
   const saveSeen = v => { try { localStorage.setItem(SEEN_KEY, JSON.stringify(v)); } catch (e) {} };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -128,7 +130,7 @@
   function orderRows() {
     const rows = new Map();
     document.querySelectorAll('a[href*="/inbox/"]').forEach(a => {
-      const m = a.getAttribute('href').match(/\/inbox\/(\d+)/);
+      const m = a.getAttribute('href').match(/\/inbox\/(\d+)(?:[/?#]|$)/);
       const text = (a.innerText || '').trim();
       // Une ligne de commande affiche un prix (ex. « 17,00 € »)
       if (m && /\d+[,.]\d{2}\s*€/.test(text)) rows.set(m[1], text.replace(/\s+/g, ' ').slice(0, 200));
@@ -151,6 +153,7 @@
   let probedRows = false;
   async function scanOrders() {
     if (scanning || !/my_orders/.test(location.pathname)) return;
+    if (enriching) return;
     scanning = true;
     try {
       const seen = loadSeen();
@@ -188,6 +191,35 @@
       post({ probe: { at: new Date().toISOString(), error: String(e) } });
     }
     scanning = false;
+  }
+
+  // Liste chargée par l'API : on a déjà l'id de transaction. On ouvre la fiche
+  // (acheteur, date de finalisation) des commandes récentes dont le statut a changé.
+  let enriching = false;
+  async function enrichOrders(orders) {
+    if (enriching) return;
+    enriching = true;
+    try {
+      const seen = loadSeen();
+      const recent = Date.now() - 60 * 86400000;
+      let budget = 15;
+      for (const o of orders) {
+        const id = o.transaction_id;
+        const state = String(o.transaction_user_status || o.status || '');
+        if (!id || o.transaction_user_status === 'failed' || new Date(o.date) < recent) continue;
+        if (seen[`tx:${id}`] === state) continue;
+        if (budget-- <= 0) break;
+        const r = await origFetch(`/api/v2/transactions/${id}`, { credentials: 'include', headers: { Accept: 'application/json' } });
+        if (!r.ok) { post({ probe: { at: new Date().toISOString(), error: `transaction ${id} : HTTP ${r.status}` } }); break; }
+        post({ url: `https://www.vinted.fr/api/v2/transactions/${id}`, data: await r.json() });
+        seen[`tx:${id}`] = state;
+        saveSeen(seen);
+        await sleep(1200);
+      }
+    } catch (e) {
+      post({ probe: { at: new Date().toISOString(), error: String(e) } });
+    }
+    enriching = false;
   }
 
   let scanTimer = null;

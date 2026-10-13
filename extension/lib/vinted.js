@@ -66,19 +66,25 @@ function normalizeOrder(o) {
   const buyerObj = first(o.opposite_user, o.buyer, o.user) || {};
   const buyer = first(buyerObj.login, buyerObj.username, o.buyer_login, o.opposite_user_login) || null;
   if (vid == null || !title || !(amount > 0) || !date) return null;
-  if (CANCELLED.test(status)) return null;
-  return { type: 'sale', vid: String(vid), title: String(title), amount, date, buyer, status };
+  if (CANCELLED.test(status) || o.transaction_user_status === 'failed') return null;
+  // Une commande listée dans Mes commandes › Ventes est une vente payée
+  return { type: 'sale', vid: String(vid), title: String(title), amount, date, buyer, status, paid: true, source: 'list' };
 }
 
 function normalizeWalletLine(l) {
   const amount = amountOf(first(l.amount, l.price, l.total, l.value));
   const date = dateOf(first(l.date, l.created_at, l.created_at_ts, l.time));
-  const title = String(first(l.title, l.description, l.subtitle, l.name, '') || '');
+  // Une ligne affiche souvent « Vente » d'un côté et le titre de l'article de l'autre :
+  // on garde le texte le plus parlant
+  const texts = [l.title, l.subtitle, l.description, l.name, l.item_title, l.entity && l.entity.title]
+    .filter(t => typeof t === 'string' && t.trim());
+  const isSale = texts.some(t => /^\s*(vente|sale)\s*$/i.test(t));
+  const title = texts.find(t => !/^\s*(vente|sale|paiement|payment)\s*$/i.test(t)) || texts[0] || '';
   const kind = String(first(l.type, l.entity_type, l.line_type, '') || '');
   const txId = first(l.transaction_id, l.entity_id, l.transaction && l.transaction.id);
   const vid = first(l.id, txId != null ? `${txId}-${date}` : null);
   if (vid == null || !(amount > 0) || !date || (!title && txId == null)) return null;
-  if (NOT_INCOME.test(title) || /debit|withdraw|payout|purchase|fee/i.test(kind)) return null;
+  if ((!isSale && NOT_INCOME.test(title)) || /debit|withdraw|payout|purchase|fee/i.test(kind)) return null;
   if (l.is_debit === true || l.direction === 'out' || l.sign === '-') return null;
   return { type: 'cash', vid: String(vid), txId: txId != null ? String(txId) : null, title, amount, date };
 }
@@ -87,20 +93,23 @@ function normalizeWalletLine(l) {
 // d'une conversation. On ne garde que les ventes (user_side = seller).
 function parseTransaction(t) {
   if (!t || t.user_side !== 'seller' || t.id == null) return [];
+  // Une conversation (favori, question, offre non payée) a aussi une fiche
+  // transaction : ce n'est une vente que si l'acheteur a payé.
+  if (!t.debit_processed_at) return [];
   const status = String(t.status_title || '');
   if (CANCELLED.test(status)) return [];
   const order = t.order || {};
   const title = first(t.item_title, order.title);
   const amount = amountOf(first(t.offer && t.offer.price, t.total_amount_without_tax,
     order.items && order.items.length === 1 ? order.items[0].price : null));
-  const date = dateOf(first(t.debit_processed_at, t.offer && t.offer.created_at, t.status_updated_at));
+  const date = dateOf(t.debit_processed_at);
   if (!title || !(amount > 0) || !date) return [];
   const account = t.seller_id ? { id: String(t.seller_id), login: (t.seller && t.seller.login) || null } : null;
   const base = { vid: String(t.id), title: String(title), amount, account };
   const items = first(t.items_count, order.item_count) || 1;
   const buyer = first(t.buyer && t.buyer.login, t.opposite_user && t.opposite_user.login,
     order.buyer && order.buyer.login, t.buyer_login) || null;
-  const events = [{ ...base, type: 'sale', date, buyer, status, items }];
+  const events = [{ ...base, type: 'sale', date, buyer, status, items, paid: true }];
   // Transaction finalisée : l'argent est versé dans le porte-monnaie
   if (/finalis|termin|complet/i.test(status)) {
     events.push({ ...base, type: 'cash', vid: `tx-${t.id}`, txId: String(t.id), date: dateOf(t.status_updated_at) || date });

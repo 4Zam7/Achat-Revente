@@ -1,7 +1,7 @@
 import { login, logout, isLoggedIn, currentEmail } from './lib/supabase.js';
 import {
   getState, saveSettings, setAccountBoutique, fetchBoutiques, processPending, applyEvent,
-  setEventStatus, reclassifyOld, diagnostic, resetEvents, missing,
+  setEventStatus, reclassifyOld, diagnostic, resetEvents, missing, cleanup, removeAccount, undoEvent,
 } from './lib/sync.js';
 
 const FIELD = { prix_revente: 'prix', date_revente: 'date de vente', client: 'client', date_encaissement: 'encaissement' };
@@ -69,6 +69,7 @@ function renderAccounts(accounts) {
             <option value="">— Choisir —</option>
             ${(BOUTIQUES || []).map(b => `<option value="${b.id}" ${b.id === accounts[id].boutiqueId ? 'selected' : ''}>${esc(b.nom)}</option>`).join('')}
           </select>
+          <button class="link danger" data-remove="${esc(id)}" title="Retirer ce compte de la liste">✕</button>
         </div>`).join('')
     : '<div class="empty">Aucun compte détecté. Ouvre ou recharge un onglet Vinted où tu es connecté, puis rouvre cette fenêtre : ton compte apparaîtra ici pour choisir sa boutique.</div>';
 }
@@ -120,6 +121,8 @@ function recentHTML(ev) {
       <span class="tag ${linked ? 'linked' : cls}">${linked ? 'Déjà saisi' : label}</span>
       <span class="ev-title">${esc(ev.articleName || ev.title)}${!linked && ev.filled ? ` <span class="muted">· ${esc(fieldsText(ev.filled))}</span>` : ''}</span>
       <span class="ev-price">${eur(ev.amount)}</span>
+      ${ev.note ? `<span class="ev-note" title="${esc(ev.note)}">⚠</span>` : ''}
+      ${linked ? '' : `<button class="link danger" data-undo="${esc(ev.key)}" title="Remettre à vide ce que l'extension a écrit">Annuler</button>`}
     </div>`;
 }
 
@@ -200,5 +203,24 @@ $('btn-reset').addEventListener('click', async () => {
   render();
 });
 
-render();
+cleanup().finally(render);
 currentEmail().then(m => { if (m) $('btn-logout').title = m; });
+
+$('accounts').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-remove]');
+  if (!btn) return;
+  if (!confirm('Retirer ce compte de la liste ? Il réapparaîtra si tu te reconnectes avec lui sur Vinted.')) return;
+  await removeAccount(btn.dataset.remove);
+  render();
+});
+
+$('recent').addEventListener('click', async e => {
+  const btn = e.target.closest('button[data-undo]');
+  if (!btn) return;
+  if (!confirm('Annuler cette mise à jour ? Les champs remplis par l\'extension seront remis à vide dans Laney (sauf si tu les as modifiés depuis).')) return;
+  try {
+    const restored = await undoEvent(btn.dataset.undo);
+    toast(restored.length ? `Annulé : ${fieldsText(restored)} remis à vide` : 'Rien annulé : les valeurs ont été modifiées depuis', !restored.length);
+  } catch (err) { toast(err.message, true); }
+  render();
+});

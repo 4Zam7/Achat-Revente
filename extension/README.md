@@ -14,6 +14,8 @@ Tu continues à saisir le prix et la date d'achat dans Laney. La saisie manuelle
 - Elle retrouve l'article Laney correspondant à partir du titre de l'annonce, ou mieux, du **SKU/ID** s'il figure dans le titre Vinted.
 - Correspondance sûre (SKU trouvé ou titre identique) → mise à jour automatique. Si plusieurs exemplaires identiques sont en stock, c'est le plus ancien acheté qui est vendu.
 - Sinon → l'événement apparaît dans **À valider** : tu choisis l'article et tu cliques sur Valider.
+- Seules les **ventes payées** comptent : une conversation née d'un favori, d'une question ou d'une offre non payée est ignorée.
+- Une mise à jour faite par erreur peut être défaite avec **Annuler** dans « Dernières mises à jour » : les champs écrits par l'extension sont remis à vide, sauf si tu les as modifiés depuis.
 - Les événements antérieurs à la **date de départ** sont ignorés, pour ne pas retraiter l'historique déjà saisi.
 
 ## Installation
