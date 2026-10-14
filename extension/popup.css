@@ -60,3 +60,14 @@ footer { display: flex; gap: 14px; margin-top: 14px; padding-top: 10px; border-t
 #toast { position: fixed; left: 14px; right: 14px; bottom: 10px; background: var(--bg4); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 10px; font-size: 12px; opacity: 0; transition: opacity .2s; pointer-events: none; }
 #toast.show { opacity: 1; }
 #toast.err { border-color: var(--red); color: var(--red); }
+
+/* Lignes « Dernières mises à jour » : titre cliquable + client copiable */
+.row { flex-direction: column; align-items: stretch; gap: 3px; }
+.row-main, .row-sub { display: flex; gap: 6px; align-items: center; min-width: 0; }
+.row-sub { padding-left: 2px; font-size: 11px; }
+.row-sub .muted { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+a.ev-title.open { color: var(--text2); text-decoration: none; }
+a.ev-title.open:hover { color: var(--accent); text-decoration: underline; }
+.client { background: var(--bg3); border: 1px solid var(--border2); color: var(--text); border-radius: 999px; padding: 1px 8px; font-size: 11px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.client:hover { border-color: var(--accent); color: var(--accent); }
+.client.none { color: var(--text3); border-color: transparent; background: none; }

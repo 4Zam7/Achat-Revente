@@ -460,10 +460,17 @@ export async function getState() {
   }
   // Les mises à jour écrites par l'extension (annulables) passent avant les « déjà saisi »
   const byDate = (a, b) => (b.doneAt || b.seenAt).localeCompare(a.doneAt || a.seenAt);
-  const recent = [
+  const recentEvents = [
     ...events.filter(e => e.status === 'done').sort(byDate).slice(0, 30),
     ...events.filter(e => e.status === 'linked').sort(byDate).slice(0, 10),
   ];
+  // Chaque ligne affiche l'article tel qu'il est dans Laney (prix, client)
+  const recent = [];
+  for (const ev of recentEvents) {
+    const boutiqueId = boutiqueOf(settings, ev.accountId);
+    const article = (await articlesOf(boutiqueId)).find(a => a.id === ev.articleId) || null;
+    recent.push({ ev, boutiqueId, article });
+  }
   return { settings, pending, recent, counts: countBy(events) };
 }
 

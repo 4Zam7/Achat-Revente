@@ -88,7 +88,7 @@ function articleLabel(ev, { article: a, score }) {
 
 function pendingHTML({ ev, boutiqueId, candidates }) {
   const [cls, label] = TYPE[ev.type];
-  const meta = [fr(ev.date), accountName(ev.accountId || 'unknown'), ev.buyer ? `acheteur ${ev.buyer}` : ''].filter(Boolean).join(' · ');
+  const meta = [fr(ev.date), accountName(ev.accountId || 'unknown')].filter(Boolean).join(' · ');
   const options = candidates.length
     ? candidates.map(c => `<option value="${c.article.id}">${esc(articleLabel(ev, c))}</option>`).join('')
     : '';
@@ -102,7 +102,7 @@ function pendingHTML({ ev, boutiqueId, candidates }) {
         <span class="ev-title" title="${esc(ev.title)}">${esc(ev.title || 'Sans titre')}</span>
         <span class="ev-price">${eur(ev.amount)}</span>
       </div>
-      <div class="ev-meta">${esc(meta)}</div>
+      <div class="ev-meta">${esc(meta)}${ev.buyer ? ` · acheteur ${clientChip(ev.buyer)}` : ''}</div>
       ${ev.note ? `<div class="ev-note">${esc(ev.note)}</div>` : ''}
       ${options ? `<select class="ev-select">${options}</select>` : `<div class="empty">${empty}</div>`}
       <div class="ev-actions">
@@ -112,17 +112,34 @@ function pendingHTML({ ev, boutiqueId, candidates }) {
     </div>`;
 }
 
-function recentHTML(ev) {
+const clientChip = name => (name
+  ? `<button class="client" data-copy="${esc(name)}" title="Copier le nom du client">${esc(name)}</button>`
+  : '<span class="client none">—</span>');
+
+function recentHTML({ ev, boutiqueId, article }) {
   const [cls, label] = TYPE[ev.type];
   const linked = ev.status === 'linked';
   const what = linked ? 'Déjà saisi dans Laney, rien modifié' : `Ajouté : ${fieldsText(ev.filled || [])}`;
+  // Le prix et le client affichés sont ceux de Laney (ce qui fait foi)
+  const price = article && article.prix_revente != null ? article.prix_revente : ev.amount;
+  const client = (article && article.client) || ev.buyer;
+  const name = (article && article.nom) || ev.articleName || ev.title;
+  const titleEl = ev.articleId
+    ? `<a class="ev-title open" href="#" data-open="${esc(ev.articleId)}" data-boutique="${esc(boutiqueId || '')}" title="Ouvrir dans Laney">${esc(name)}</a>`
+    : `<span class="ev-title">${esc(name)}</span>`;
   return `
     <div class="row" title="${esc(what)}">
-      <span class="tag ${linked ? 'linked' : cls}">${linked ? 'Déjà saisi' : label}</span>
-      <span class="ev-title">${esc(ev.articleName || ev.title)}${!linked && ev.filled ? ` <span class="muted">· ${esc(fieldsText(ev.filled))}</span>` : ''}</span>
-      <span class="ev-price">${eur(ev.amount)}</span>
-      ${ev.note ? `<span class="ev-note" title="${esc(ev.note)}">⚠</span>` : ''}
-      ${linked ? '' : `<button class="link danger" data-undo="${esc(ev.key)}" title="Remettre à vide ce que l'extension a écrit">Annuler</button>`}
+      <div class="row-main">
+        <span class="tag ${linked ? 'linked' : cls}">${linked ? 'Déjà saisi' : label}</span>
+        ${titleEl}
+        <span class="ev-price">${eur(price)}</span>
+      </div>
+      <div class="row-sub">
+        ${clientChip(client)}
+        <span class="muted">${linked ? 'rien modifié' : esc(fieldsText(ev.filled || []))}</span>
+        ${ev.note ? `<span class="ev-note" title="${esc(ev.note)}">⚠</span>` : ''}
+        ${linked ? '' : `<button class="link danger" data-undo="${esc(ev.key)}" title="Remettre à vide ce que l'extension a écrit">Annuler</button>`}
+      </div>
     </div>`;
 }
 
@@ -223,4 +240,29 @@ $('recent').addEventListener('click', async e => {
     toast(restored.length ? `Annulé : ${fieldsText(restored)} remis à vide` : 'Rien annulé : les valeurs ont été modifiées depuis', !restored.length);
   } catch (err) { toast(err.message, true); }
   render();
+});
+
+// Copier le nom du client en un clic
+document.addEventListener('click', async e => {
+  const chip = e.target.closest('[data-copy]');
+  if (!chip) return;
+  e.stopPropagation();
+  await navigator.clipboard.writeText(chip.dataset.copy);
+  toast(`Copié : ${chip.dataset.copy}`);
+});
+
+// Ouvrir l'article dans Laney (réutilise l'onglet Laney s'il est déjà ouvert)
+const LANEY_URL = 'https://achat-revente-sigma.vercel.app';
+$('recent').addEventListener('click', async e => {
+  const link = e.target.closest('[data-open]');
+  if (!link) return;
+  e.preventDefault();
+  const url = `${LANEY_URL}/?article=${link.dataset.open}${link.dataset.boutique ? `&boutique=${link.dataset.boutique}` : ''}`;
+  const [tab] = await chrome.tabs.query({ url: `${LANEY_URL}/*` });
+  if (tab) {
+    await chrome.tabs.update(tab.id, { url, active: true });
+    await chrome.windows.update(tab.windowId, { focused: true });
+  } else {
+    await chrome.tabs.create({ url });
+  }
 });

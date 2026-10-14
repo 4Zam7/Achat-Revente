@@ -71,6 +71,21 @@ async function showApp() {
   buildOverview();
   setupRealtimeSync();
   dpSetValue('f-date', today());
+  openArticleFromUrl();
+}
+
+// Lien direct vers un article (ex. depuis l'extension Laney Sync) : /?article=ID&boutique=ID
+async function openArticleFromUrl() {
+  const p = new URLSearchParams(location.search);
+  const id = parseInt(p.get('article'), 10);
+  if (!id) return;
+  history.replaceState(null, '', location.pathname);
+  const b = BOUTIQUES.find(x => String(x.id) === p.get('boutique'));
+  if (b && (!CURRENT_BOUTIQUE || CURRENT_BOUTIQUE.id !== b.id)) await switchBoutique(b.id);
+  if (!D.some(d => d.id === id)) { toast('Article introuvable dans cette boutique', 'err'); return; }
+  showTab('items');
+  // Attendre la fin de l'écran de chargement avant d'ouvrir la fiche
+  setTimeout(() => openEditModal(id), 1700);
 }
 
 async function loadData() {

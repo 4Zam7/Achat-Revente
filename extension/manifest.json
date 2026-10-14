@@ -1,12 +1,13 @@
 {
   "manifest_version": 3,
   "name": "Laney Sync — Vinted",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Met à jour Laney (ventes et encaissements) quand tu consultes tes commandes et ton porte-monnaie Vinted.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.vinted.fr/*",
-    "https://dqsrqdmbqlyvwhfrdjvk.supabase.co/*"
+    "https://dqsrqdmbqlyvwhfrdjvk.supabase.co/*",
+    "https://achat-revente-sigma.vercel.app/*"
   ],
   "background": { "service_worker": "background.js", "type": "module" },
   "action": {
