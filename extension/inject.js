@@ -222,6 +222,39 @@
     enriching = false;
   }
 
+  // ─── VÉRIFICATION DEPUIS N'IMPORTE QUELLE PAGE VINTED ─────────────────────
+  // Toutes les 15 min au plus par compte (partagé entre onglets), l'extension
+  // récupère la liste des ventes elle-même : plus besoin d'ouvrir Mes commandes.
+  const AUTO_EVERY = 15 * 60 * 1000;
+  const SOLD_URLS = [
+    'https://api.vinted.fr/escrow-orders/api/v2/current-user/escrow-orders?page=1&per_page=20&type=sold',
+    '/api/v2/my_orders?type=sold&status=all&per_page=20&page=1',
+  ];
+  async function autoCheck() {
+    if (/my_orders/.test(location.pathname)) return; // la page charge déjà la liste
+    const acc = detectAccount();
+    if (!acc) return; // non connecté
+    const key = `laneySync:lastAuto:${acc.id}`;
+    let last = 0;
+    try { last = +localStorage.getItem(key) || 0; } catch (e) {}
+    if (Date.now() - last < AUTO_EVERY) return;
+    try { localStorage.setItem(key, String(Date.now())); } catch (e) {}
+    const errors = [];
+    for (const u of SOLD_URLS) {
+      try {
+        // window.fetch : la réponse est captée et traitée comme celle de la page
+        const r = await window.fetch(u, { credentials: 'include', headers: { Accept: 'application/json' } });
+        if (r.ok) return;
+        errors.push(`${u.split('?')[0]} : HTTP ${r.status}`);
+      } catch (e) { errors.push(`${u.split('?')[0]} : ${e}`); }
+    }
+    post({ probe: { at: new Date().toISOString(), path: location.pathname, autoCheck: errors } });
+  }
+  window.addEventListener('load', () => {
+    setTimeout(autoCheck, 6000);
+    setInterval(autoCheck, 5 * 60 * 1000);
+  });
+
   let scanTimer = null;
   const scheduleScan = () => {
     if (scanTimer) return;

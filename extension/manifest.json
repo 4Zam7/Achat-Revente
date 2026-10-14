@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Laney Sync — Vinted",
-  "version": "0.1.15",
+  "version": "0.2.2",
   "description": "Met à jour Laney (ventes et encaissements) quand tu consultes tes commandes et ton porte-monnaie Vinted.",
   "permissions": ["storage"],
   "host_permissions": [

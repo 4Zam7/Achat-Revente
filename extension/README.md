@@ -9,6 +9,9 @@ Tu continues à saisir le prix et la date d'achat dans Laney. La saisie manuelle
 
 ## Comment ça marche
 
+- **Pas besoin d'ouvrir Mes commandes** : dès qu'une page Vinted est ouverte (accueil, profil…), l'extension récupère elle-même la liste de tes ventes, au plus une fois toutes les 15 minutes par compte.
+- **Plus de stock ?** Si l'article vendu est reconnu avec certitude (ID/SKU dans le titre) mais qu'aucun exemplaire n'est en stock dans Laney, l'extension crée un nouvel exemplaire (comme « Dupliquer ») et le marque vendu. Le prix d'achat reste à saisir.
+
 - L'extension lit les données que la page Vinted reçoit quand tu l'ouvres. Sur **Mes commandes**, la liste ne contient pas le détail des ventes : pour chaque vente nouvelle (ou dont le statut a changé), l'extension ouvre elle-même sa fiche, comme si tu ouvrais la conversation — 2 requêtes par vente, espacées d'environ 1 s, 15 ventes maximum par passage.
 - **Plusieurs comptes Vinted** : l'extension reconnaît le compte connecté sur la page. Dans la popup, associe une fois chaque compte à sa boutique Laney (ex. compte perso → Vinted, compte pro → Vinted Pro). Tant qu'un compte n'est pas associé, ses ventes restent en attente.
 - Elle retrouve l'article Laney correspondant à partir du titre de l'annonce, ou mieux, du **SKU/ID** s'il figure dans le titre Vinted.

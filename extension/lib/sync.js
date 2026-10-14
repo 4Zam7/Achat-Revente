@@ -60,6 +60,13 @@ export function undoEvent(key) {
     const events = await store.get('events', {});
     const ev = events[key];
     if (!ev || ev.status !== 'done' || !ev.articleId) throw new Error('Rien à annuler');
+    if (ev.created) {
+      const rows = await rest(`articles?id=eq.${ev.articleId}&prix_revente=eq.${ev.amount}&date_revente=eq.${ev.date}`, { method: 'DELETE' });
+      Object.assign(ev, { status: 'ignored', undone: rows && rows.length ? ['created'] : [], filled: [] });
+      await store.set('events', events);
+      await refreshBadge();
+      return ev.undone;
+    }
     const written = {
       prix_revente: ev.amount, date_revente: ev.date, client: ev.buyer, date_encaissement: ev.date,
     };
@@ -187,7 +194,7 @@ export async function fetchBoutiques() {
 }
 
 async function fetchArticles(boutiqueId) {
-  return rest(`articles?select=id,nom,prix_achat,prix_revente,date_achat,date_revente,date_encaissement,sku,identifiant,taille,client&boutique_id=eq.${boutiqueId}&order=id.asc`);
+  return rest(`articles?select=id,nom,prix_achat,prix_revente,date_achat,date_revente,date_encaissement,sku,identifiant,taille,client,categorie,grossiste,boutique_id&boutique_id=eq.${boutiqueId}&order=id.asc`);
 }
 
 // Articles déjà associés à un événement du même type
@@ -216,14 +223,42 @@ export function candidatesFor(ev, articles) {
     .sort((x, y) => y.score - x.score || missing(ev, y.article).length - missing(ev, x.article).length);
 }
 
+// Modèle à dupliquer quand il n'y a plus de stock : un article de la boutique
+// reconnu avec certitude (ID/SKU dans le titre Vinted, ou titre identique)
+export function modelFor(ev, articles) {
+  const model = sureMatch(rank(cleanTitle(ev.title), articles));
+  return model || null;
+}
+
+// Crée un nouvel exemplaire (mêmes champs que « Dupliquer » dans Laney) déjà vendu
+async function createSold(ev, model) {
+  const row = {
+    nom: model.nom,
+    categorie: model.categorie || null,
+    grossiste: model.grossiste || null,
+    sku: model.sku || null,
+    identifiant: model.identifiant || null,
+    boutique_id: model.boutique_id,
+    prix_revente: ev.amount,
+    date_revente: ev.date,
+    client: ev.buyer || null,
+  };
+  const rows = await rest('articles', { method: 'POST', body: [row] });
+  if (!rows || !rows.length) throw new Error('Création de l\'article refusée');
+  return rows[0];
+}
+
 // Cet article déjà vendu dans Laney correspond-il à CETTE vente Vinted ?
 // Le client doit concorder s'il est connu des deux côtés, et le prix doit être
 // identique OU la date de vente à 7 jours près (une offre peut changer le prix).
 function isSameSale(ev, a) {
-  if (a.client && ev.buyer && norm(a.client) !== norm(ev.buyer)) return false;
-  if (a.client && ev.buyer) return daysBetween(a.date_revente, ev.date) <= MANUAL_WINDOW;
-  return samePrice(a.prix_revente, ev.amount) ? daysBetween(a.date_revente, ev.date) <= MANUAL_WINDOW
-    : daysBetween(a.date_revente, ev.date) <= 7;
+  const days = daysBetween(a.date_revente, ev.date);
+  // Clients connus des deux côtés : ils doivent correspondre
+  if (a.client && ev.buyer) return norm(a.client) === norm(ev.buyer) && days <= MANUAL_WINDOW;
+  // L'article a un client mais l'acheteur Vinted n'est pas encore connu : même prix exigé
+  if (a.client) return samePrice(a.prix_revente, ev.amount) && days <= MANUAL_WINDOW;
+  // Pas de client dans Laney : même prix, ou date à 7 jours près (offre acceptée)
+  return samePrice(a.prix_revente, ev.amount) ? days <= MANUAL_WINDOW : days <= 7;
 }
 
 // Champs que l'extension peut remplir sur cet article : uniquement ceux qui sont vides
@@ -255,8 +290,15 @@ function resolve(ev, articles, events) {
         || daysBetween(a.date_revente, ev.date) - daysBetween(b.date_revente, ev.date));
     if (manual.length) return { article: manual[0] };
     // 2. Sinon, un exemplaire en stock dont on est sûr
-    const sure = sureMatch(rank(title, free.filter(a => a.prix_revente == null)));
-    return sure ? { article: sure } : null;
+    const stock = free.filter(a => a.prix_revente == null);
+    const sure = sureMatch(rank(title, stock));
+    if (sure) return { article: sure };
+    // 3. Aucun exemplaire en stock de cet article : on en crée un (copie du modèle)
+    if (!stock.some(a => score(title, a) >= SURE)) {
+      const model = modelFor(ev, articles);
+      if (model) return { create: model };
+    }
+    return null;
   }
 
   // Articles rattachés à une AUTRE vente Vinted : jamais candidats pour cet encaissement
@@ -399,6 +441,17 @@ export function processPending() {
       const articles = byBoutique[bId] || (byBoutique[bId] = await fetchArticles(bId));
       const r = resolve(ev, articles, events);
       if (!r) continue;
+      if (r.create) {
+        // Création automatique seulement en mode auto et hors revérification
+        if (!settings.auto || ev.recheck) continue;
+        try {
+          const created = await createSold(ev, r.create);
+          articles.push(created);
+          markResolved(ev, created, ['created', 'prix_revente', 'date_revente', ...(ev.buyer ? ['client'] : [])]);
+          ev.created = true;
+        } catch (e) { ev.note = e.message; }
+        continue;
+      }
       // Mode manuel, ou vente revérifiée : on n'écrit rien sans confirmation
       // (sauf si tout est déjà saisi : simple rapprochement)
       if ((!settings.auto || ev.recheck) && missing(ev, r.article).length) continue;
@@ -423,6 +476,18 @@ export function applyEvent(key, articleId) {
     const boutiqueId = boutiqueOf(settings, ev.accountId);
     if (!boutiqueId) throw new Error('Associe d\'abord ce compte Vinted à une boutique');
     const articles = await fetchArticles(boutiqueId);
+    // « new:ID » = créer un nouvel exemplaire à partir de l'article ID
+    if (String(articleId).startsWith('new:')) {
+      const model = articles.find(a => String(a.id) === String(articleId).slice(4));
+      if (!model || ev.type !== 'sale') throw new Error('Modèle introuvable');
+      const created = await createSold(ev, model);
+      const filled = ['created', 'prix_revente', 'date_revente', ...(ev.buyer ? ['client'] : [])];
+      markResolved(ev, created, filled);
+      ev.created = true;
+      await store.set('events', events);
+      await refreshBadge();
+      return filled;
+    }
     const article = articles.find(a => a.id === articleId);
     if (!article) throw new Error('Article introuvable');
     const filled = await write(ev, article);
@@ -456,13 +521,15 @@ export async function getState() {
   const pending = [];
   for (const ev of events.filter(e => e.status === 'pending').sort((a, b) => b.date.localeCompare(a.date))) {
     const boutiqueId = boutiqueOf(settings, ev.accountId);
-    pending.push({ ev, boutiqueId, candidates: candidatesFor(ev, await articlesOf(boutiqueId)).slice(0, 30) });
+    const arts = await articlesOf(boutiqueId);
+    const create = ev.type === 'sale' ? modelFor(ev, arts) : null;
+    pending.push({ ev, boutiqueId, candidates: candidatesFor(ev, arts).slice(0, 30), create });
   }
   // Les mises à jour écrites par l'extension (annulables) passent avant les « déjà saisi »
   const byDate = (a, b) => (b.doneAt || b.seenAt).localeCompare(a.doneAt || a.seenAt);
   const recentEvents = [
-    ...events.filter(e => e.status === 'done').sort(byDate).slice(0, 30),
-    ...events.filter(e => e.status === 'linked').sort(byDate).slice(0, 10),
+    ...events.filter(e => e.status === 'done').sort(byDate).slice(0, 150),
+    ...events.filter(e => e.status === 'linked').sort(byDate).slice(0, 50),
   ];
   // Chaque ligne affiche l'article tel qu'il est dans Laney (prix, client)
   const recent = [];
@@ -471,7 +538,12 @@ export async function getState() {
     const article = (await articlesOf(boutiqueId)).find(a => a.id === ev.articleId) || null;
     recent.push({ ev, boutiqueId, article });
   }
-  return { settings, pending, recent, counts: countBy(events) };
+  const stats = {
+    pending: pending.length,
+    sales: events.filter(e => e.type === 'sale' && e.status === 'done').length,
+    cash: events.filter(e => e.type === 'cash' && e.status === 'done').length,
+  };
+  return { settings, pending, recent, stats, counts: countBy(events) };
 }
 
 function countBy(events) {

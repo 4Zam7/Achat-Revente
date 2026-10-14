@@ -2,50 +2,129 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Laney Sync</title>
+  <link rel="icon" href="icons/icon-64.png">
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <header>
-    <img src="icons/icon-64.png" alt="" width="22" height="22">
-    <div class="brand">Laney Sync <span class="sub">Vinted</span></div>
-    <button id="btn-logout" class="link" hidden>Déconnexion</button>
-  </header>
+  <div class="shell">
+    <header class="top">
+      <img src="icons/icon-64.png" alt="" class="logo">
+      <div class="brand">
+        <div class="brand-name">Laney Sync</div>
+        <div class="brand-sub" id="status-line">Vinted → Laney</div>
+      </div>
+      <div class="top-actions">
+        <button id="btn-sync" class="icon-btn" title="Relancer la synchro" hidden>
+          <svg viewBox="0 0 16 16" fill="none"><path d="M13.5 8a5.5 5.5 0 1 1-1.6-3.9M13.5 2.5v3h-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="btn-tab" class="icon-btn" title="Ouvrir dans un onglet">
+          <svg viewBox="0 0 16 16" fill="none"><path d="M9 2.5h4.5V7M13.5 2.5 7.5 8.5M6.5 3.5h-3a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </header>
 
-  <!-- CONNEXION -->
-  <section id="login" hidden>
-    <p class="muted">Connecte-toi avec ton compte Laney.</p>
-    <input id="email" type="email" placeholder="Email" autocomplete="username">
-    <input id="pwd" type="password" placeholder="Mot de passe" autocomplete="current-password">
-    <button id="btn-login" class="primary">Se connecter</button>
-    <div id="login-error" class="error"></div>
-  </section>
+    <!-- CONNEXION -->
+    <section id="login" class="login" hidden>
+      <div class="login-card">
+        <h1>Connexion</h1>
+        <p class="muted">Utilise ton compte Laney.</p>
+        <input id="email" type="email" placeholder="Email" autocomplete="username">
+        <input id="pwd" type="password" placeholder="Mot de passe" autocomplete="current-password">
+        <button id="btn-login" class="btn primary block">Se connecter</button>
+        <div id="login-error" class="error"></div>
+      </div>
+    </section>
 
-  <!-- APP -->
-  <section id="main" hidden>
-    <div class="settings">
-      <div class="label">Comptes Vinted → boutique Laney</div>
-      <div id="accounts"></div>
-      <label>Prendre en compte à partir du
-        <input id="start-date" type="date">
-      </label>
-      <label class="check"><input id="auto" type="checkbox"> Appliquer automatiquement les correspondances sûres</label>
-    </div>
+    <!-- APP -->
+    <section id="main" hidden>
+      <div class="stats">
+        <button class="stat" data-goto="pending">
+          <span class="stat-value amber" id="stat-pending">0</span>
+          <span class="stat-label">À valider</span>
+        </button>
+        <button class="stat" data-goto="history">
+          <span class="stat-value green" id="stat-sales">0</span>
+          <span class="stat-label">Ventes ajoutées</span>
+        </button>
+        <button class="stat" data-goto="history">
+          <span class="stat-value blue" id="stat-cash">0</span>
+          <span class="stat-label">Encaissements</span>
+        </button>
+      </div>
 
-    <div class="hint">Ouvre <a href="https://www.vinted.fr/my_orders" target="_blank">Mes commandes</a> (onglet Ventes) ou <a href="https://www.vinted.fr/wallet/balance" target="_blank">Porte-monnaie</a> : Laney se met à jour.</div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="pending">À valider <span id="pending-count" class="badge"></span></button>
+        <button class="tab" data-tab="history">Historique</button>
+        <button class="tab" data-tab="settings">Réglages <span id="settings-alert" class="dot" hidden></span></button>
+      </nav>
 
-    <h2>À valider <span id="pending-count" class="count"></span></h2>
-    <div id="pending"></div>
+      <!-- À VALIDER -->
+      <div class="panel" id="panel-pending">
+        <div id="pending" class="cards"></div>
+      </div>
 
-    <h2>Dernières mises à jour</h2>
-    <div id="recent"></div>
+      <!-- HISTORIQUE -->
+      <div class="panel" id="panel-history" hidden>
+        <div class="toolbar">
+          <input id="h-search" type="search" placeholder="Rechercher un article ou un client…">
+          <div class="seg" id="h-filter">
+            <button class="seg-btn active" data-f="all">Tout</button>
+            <button class="seg-btn" data-f="sale">Ventes</button>
+            <button class="seg-btn" data-f="cash">Encaissements</button>
+            <button class="seg-btn" data-f="linked">Déjà saisis</button>
+          </div>
+        </div>
+        <div class="hhead">
+          <span class="c-date">Date</span>
+          <span class="c-type">Type</span>
+          <span class="c-title">Article</span>
+          <span class="c-client">Client</span>
+          <span class="c-price">Prix</span>
+          <span class="c-filled">Ajouté</span>
+          <span class="c-actions"></span>
+        </div>
+        <div id="recent" class="hlist"></div>
+      </div>
 
-    <footer>
-      <button id="btn-sync" class="link">Relancer la synchro</button>
-      <button id="btn-diag" class="link">Copier le diagnostic</button>
-      <button id="btn-reset" class="link danger">Vider l'historique</button>
-    </footer>
-  </section>
+      <!-- RÉGLAGES -->
+      <div class="panel" id="panel-settings" hidden>
+        <div class="box">
+          <div class="box-title">Comptes Vinted → boutique Laney</div>
+          <div id="accounts"></div>
+        </div>
+        <div class="box">
+          <div class="box-title">Synchronisation</div>
+          <label class="field">Prendre en compte les ventes à partir du
+            <input id="start-date" type="date">
+          </label>
+          <label class="switch">
+            <input id="auto" type="checkbox">
+            <span class="switch-ui"></span>
+            <span>Appliquer automatiquement les correspondances sûres</span>
+          </label>
+        </div>
+        <div class="box">
+          <div class="box-title">Pages Vinted à ouvrir</div>
+          <div class="links">
+            <a class="btn" href="https://www.vinted.fr/my_orders" target="_blank">Mes commandes</a>
+            <a class="btn" href="https://www.vinted.fr/wallet/balance" target="_blank">Porte-monnaie</a>
+          </div>
+          <p class="muted small-text">Mes commandes suffit : nouvelles ventes, clients et encaissements (commandes finalisées).</p>
+        </div>
+        <div class="box">
+          <div class="box-title">Avancé</div>
+          <div class="links">
+            <button id="btn-diag" class="btn">Copier le diagnostic</button>
+            <button id="btn-reset" class="btn danger">Vider l'historique</button>
+            <button id="btn-logout" class="btn">Déconnexion</button>
+          </div>
+          <p class="muted small-text" id="account-email"></p>
+        </div>
+      </div>
+    </section>
+  </div>
 
   <div id="toast"></div>
   <script type="module" src="popup.js"></script>
